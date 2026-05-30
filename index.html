@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>חוגגות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700;800;900&family=Rubik+Mono+One&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #F5E8D2; font-family: "Rubik", "Heebo", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #root { width: 100%; min-height: 100vh; }
+
+  @keyframes screenIn { from { transform: translateY(8px); opacity: 0.6; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes cardIn { 0% { transform: translateY(12px) scale(0.96); opacity: 0; } 100% { transform: none; opacity: 1; } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+  input::placeholder { color: #B5A99E; }
+  button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+/* ──────────────────────────────────────────────────────────────
+   THEME — same DNA as the design (Sticker Pop), cleaner styling
+   ────────────────────────────────────────────────────────────── */
+const T = {
+  bg:        "#FFF1E0",
+  bgAlt:     "#FFE9CC",
+  ink:       "#1F1530",
+  inkMuted:  "#6B5F7A",
+  paper:     "#FFFFFF",
+  paperAlt:  "#FAF4E8",
+  pink:      "#FF4D7E",
+  pinkDeep:  "#D62867",
+  pinkSoft:  "#FFD8E2",
+  yellow:    "#FFD23F",
+  yellowSoft:"#FFF1B8",
+  green:     "#7BD389",
+  greenSoft: "#D9F1DC",
+  blue:      "#5BB8FF",
+  blueSoft:  "#DDEFFF",
+  lavender:  "#C9B0FF",
+  lavSoft:   "#EBE0FF",
+  coral:     "#FF8A65",
+  shadow:    (x = 4, y = 4) => `${x}px ${y}px 0 #1F1530`,
+  font:      '"Rubik", "Heebo", system-ui, sans-serif',
+  fontMono:  '"Rubik Mono One", "Rubik", monospace',
+};
+
+/* ──────────────────────────────────────────────────────────────
+   ICONS — simple line SVGs (cleaner than emojis)
+   ────────────────────────────────────────────────────────────── */
+const Icon = ({ name, size = 22, color = "currentColor", stroke = 2.2 }) => {
+  const s = { width: size, height: size, display: "block" };
+  const p = { stroke: color, strokeWidth: stroke, strokeLinecap: "round", strokeLinejoin: "round", fill: "none" };
+  switch (name) {
+    case "ring":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="15" r="6" {...p}/><path d="M9 8l3-5 3 5" {...p}/></svg>;
+    case "cake":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M4 20h16M5 14h14v6H5zM7 14V9a5 5 0 0110 0v5M12 3v3" {...p}/></svg>;
+    case "rocket":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M5 14l-2 6 6-2M14 5c4 0 5 1 5 5l-7 7-5-5 7-7zM10 14c-2 0-3 1-3 3M14 10a2 2 0 100-4 2 2 0 000 4z" {...p}/></svg>;
+    case "heart":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M12 20s-7-4.5-7-10a4 4 0 017-2 4 4 0 017 2c0 5.5-7 10-7 10z" {...p}/></svg>;
+    case "check":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M5 13l4 4 10-10" {...p}/></svg>;
+    case "checklist":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="4" y="3" width="16" height="18" rx="2" {...p}/><path d="M8 8h8M8 12h8M8 16h5" {...p}/></svg>;
+    case "music":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M9 18V5l11-2v13" {...p}/><circle cx="6" cy="18" r="3" {...p}/><circle cx="17" cy="16" r="3" {...p}/></svg>;
+    case "wallet":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="6" width="18" height="14" rx="2" {...p}/><path d="M3 10h18M17 15h.01" {...p}/></svg>;
+    case "dice":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="4" y="4" width="16" height="16" rx="3" {...p}/><circle cx="9" cy="9" r="1" fill={color} stroke="none"/><circle cx="15" cy="9" r="1" fill={color} stroke="none"/><circle cx="9" cy="15" r="1" fill={color} stroke="none"/><circle cx="15" cy="15" r="1" fill={color} stroke="none"/></svg>;
+    case "qr":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="3" width="7" height="7" rx="1" {...p}/><rect x="14" y="3" width="7" height="7" rx="1" {...p}/><rect x="3" y="14" width="7" height="7" rx="1" {...p}/><path d="M14 14h3v3h-3zM20 14v3M14 20h3v1M20 20h1" {...p}/></svg>;
+    case "camera":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="6" width="18" height="14" rx="2" {...p}/><circle cx="12" cy="13" r="4" {...p}/><path d="M8 6l2-3h4l2 3" {...p}/></svg>;
+    case "tv":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="3" y="5" width="18" height="12" rx="2" {...p}/><path d="M9 21h6" {...p}/></svg>;
+    case "back":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M9 6l6 6-6 6" {...p}/></svg>;
+    case "close":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M6 6l12 12M18 6L6 18" {...p}/></svg>;
+    case "dots":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="5" r="1.6" fill={color}/><circle cx="12" cy="12" r="1.6" fill={color}/><circle cx="12" cy="19" r="1.6" fill={color}/></svg>;
+    case "plus":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M12 5v14M5 12h14" {...p}/></svg>;
+    case "play":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M7 5l12 7-12 7V5z" fill={color} stroke="none"/></svg>;
+    case "share":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M12 3v12M8 7l4-4 4 4M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5" {...p}/></svg>;
+    case "spotify":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="10" fill="#1DB954" stroke="none"/><path d="M7 10c3-1 7-1 10 1M7.5 13c2.5-.7 5.5-.7 8 .8M8 16c2-.5 4.5-.5 7 .8" stroke="#000" strokeWidth="1.4" strokeLinecap="round" fill="none"/></svg>;
+    case "users":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="9" cy="9" r="3" {...p}/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M16 11a3 3 0 100-6M21 19c0-2.5-2-4-4-4.5" {...p}/></svg>;
+    case "clock":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="9" {...p}/><path d="M12 7v5l3 2" {...p}/></svg>;
+    case "lock":
+      return <svg viewBox="0 0 24 24" style={s}><rect x="5" y="11" width="14" height="10" rx="2" {...p}/><path d="M8 11V8a4 4 0 018 0v3" {...p}/></svg>;
+    case "send":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M21 3L3 11l7 3 3 7 8-18z" {...p}/></svg>;
+    case "circle-check":
+      return <svg viewBox="0 0 24 24" style={s}><circle cx="12" cy="12" r="10" fill={T.green} stroke={T.ink} strokeWidth="2"/><path d="M7 12.5l3.5 3.5L17 9" stroke={T.ink} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>;
+    case "star":
+      return <svg viewBox="0 0 24 24" style={s}><path d="M12 3l2.5 6 6.5.5-5 4.5 1.5 6.5L12 17l-5.5 3.5L8 14 3 9.5l6.5-.5L12 3z" {...p}/></svg>;
+    default: return null;
+  }
+};
+
+/* ──────────────────────────────────────────────────────────────
+   SHELL & PRIMITIVES
+   ────────────────────────────────────────────────────────────── */
+function PhoneShell({ children }) {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth <= 480);
+  React.useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth <= 480);
+    h();
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div style={{
+        position: "fixed", inset: 0,
+        background: T.bg, direction: "rtl",
+        fontFamily: T.font, color: T.ink,
+        overflow: "hidden",
+      }}>{children}</div>
+    );
+  }
+  return (
+    <div style={{
+      minHeight: "100vh", width: "100%",
+      background: `radial-gradient(circle at 20% 0%, #FFE0B5 0%, transparent 50%), radial-gradient(circle at 80% 100%, #FFD8E2 0%, transparent 50%), #F5E8D2`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "24px", fontFamily: T.font,
+    }}>
+      <div style={{
+        width: 380, height: 760, background: T.bg,
+        borderRadius: 44, overflow: "hidden", position: "relative",
+        direction: "rtl", color: T.ink,
+        boxShadow: `0 40px 80px -30px rgba(40,20,60,0.35), 0 0 0 10px #1F1530, 0 0 0 12px #2A1F45`,
+      }}>{children}</div>
+    </div>
+  );
+}
+
+function StatusBar({ color = T.ink }) {
+  return (
+    <div style={{
+      position: "absolute", top: 0, left: 0, right: 0,
+      height: 38, display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "0 24px", color, fontSize: 12, fontWeight: 700,
+      fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+      zIndex: 50, direction: "ltr",
+    }}>
+      <span>9:41</span>
+      <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <svg width="14" height="9" viewBox="0 0 14 9" fill="none"><path d="M1 8h1M3 6h1M5 4h1M7 2h1M9 1h1M11 1h1M13 1h1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+        <svg width="22" height="10" viewBox="0 0 22 10" fill="none"><rect x="0.5" y="0.5" width="18" height="9" rx="2.5" stroke="currentColor" fill="none"/><rect x="2" y="2" width="14" height="6" rx="1" fill="currentColor"/><rect x="19.5" y="3" width="1.5" height="4" rx="0.5" fill="currentColor"/></svg>
+      </span>
+    </div>
+  );
+}
+
+function HomeBar({ color = T.ink }) {
+  return (
+    <div style={{
+      position: "absolute", bottom: 8, left: "50%",
+      transform: "translateX(-50%)",
+      width: 120, height: 5, borderRadius: 3,
+      background: color, opacity: 0.5, zIndex: 50,
+    }} />
+  );
+}
+
+function ChunkyButton({ children, onClick, bg = T.pink, fg = "#fff", style, full = true, size = "lg", disabled = false }) {
+  const [pressed, setPressed] = React.useState(false);
+  const sz = size === "sm" ? { padding: "11px 16px", fontSize: 14, radius: 14, shadow: 3 }
+    : size === "md" ? { padding: "13px 18px", fontSize: 15, radius: 16, shadow: 3 }
+    : { padding: "16px 22px", fontSize: 17, radius: 18, shadow: 4 };
+  return (
+    <button
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      onMouseLeave={() => setPressed(false)}
+      onTouchStart={() => setPressed(true)}
+      onTouchEnd={() => setPressed(false)}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      style={{
+        width: full ? "100%" : "auto",
+        background: disabled ? "#D9CFC0" : bg, color: fg,
+        border: `2px solid ${T.ink}`, borderRadius: sz.radius,
+        padding: sz.padding, fontSize: sz.fontSize,
+        fontWeight: 800, fontFamily: T.font,
+        cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: pressed ? `1px 1px 0 ${T.ink}` : `${sz.shadow}px ${sz.shadow}px 0 ${T.ink}`,
+        transform: pressed ? "translate(3px, 3px)" : "none",
+        transition: "transform 60ms, box-shadow 60ms",
+        letterSpacing: 0.2, opacity: disabled ? 0.7 : 1,
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        ...style,
+      }}
+    >{children}</button>
+  );
+}
+
+function PaperCard({ children, bg = T.paper, style, padding = 16, onClick }) {
+  return (
+    <div onClick={onClick} style={{
+      background: bg, border: `2px solid ${T.ink}`,
+      borderRadius: 20, boxShadow: T.shadow(4, 4),
+      padding, cursor: onClick ? "pointer" : "default",
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function TopBar({ onBack, progress, title, right }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+      {onBack ? (
+        <button onClick={onBack} style={{
+          width: 40, height: 40, borderRadius: 12,
+          background: T.paper, border: `2px solid ${T.ink}`,
+          boxShadow: T.shadow(3, 3),
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", padding: 0,
+        }}><Icon name="back" size={15} color={T.ink} stroke={2.4}/></button>
+      ) : <div style={{ width: 40 }} />}
+      {title && <div style={{ fontSize: 15, fontWeight: 800 }}>{title}</div>}
+      {progress ? (
+        <div style={{ display: "flex", gap: 5 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{
+              width: i === progress ? 26 : 10, height: 10, borderRadius: 5,
+              background: i <= progress ? T.pink : T.paper,
+              border: `2px solid ${T.ink}`, transition: "width 200ms",
+            }} />
+          ))}
+        </div>
+      ) : (right || <div style={{ width: 40 }} />)}
+    </div>
+  );
+}
+
+function StepTag({ children, bg = T.lavender }) {
+  return (
+    <div style={{
+      display: "inline-block",
+      padding: "5px 12px", background: bg,
+      border: `2px solid ${T.ink}`, borderRadius: 999,
+      fontSize: 11, fontWeight: 800, letterSpacing: 0.4,
+    }}>{children}</div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ONBOARDING
+   ────────────────────────────────────────────────────────────── */
+const VALID_CODE = "123456";
+
+function ScreenWelcome({ onNext }) {
+  const [code, setCode] = React.useState(["", "", "", "", "", ""]);
+  const inputsRef = React.useRef([]);
+
+  React.useEffect(() => { inputsRef.current[0]?.focus(); }, []);
+
+  const setDigit = (i, v) => {
+    const clean = (v || "").replace(/[^0-9]/g, "");
+    if (!clean) {
+      const next = [...code]; next[i] = ""; setCode(next); return;
+    }
+    if (clean.length > 1) {
+      const next = [...code];
+      for (let k = 0; k < clean.length && i + k < 6; k++) next[i + k] = clean[k];
+      setCode(next);
+      const focusIdx = Math.min(i + clean.length, 5);
+      inputsRef.current[focusIdx]?.focus();
+      return;
+    }
+    const next = [...code]; next[i] = clean; setCode(next);
+    if (i < 5) inputsRef.current[i + 1]?.focus();
+  };
+  const onKey = (i, e) => {
+    if (e.key === "Backspace") {
+      if (code[i]) {
+        const next = [...code]; next[i] = ""; setCode(next);
+      } else if (i > 0) {
+        inputsRef.current[i - 1]?.focus();
+        const next = [...code]; next[i - 1] = ""; setCode(next);
+      }
+      e.preventDefault();
+    } else if (e.key === "ArrowLeft" && i < 5) {
+      inputsRef.current[i + 1]?.focus();
+    } else if (e.key === "ArrowRight" && i > 0) {
+      inputsRef.current[i - 1]?.focus();
+    }
+  };
+  const filled = code.every(c => c.length === 1);
+  const isValid = code.join("") === VALID_CODE;
+  const isWrong = filled && !isValid;
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 24px 32px", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <div style={{
+            padding: "12px 24px", background: T.pink, color: "#fff",
+            border: `2.5px solid ${T.ink}`, borderRadius: 18,
+            transform: "rotate(-2deg)", fontSize: 38, fontWeight: 900,
+            boxShadow: T.shadow(5, 5), letterSpacing: 0.5, marginBottom: 24,
+          }}>חוגגות</div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, margin: "8px 0 10px", lineHeight: 1.2 }}>מה קורה, נשמות שלי?</h1>
+          <p style={{ fontSize: 14, color: T.inkMuted, margin: "0 24px", lineHeight: 1.6, fontWeight: 500 }}>
+            פה מתחילים את הכיף.<br />הזיני את הקוד שקיבלת במייל ויאללה.
+          </p>
+        </div>
+
+        <PaperCard padding={16} style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: T.inkMuted, marginBottom: 10, letterSpacing: 1 }}>הקוד הסודי שלי</div>
+          <div style={{ display: "flex", gap: 7 }}>
+            {code.map((ch, i) => (
+              <input
+                key={i}
+                ref={el => { inputsRef.current[i] = el; }}
+                value={ch}
+                onChange={e => setDigit(i, e.target.value)}
+                onKeyDown={e => onKey(i, e)}
+                onFocus={e => e.target.select()}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]*"
+                style={{
+                  flex: 1, width: 0, height: 48, borderRadius: 12,
+                  background: isWrong ? "#FFE0E0" : (ch ? "#FFF6E8" : "#F4EEDC"),
+                  border: `2px solid ${isWrong ? T.pinkDeep : T.ink}`,
+                  textAlign: "center",
+                  fontSize: 22, fontWeight: 900, color: T.ink,
+                  fontFamily: T.fontMono, outline: "none",
+                  padding: 0, direction: "ltr",
+                }}
+              />
+            ))}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 11, fontWeight: 600 }}>
+            {isWrong ? (
+              <span style={{ color: T.pinkDeep, fontWeight: 800 }}>אופס, הקוד לא נכון. נסי שוב.</span>
+            ) : (
+              <span style={{ color: T.inkMuted }}>רמז (לדמו): <span style={{ color: T.pinkDeep, fontWeight: 800 }}>123456</span></span>
+            )}
+          </div>
+        </PaperCard>
+
+        <ChunkyButton onClick={onNext} disabled={!isValid}>
+          {isValid ? "יאללה, נכנסות" : isWrong ? "קוד שגוי" : "ממלאות קוד..."}
+        </ChunkyButton>
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 12, color: T.inkMuted, fontWeight: 600 }}>
+          עוד לא רכשת? <span style={{ color: T.pinkDeep, fontWeight: 800, textDecoration: "underline" }}>בואי נסדר את זה</span>
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+function ScreenUsername({ onNext, onBack, name, setName }) {
+  const suggestions = [
+    { t: "מלכת הערב",  bg: T.lavender },
+    { t: "די־ג'יי נועי", bg: T.blue },
+    { t: "המארגנת",   bg: T.yellow },
+    { t: "פאם פאטאל", bg: T.green },
+  ];
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 24px 32px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} progress={1} />
+
+        <div style={{ marginTop: 32 }}>
+          <StepTag>שלב 1 מתוך 3</StepTag>
+          <h1 style={{ fontSize: 30, fontWeight: 900, margin: "12px 0 0", lineHeight: 1.15 }}>איך<br/>קוראים לך?</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, marginTop: 10, lineHeight: 1.55, fontWeight: 500 }}>
+            זה השם שכולן יראו במשחק.<br/>אל תהיי ביישנית.
+          </p>
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <PaperCard padding={"14px 16px"} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: "50%", background: T.pink, border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#fff", fontSize: 17 }}>
+              {(name || "?")[0]}
+            </div>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="השם שלי..."
+              style={{
+                flex: 1, fontSize: 18, fontWeight: 800, color: T.ink,
+                background: "transparent", border: "none", outline: "none",
+                fontFamily: T.font, padding: 0,
+              }}
+            />
+            {name.length >= 2 && <Icon name="circle-check" size={22}/>}
+          </PaperCard>
+
+          <div style={{ marginTop: 22, fontSize: 12, color: T.inkMuted, fontWeight: 800, marginBottom: 10, letterSpacing: 0.5 }}>או בחרי כינוי מהיר:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {suggestions.map((s, i) => (
+              <button key={i} onClick={() => setName(s.t)} style={{
+                padding: "8px 14px", borderRadius: 12,
+                background: s.bg, border: `2px solid ${T.ink}`,
+                fontSize: 13, fontWeight: 700, color: T.ink,
+                boxShadow: T.shadow(2, 2),
+                cursor: "pointer", fontFamily: T.font,
+              }}>{s.t}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }} />
+        <ChunkyButton onClick={onNext} disabled={!name || name.length < 2}>הבא</ChunkyButton>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+const EVENT_OPTS = [
+  { id: "bach", t: "מסיבת רווקות", s: "פרידה מהרווקות בסטייל", icon: "ring",   bg: T.pink,     fg: "#fff",
+    nameTitle: "תני שם\nלמסיבה", nameHint: "איך נקרא לחגיגה? זה יופיע לכל המשתתפות.",
+    placeholder: "הרווקות של מאיה", samples: ["הרווקות של מאיה", "Last Dance", "מאיה נשארת איתנו"] },
+  { id: "bday", t: "יום הולדת",    s: "החוגגים מתחילים כאן",   icon: "cake",   bg: T.yellow,   fg: T.ink,
+    nameTitle: "תני שם\nלאירוע", nameHint: "שם החגיגה שיראו כל האורחים.",
+    placeholder: "היומולדת של דניאל", samples: ["היומולדת של דניאל", "דני בן 30", "מסיבת הפתעה"] },
+  { id: "team", t: "גיבוש צוות",   s: "שוברי קרח לעבודה",        icon: "rocket", bg: T.blue,     fg: "#fff",
+    nameTitle: "תני שם\nלגיבוש", nameHint: "שם האירוע שיראו כל חברי הצוות.",
+    placeholder: "גיבוש צוות פיתוח", samples: ["גיבוש צוות פיתוח", "Team Offsite 2026", "יום כיף חברה"] },
+  { id: "date", t: "ערב זוגי",     s: "רק שניכם",                icon: "heart",  bg: T.lavender, fg: T.ink,
+    nameTitle: "תני שם\nלערב", nameHint: "שם קטן ומתוק לערב שלכם.",
+    placeholder: "ערב של נועה ויואב", samples: ["דייט נייט", "נועה ויואב", "ערב בלי טלפונים"] },
+];
+
+function ScreenEventPicker({ onNext, onBack, selected, setSelected }) {
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 24px 32px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} progress={2} />
+
+        <div style={{ marginTop: 22 }}>
+          <StepTag>שלב 2 מתוך 3</StepTag>
+          <h1 style={{ fontSize: 30, fontWeight: 900, margin: "12px 0 0", lineHeight: 1.15 }}>מה<br/>החגיגה?</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, marginTop: 8, lineHeight: 1.5, fontWeight: 500 }}>
+            כל בחירה פותחת עולם משחקים אחר.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+          {EVENT_OPTS.map((e) => {
+            const isSel = selected === e.id;
+            return (
+              <button key={e.id} onClick={() => setSelected(e.id)} style={{
+                background: isSel ? e.bg : T.paper,
+                border: `2px solid ${T.ink}`, borderRadius: 16,
+                boxShadow: isSel ? T.shadow(5, 5) : T.shadow(3, 3),
+                padding: "12px 14px",
+                display: "flex", alignItems: "center", gap: 12,
+                transform: isSel ? "translate(-1px,-1px)" : "none",
+                color: isSel ? e.fg : T.ink,
+                fontFamily: T.font, cursor: "pointer",
+                textAlign: "right",
+                transition: "transform 100ms, box-shadow 100ms",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 12,
+                  background: isSel ? "rgba(255,255,255,0.22)" : e.bg,
+                  border: `2px solid ${isSel ? "rgba(255,255,255,0.35)" : T.ink}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: isSel ? e.fg : T.ink,
+                }}><Icon name={e.icon} size={24} stroke={2.2}/></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{e.t}</div>
+                  <div style={{ fontSize: 12, opacity: 0.85, marginTop: 1 }}>{e.s}</div>
+                </div>
+                {isSel && (
+                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon name="check" size={14} color={T.ink} stroke={2.6}/>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ flex: 1 }} />
+        <ChunkyButton onClick={onNext} disabled={!selected}>
+          {selected ? "ממשיכות" : "בחרי אירוע"}
+        </ChunkyButton>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+function ScreenNameEvent({ onNext, onBack, eventId, eventName, setEventName }) {
+  const ev = EVENT_OPTS.find(e => e.id === eventId) || EVENT_OPTS[0];
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 24px 32px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} progress={3} />
+
+        <div style={{ marginTop: 28 }}>
+          <StepTag bg={ev.bg === T.yellow || ev.bg === T.lavender ? ev.bg : T.lavender}>
+            שלב 3 מתוך 3 · {ev.t}
+          </StepTag>
+          <h1 style={{ fontSize: 30, fontWeight: 900, margin: "12px 0 0", lineHeight: 1.15, whiteSpace: "pre-line" }}>{ev.nameTitle}</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, marginTop: 10, lineHeight: 1.55, fontWeight: 500 }}>{ev.nameHint}</p>
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          <PaperCard padding={"14px 16px"} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: ev.bg, border: `2px solid ${T.ink}`,
+              display: "flex", alignItems: "center", justifyContent: "center", color: ev.fg }}>
+              <Icon name={ev.icon} size={22} stroke={2.2}/>
+            </div>
+            <input
+              value={eventName}
+              onChange={e => setEventName(e.target.value)}
+              placeholder={ev.placeholder}
+              style={{
+                flex: 1, fontSize: 17, fontWeight: 800, color: T.ink,
+                background: "transparent", border: "none", outline: "none",
+                fontFamily: T.font, padding: 0,
+              }}
+            />
+            {eventName && eventName.length >= 2 && <Icon name="circle-check" size={22}/>}
+          </PaperCard>
+
+          <div style={{ marginTop: 22, fontSize: 12, color: T.inkMuted, fontWeight: 800, marginBottom: 10, letterSpacing: 0.5 }}>הצעות מהירות:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {ev.samples.map((s, i) => (
+              <button key={i} onClick={() => setEventName(s)} style={{
+                padding: "8px 14px", borderRadius: 12,
+                background: [T.yellow, T.lavender, T.green][i % 3], border: `2px solid ${T.ink}`,
+                fontSize: 13, fontWeight: 700, color: T.ink,
+                boxShadow: T.shadow(2, 2),
+                cursor: "pointer", fontFamily: T.font,
+              }}>{s}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }} />
+        <ChunkyButton onClick={onNext} disabled={!eventName || eventName.length < 2}>סיימנו, פותחות</ChunkyButton>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PSEUDO-QR
+   ────────────────────────────────────────────────────────────── */
+function FakeQR({ size = 150, fg = "#1F1530", bg = "#fff" }) {
+  const N = 21;
+  const cells = [];
+  const seed = (x, y) => ((x * 31 + y * 17 + x * y * 7) % 11) > 5;
+  const inFinder = (x, y) => ((x < 7 && y < 7) || (x >= N - 7 && y < 7) || (x < 7 && y >= N - 7));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (inFinder(x, y)) continue;
+    if (seed(x, y)) cells.push({ x, y });
+  }
+  const u = size / N;
+  const Finder = ({ ox, oy }) => (
+    <>
+      <rect x={ox * u} y={oy * u} width={7 * u} height={7 * u} fill={fg} />
+      <rect x={(ox + 1) * u} y={(oy + 1) * u} width={5 * u} height={5 * u} fill={bg} />
+      <rect x={(ox + 2) * u} y={(oy + 2) * u} width={3 * u} height={3 * u} fill={fg} />
+    </>
+  );
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+      <rect width={size} height={size} fill={bg} />
+      {cells.map((c, i) => (<rect key={i} x={c.x * u} y={c.y * u} width={u} height={u} fill={fg} rx={u * 0.2} />))}
+      <Finder ox={0} oy={0} /><Finder ox={N - 7} oy={0} /><Finder ox={0} oy={N - 7} />
+    </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   BACHELORETTE HOME
+   ────────────────────────────────────────────────────────────── */
+const HOST_CATS = [
+  { id: "checklist", t: "צ'קליסט", s: "ארגון המסיבה",  icon: "checklist", bg: T.green,    fg: T.ink, badge: "3/8" },
+  { id: "playlist",  t: "פלייליסט", s: "מחובר לספוטיפיי", icon: "music",     bg: T.lavender, fg: T.ink, badge: "24 שירים" },
+  { id: "budget",    t: "תקציב",   s: "מי חייבת כמה",   icon: "wallet",    bg: T.blue,     fg: "#fff", badge: "₪1,840" },
+  { id: "games",     t: "משחקים",  s: "להקרנה לכולן",   icon: "dice",      bg: T.pink,     fg: "#fff", badge: "5 משחקים" },
+];
+
+function ScreenBachHome({ onNav, user, eventName }) {
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 32px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Top user row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ position: "relative" }}>
+              <div style={{ width: 42, height: 42, borderRadius: "50%", background: T.pink, border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "#fff", fontSize: 16, boxShadow: T.shadow(2, 2) }}>{(user.name || "?")[0]}</div>
+              <div style={{ position: "absolute", bottom: -6, left: -6, background: T.yellow, border: `2px solid ${T.ink}`, borderRadius: 6, fontSize: 9, fontWeight: 900, padding: "1px 5px" }}>מארחת</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: T.inkMuted, fontWeight: 700 }}>היי {user.name},</div>
+              <div style={{ fontSize: 14, fontWeight: 800 }}>{eventName || "הרווקות של מאיה"}</div>
+            </div>
+          </div>
+          <button style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: T.paper, border: `2px solid ${T.ink}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: T.shadow(3, 3), cursor: "pointer", padding: 0,
+          }}><Icon name="dots" size={18} color={T.ink}/></button>
+        </div>
+
+        {/* Invite + QR card */}
+        <PaperCard bg={T.ink} padding={16} style={{ marginTop: 18, color: "#fff", position: "relative" }}>
+          <div style={{
+            position: "absolute", top: -10, right: 16,
+            padding: "3px 10px", background: T.yellow, color: T.ink,
+            border: `2px solid ${T.ink}`, borderRadius: 8,
+            fontSize: 10, fontWeight: 800,
+          }}>צירוף משתתפות</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
+            <div style={{ background: "#fff", padding: 7, borderRadius: 12, border: `2px solid ${T.ink}` }}>
+              <FakeQR size={74} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 }}>החברות סורקות ומצטרפות</div>
+              <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 2, marginTop: 2, fontFamily: T.fontMono }}>MAYA·77</div>
+              <div style={{ fontSize: 11, color: T.green, fontWeight: 800, marginTop: 4 }}>● 4 כבר מחוברות</div>
+            </div>
+          </div>
+          <ChunkyButton size="sm" bg={T.pink} fg="#fff" onClick={() => onNav("qrjoin")}
+            style={{ border: `2px solid ${T.bg}`, boxShadow: "none", marginTop: 12 }}>
+            <Icon name="camera" size={16} color="#fff" stroke={2.2}/> פתחי סריקה לצירוף
+          </ChunkyButton>
+        </PaperCard>
+
+        {/* Host-only banner */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, marginTop: 14,
+          padding: "8px 12px", background: T.yellowSoft,
+          border: `2px dashed ${T.ink}`, borderRadius: 12,
+        }}>
+          <Icon name="lock" size={16} color={T.ink} stroke={2.2}/>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.ink, lineHeight: 1.4 }}>
+            הכלים האלה גלויים <b>רק לך כמארחת</b>. המשתתפות רואות רק את המשחק על המסך.
+          </div>
+        </div>
+
+        <div style={{ marginTop: 22, marginBottom: 12 }}>
+          <div style={{ fontSize: 18, fontWeight: 900 }}>ארגז הכלים שלך</div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {HOST_CATS.map((c) => (
+            <button key={c.id} onClick={() => onNav(c.id)} style={{
+              background: c.bg, color: c.fg,
+              border: `2px solid ${T.ink}`, borderRadius: 16,
+              boxShadow: T.shadow(3, 3),
+              padding: 14, height: 122,
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              cursor: "pointer", fontFamily: T.font, textAlign: "right",
+              position: "relative",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10,
+                  background: c.fg === "#fff" ? "rgba(255,255,255,0.2)" : "rgba(31,21,48,0.08)",
+                  border: `2px solid ${c.fg === "#fff" ? "rgba(255,255,255,0.4)" : T.ink}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}><Icon name={c.icon} size={20} color={c.fg} stroke={2.2}/></div>
+                <div style={{
+                  fontSize: 10, fontWeight: 800,
+                  background: c.fg === "#fff" ? "rgba(255,255,255,0.25)" : "rgba(31,21,48,0.12)",
+                  padding: "3px 8px", borderRadius: 8,
+                  border: `1.5px solid ${c.fg === "#fff" ? "rgba(255,255,255,0.4)" : T.ink}`,
+                }}>{c.badge}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 900, lineHeight: 1.1 }}>{c.t}</div>
+                <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2, fontWeight: 600 }}>{c.s}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+function ScreenQRJoin({ onBack }) {
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 24px 32px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} title="צירוף משתתפות" />
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 8px", lineHeight: 1.15 }}>סרקו והצטרפו</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, margin: "0 20px 22px", lineHeight: 1.55, fontWeight: 500 }}>
+            כוונו את מצלמת הטלפון לברקוד.<br/>כל אחת מצטרפת מהמכשיר שלה.
+          </p>
+
+          <PaperCard padding={18}>
+            <FakeQR size={184} />
+            <div style={{ marginTop: 12, fontSize: 12, fontWeight: 800, color: T.inkMuted }}>או הקלידו קוד:</div>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 3, fontFamily: T.fontMono, color: T.ink }}>MAYA·77</div>
+          </PaperCard>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 22 }}>
+            <div style={{ display: "flex" }}>
+              {["מ", "ל", "ש", "ת"].map((n, i) => (
+                <div key={i} style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: [T.coral, T.lavender, T.blue, T.green][i],
+                  border: `2px solid ${T.ink}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 800, color: T.ink,
+                  marginInlineStart: i > 0 ? -8 : 0,
+                }}>{n}</div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted }}>
+              <span style={{ color: T.ink }}>4 חברות</span> כבר הצטרפו
+            </div>
+          </div>
+        </div>
+
+        <ChunkyButton bg={T.green} fg={T.ink} onClick={() => alert("שיתוף קישור הזמנה (דמו)")}>
+          <Icon name="share" size={16} color={T.ink} stroke={2.2}/> שיתוף קישור במקום
+        </ChunkyButton>
+        <button onClick={onBack} style={{
+          marginTop: 10, background: "transparent", border: "none",
+          fontSize: 12, fontWeight: 700, color: T.inkMuted, cursor: "pointer",
+        }}>סיימתי, חזרה למסך הראשי</button>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   "Coming soon" for non-bachelorette events
+   ────────────────────────────────────────────────────────────── */
+function ScreenComingSoon({ eventId, onBack }) {
+  const ev = EVENT_OPTS.find(e => e.id === eventId);
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 32px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <div style={{
+            width: 90, height: 90, borderRadius: 22,
+            background: ev?.bg || T.yellow, color: ev?.fg || T.ink,
+            border: `2.5px solid ${T.ink}`, boxShadow: T.shadow(5, 5),
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 22,
+          }}><Icon name={ev?.icon || "star"} size={42} stroke={2.4}/></div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, margin: "8px 0 10px", lineHeight: 1.15 }}>
+            {ev?.t}<br/>בקרוב
+          </h1>
+          <p style={{ fontSize: 14, color: T.inkMuted, margin: "0 28px", lineHeight: 1.55, fontWeight: 500 }}>
+            הזרימה הזו עוד באפייה.<br/>בינתיים, נסי את מסיבת הרווקות — שם יש את כל הכלים והמשחקים מוכנים.
+          </p>
+        </div>
+        <ChunkyButton onClick={onBack}>חזרה לבחירה</ChunkyButton>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   GAMES — data
+   ────────────────────────────────────────────────────────────── */
+const GAMES = [
+  { id: "lipread",   t: "מפה לאוזן",        s: "קריאת שפתיים בזוג",     type: "timer", bg: T.pink,     fg: "#fff", time: "2 דקות", players: "זוג",   difficulty: 2,
+    tagline: "אחת עם אוזניות, השנייה מעבירה מילים רק בשפתיים." },
+  { id: "charades",  t: "פנטומימה",         s: "להעביר בלי מילים",      type: "timer", bg: T.blue,     fg: "#fff", time: "2 דקות", players: "זוג",   difficulty: 2,
+    tagline: "מציגות תמונה — בלי לדבר, רק בתנועות." },
+  { id: "groomq",    t: "שאלון עם החתן",   s: "כמה הם באמת מכירים?",  type: "card",  bg: T.yellow,   fg: T.ink,  time: "פתוח",  players: "כולן", difficulty: 1,
+    tagline: "השוו את התשובות של החתן והכלה." },
+  { id: "bridequiz", t: "חידון על הכלה",   s: "מי מכירה הכי טוב?",     type: "quiz",  bg: T.lavender, fg: T.ink,  time: "10 דקות", players: "כולן", difficulty: 2,
+    tagline: "ארבע תשובות, רק אחת נכונה." },
+  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",            type: "card",  bg: T.green,    fg: T.ink,  time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
+    tagline: "מי שכן — שותה. פשוט וקטלני." },
+];
+
+const TIMER_DECKS = {
+  lipread: {
+    label: "מילה להעביר",
+    headline: "קריאת שפתיים",
+    rules: [
+      "שחקנית א' שמה אוזניות עם מוזיקה חזקה — לא שומעת כלום.",
+      "שחקנית ב' רואה את המילה על המסך ומבטאת אותה בשפתיים בלבד.",
+      "א' צריכה לנחש. ניחשתן? לחצו ✓ והמשיכו למילה הבאה.",
+      "יש לכן 2 דקות. כמה מילים תספיקו?",
+    ],
+    prompts: [
+      "ירח דבש", "שמלת כלה", "ריקוד ראשון", "הצעת נישואין", "שושבינה",
+      "חופה", "טבעת אירוסין", "זר כלה", "ליל כלולות", "עוגת חתונה",
+      "מזל טוב", "נשיקה ראשונה", "חתן מאושר", "כלה לחוצה", "רחבת ריקודים",
+      "צלם החתונה", "ביישנית", "פרפרים בבטן", "אהבת אמת", "ירח דבש",
+    ],
+  },
+  charades: {
+    label: "להציג בפנטומימה",
+    headline: "פנטומימה",
+    rules: [
+      "שחקנית אחת רואה את התמונה על המסך.",
+      "היא מציגה אותה בתנועות בלבד — אסור לדבר ואסור להצביע על חפצים.",
+      "החברות מנחשות. ניחשו? המשיכו.",
+      "2 דקות על השעון. קדימה.",
+    ],
+    prompts: [
+      "כלה רוקדת סלסה", "שתיית שמפניה", "סלפי קבוצתי", "סופרוומן",
+      "להחליף חיתול", "חתולה מפונקת", "לשחות בים", "זמרת על במה",
+      "לבשל ארוחה", "טיסה לחו\"ל", "כלה לחוצה לפני חופה", "ריקוד בלט",
+      "לצלם תמונה", "מלכת יופי", "נהגת מירוצים", "יוגה בבוקר",
+    ],
+  },
+};
+
+const CARD_DECKS = {
+  groomq: {
+    label: "שאלה לחתן ולכלה",
+    headline: "שאלון עם החתן",
+    rules: [
+      "החתן ענה מראש על השאלות.",
+      "הכלה מנחשת מה הוא ענה — על כל פספוס, לגימה.",
+      "החברות שופטות אם זו התאמה.",
+    ],
+    prompts: [
+      "מי אמר 'אני אוהב/ת' קודם?",
+      "איפה הייתה הדייט הראשון שלכם?",
+      "מה התכונה שהכי שבתה אותו בכלה?",
+      "מי מבשל/ת טוב יותר?",
+      "מה הכינוי שהוא נותן לה?",
+      "מי לוקח/ת יותר זמן להתכונן ביציאה?",
+      "מה הריב הכי מצחיק שהיה לכם?",
+      "איך הוא הציע נישואין?",
+      "מי שולט/ת בשלט הטלוויזיה?",
+      "מה החלום המשותף הכי גדול שלכם?",
+    ],
+  },
+  nhie: {
+    label: "מעולם לא...",
+    headline: "Never Have I Ever",
+    rules: [
+      "מקריאות משפט 'מעולם לא...' בקול.",
+      "מי שכן עשתה את זה — לוקחת לגימה.",
+      "הכי אמיצה / הכי שתויה מנצחת. בכיף.",
+    ],
+    prompts: [
+      "מעולם לא נשיקתי זר/ה במסיבה",
+      "מעולם לא שלחתי הודעה לאקס באמצע הלילה",
+      "מעולם לא ברחתי באמצע דייט",
+      "מעולם לא שיקרתי לגבי הגיל שלי",
+      "מעולם לא נרדמתי במסיבה שלי",
+      "מעולם לא התאהבתי ממבט ראשון",
+      "מעולם לא רקדתי על השולחן",
+      "מעולם לא עשיתי קעקוע ספונטני",
+      "מעולם לא צחקתי ברגע הכי לא מתאים",
+      "מעולם לא חזרתי לאקס",
+    ],
+  },
+};
+
+const QUIZ_DECKS = {
+  bridequiz: {
+    headline: "חידון על הכלה",
+    rules: [
+      "כל שאלה — 4 תשובות, אחת נכונה.",
+      "כל החברות מנחשות. מי שצדקה הכי הרבה — מנצחת.",
+      "אפשר להקרין על מסך גדול כמו בחידון אמיתי.",
+    ],
+    questions: [
+      { q: "מה הצבע האהוב על מאיה?", a: ["ורוד", "שחור", "תכלת", "סגול"], correct: 0 },
+      { q: "איפה מאיה הכי אוהבת לבלות?", a: ["ים", "הרים", "קניון", "בית קפה"], correct: 0 },
+      { q: "מה המאכל שמאיה הכי אוהבת?", a: ["סושי", "פיצה", "חומוס", "פסטה"], correct: 1 },
+      { q: "כמה אחים יש למאיה?", a: ["1", "2", "3", "4"], correct: 2 },
+      { q: "מה החיה האהובה על מאיה?", a: ["כלבה", "חתולה", "סוסה", "ארנבת"], correct: 1 },
+      { q: "מה היעד שמאיה הכי רוצה לטוס אליו?", a: ["יפן", "איטליה", "תאילנד", "ניו יורק"], correct: 0 },
+    ],
+  },
+};
+
+/* ──────────────────────────────────────────────────────────────
+   GAMES HUB
+   ────────────────────────────────────────────────────────────── */
+function ScreenGamesHub({ onNav, onBack }) {
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+        <TopBar onBack={onBack} title="משחקים" />
+
+        <div style={{ marginTop: 16 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, margin: "0 0 6px", lineHeight: 1.15 }}>במה משחקים?</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, lineHeight: 1.5, fontWeight: 500 }}>
+            בחרי משחק. כל משחק אפשר <b>להקרין על מסך גדול</b> כמו בחידון.
+          </p>
+        </div>
+
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, marginTop: 16,
+          padding: "10px 12px", background: T.ink, color: "#fff",
+          border: `2px solid ${T.ink}`, borderRadius: 14, boxShadow: T.shadow(3, 3),
+        }}>
+          <Icon name="tv" size={22} color="#fff" stroke={2.2}/>
+          <div style={{ flex: 1, fontSize: 11, fontWeight: 600, lineHeight: 1.4 }}>
+            חברו טלוויזיה או מקרן — בכל משחק יש כפתור <b style={{ color: T.yellow }}>"הקרנה"</b>.
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+          {GAMES.map((g) => (
+            <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
+              display: "flex", alignItems: "center", gap: 13,
+              background: T.paper, border: `2px solid ${T.ink}`, borderRadius: 16,
+              boxShadow: T.shadow(3, 3), padding: "12px 14px",
+              cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
+            }}>
+              <div style={{
+                width: 54, height: 54, borderRadius: 14, flexShrink: 0,
+                background: g.bg, border: `2px solid ${T.ink}`, color: g.fg,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}><Icon name={g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users"} size={26} stroke={2.2}/></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize: 16, fontWeight: 900 }}>{g.t}</div>
+                  {g.hot && <span style={{ fontSize: 9, padding: "2px 6px", background: T.pink, color: "#fff", borderRadius: 4, fontWeight: 800, border: `1.5px solid ${T.ink}` }}>פופולרי</span>}
+                </div>
+                <div style={{ fontSize: 12, color: T.inkMuted, fontWeight: 600, marginTop: 1 }}>{g.s}</div>
+                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.yellowSoft, border: `1.5px solid ${T.ink}`, color: T.ink }}>זמן: {g.time}</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.lavSoft, border: `1.5px solid ${T.ink}`, color: T.ink }}>{g.players}</span>
+                </div>
+              </div>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                background: T.yellow, border: `2px solid ${T.ink}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}><Icon name="back" size={14} color={T.ink} stroke={2.4}/></div>
+            </button>
+          ))}
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   GAME INTRO (shared)
+   ────────────────────────────────────────────────────────────── */
+function GStat({ label, value }) {
+  return (
+    <div style={{
+      padding: "10px 14px", background: T.paper,
+      border: `2px solid ${T.ink}`, borderRadius: 14,
+      boxShadow: T.shadow(2, 2), textAlign: "center", minWidth: 76,
+    }}>
+      <div style={{ fontSize: 15, fontWeight: 900, color: T.ink }}>{value}</div>
+      <div style={{ fontSize: 10, color: T.inkMuted, fontWeight: 700, marginTop: 2 }}>{label}</div>
+    </div>
+  );
+}
+
+function GameIntro({ game, rules, onStart, onBack, startLabel = "יאללה, מתחילות" }) {
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+        <TopBar onBack={onBack} title="איך משחקים" />
+
+        <div style={{ textAlign: "center", marginTop: 14 }}>
+          <div style={{
+            width: 88, height: 88, borderRadius: 24, background: game.bg, color: game.fg,
+            border: `2.5px solid ${T.ink}`, boxShadow: T.shadow(5, 5),
+            margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center",
+          }}><Icon name={game.type === "timer" ? "clock" : game.type === "quiz" ? "star" : "users"} size={42} stroke={2.4}/></div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, margin: "4px 0 6px", lineHeight: 1.1 }}>{game.t}</h1>
+          <p style={{ fontSize: 13, color: T.inkMuted, margin: "0 18px", lineHeight: 1.5, fontWeight: 600 }}>{game.tagline}</p>
+
+          <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18 }}>
+            <GStat label="שחקניות" value={game.players} />
+            <GStat label="זמן" value={game.time} />
+            <GStat label="קושי" value={"●".repeat(game.difficulty) + "○".repeat(3 - game.difficulty)} />
+          </div>
+        </div>
+
+        <PaperCard bg={T.yellowSoft} padding={16} style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 900, marginBottom: 10 }}>חוקי המשחק</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {rules.map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                  background: T.pink, color: "#fff", border: `2px solid ${T.ink}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 900,
+                }}>{i + 1}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: T.ink, lineHeight: 1.45 }}>{r}</div>
+              </div>
+            ))}
+          </div>
+        </PaperCard>
+
+        <div style={{ flex: 1, minHeight: 16 }} />
+        <ChunkyButton onClick={onStart}>{startLabel}</ChunkyButton>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   TIMER GAME
+   ────────────────────────────────────────────────────────────── */
+function TimerGame({ game, onBack }) {
+  const deck = TIMER_DECKS[game.id];
+  const [phase, setPhase] = React.useState("intro");
+  const [timeLeft, setTimeLeft] = React.useState(120);
+  const [idx, setIdx] = React.useState(0);
+  const [got, setGot] = React.useState(0);
+  const [skipped, setSkipped] = React.useState(0);
+  const [projecting, setProjecting] = React.useState(false);
+  const order = React.useRef([]);
+
+  const startPlay = () => {
+    order.current = [...deck.prompts].sort(() => Math.random() - 0.5);
+    setTimeLeft(120); setIdx(0); setGot(0); setSkipped(0);
+    setPhase("play");
+  };
+
+  React.useEffect(() => {
+    if (phase !== "play") return;
+    if (timeLeft <= 0) { setPhase("done"); return; }
+    const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [phase, timeLeft]);
+
+  const prompt = order.current[idx % (order.current.length || 1)];
+  const mins = Math.floor(timeLeft / 60);
+  const secs = String(timeLeft % 60).padStart(2, "0");
+  const danger = timeLeft <= 15;
+
+  const correct = () => { setGot(g => g + 1); setIdx(i => i + 1); };
+  const skip = () => { setSkipped(s => s + 1); setIdx(i => i + 1); };
+
+  if (phase === "intro")
+    return <GameIntro game={game} rules={deck.rules} onBack={onBack} onStart={startPlay} startLabel="התחילו טיימר" />;
+
+  if (phase === "done") {
+    return (
+      <>
+        <StatusBar />
+        <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column" }}>
+          <TopBar onBack={onBack} title={game.t} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <h1 style={{ fontSize: 30, fontWeight: 900, margin: "0 0 6px" }}>נגמר הזמן</h1>
+            <p style={{ fontSize: 14, color: T.inkMuted, fontWeight: 600, margin: "0 0 22px" }}>כל הכבוד, זוג אלופות.</p>
+            <PaperCard bg={T.green} padding={20} style={{ width: "100%" }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(31,21,48,0.7)" }}>צברתן</div>
+              <div style={{ fontSize: 64, fontWeight: 900, color: T.ink, lineHeight: 1, fontFamily: T.fontMono }}>{got}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>ניחושים נכונים</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(31,21,48,0.6)", marginTop: 6 }}>דילגתן על {skipped}</div>
+            </PaperCard>
+          </div>
+          <ChunkyButton onClick={startPlay}>סיבוב נוסף</ChunkyButton>
+          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 12, fontWeight: 700, color: T.inkMuted, cursor: "pointer" }}>לרשימת המשחקים</button>
+        </div>
+        <HomeBar />
+      </>
+    );
+  }
+
+  const playBody = (big) => (
+    <>
+      <div style={{
+        margin: "0 auto",
+        background: danger ? T.pink : T.ink,
+        color: "#fff", border: `${big ? 4 : 3}px solid ${big ? "#fff" : T.ink}`,
+        borderRadius: 999, padding: big ? "10px 36px" : "8px 24px",
+        fontSize: big ? "clamp(36px,6vw,72px)" : 34, fontWeight: 900,
+        fontFamily: T.fontMono, letterSpacing: 2,
+        animation: danger ? "pulse 0.7s ease-in-out infinite" : "none",
+        display: "inline-block",
+      }}>{mins}:{secs}</div>
+
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: big ? 18 : 12 }}>
+        <span style={{
+          fontSize: big ? "clamp(12px,1.6vw,18px)" : 12, fontWeight: 800,
+          background: T.yellow, color: T.ink, border: `2px solid ${T.ink}`,
+          borderRadius: 999, padding: big ? "6px 16px" : "4px 12px",
+        }}>{deck.label} · {got} ✓</span>
+      </div>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "16px 0", minHeight: 0 }}>
+        <div key={idx} style={{
+          width: big ? "min(90%,860px)" : "100%",
+          background: game.bg,
+          border: `${big ? 5 : 2.5}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: big ? 32 : 24, boxShadow: big ? "0 24px 60px -10px rgba(0,0,0,0.5)" : T.shadow(6, 6),
+          padding: big ? "clamp(28px,5vw,64px)" : "36px 24px",
+          textAlign: "center",
+          animation: "cardIn 260ms cubic-bezier(.18,.89,.43,1.19)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          minHeight: big ? "auto" : 180,
+        }}>
+          <div style={{
+            fontSize: big ? "clamp(40px,7vw,96px)" : 34,
+            fontWeight: 900, lineHeight: 1.15,
+            color: game.fg === "#fff" ? "#fff" : T.ink, textWrap: "balance",
+          }}>{prompt}</div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: big ? 16 : 10, justifyContent: "center" }}>
+        <button onClick={skip} style={{
+          flex: big ? "none" : 1,
+          padding: big ? "clamp(14px,1.8vw,20px) clamp(28px,3vw,44px)" : "16px",
+          background: big ? "#fff" : T.paper, color: T.ink,
+          border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: 16, fontSize: big ? "clamp(16px,2vw,24px)" : 16, fontWeight: 900,
+          boxShadow: big ? "none" : T.shadow(3, 3), cursor: "pointer", fontFamily: T.font,
+        }}>דלג</button>
+        <button onClick={correct} style={{
+          flex: big ? "none" : 2,
+          padding: big ? "clamp(14px,1.8vw,20px) clamp(36px,4vw,60px)" : "16px",
+          background: T.green, color: T.ink,
+          border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: 16, fontSize: big ? "clamp(16px,2vw,24px)" : 16, fontWeight: 900,
+          boxShadow: big ? "none" : T.shadow(3, 3), cursor: "pointer", fontFamily: T.font,
+        }}>ניחשו</button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <button onClick={onBack} style={{
+            width: 40, height: 40, borderRadius: 12, background: T.paper,
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(3, 3),
+            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0,
+          }}><Icon name="close" size={14} color={T.ink} stroke={2.4}/></button>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>{game.t}</div>
+          <button onClick={() => setProjecting(true)} style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "#fff",
+            padding: "7px 12px", background: T.ink, border: `2px solid ${T.ink}`, borderRadius: 10,
+            cursor: "pointer", fontFamily: T.font, boxShadow: T.shadow(2, 2),
+          }}><Icon name="tv" size={14} color="#fff" stroke={2.2}/> הקרנה</button>
+        </div>
+        {playBody(false)}
+      </div>
+      <HomeBar />
+      {projecting && ReactDOM.createPortal(
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999, direction: "rtl", fontFamily: T.font,
+          background: `radial-gradient(circle at 15% 15%, #2A1F45 0%, transparent 55%), radial-gradient(circle at 85% 85%, #3A1530 0%, transparent 55%), #1F1530`,
+          display: "flex", flexDirection: "column", padding: "clamp(16px,4vw,48px)", animation: "screenIn 300ms ease-out",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+            <div style={{ color: "#fff", fontSize: "clamp(16px,2.2vw,28px)", fontWeight: 900 }}>{deck.headline}</div>
+            <button onClick={() => setProjecting(false)} style={{
+              padding: "10px 18px", background: "rgba(255,255,255,0.12)", color: "#fff",
+              border: "2px solid rgba(255,255,255,0.3)", borderRadius: 12,
+              fontSize: "clamp(13px,1.5vw,18px)", fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+              display: "flex", alignItems: "center", gap: 8,
+            }}><Icon name="close" size={16} color="#fff"/> סגירת הקרנה</button>
+          </div>
+          {playBody(true)}
+        </div>, document.body)}
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   QUIZ GAME
+   ────────────────────────────────────────────────────────────── */
+function QuizGame({ game, onBack }) {
+  const deck = QUIZ_DECKS[game.id];
+  const [phase, setPhase] = React.useState("intro");
+  const [qi, setQi] = React.useState(0);
+  const [picked, setPicked] = React.useState(null);
+  const [score, setScore] = React.useState(0);
+  const [projecting, setProjecting] = React.useState(false);
+
+  const q = deck.questions[qi];
+  const tileColors = [T.pink, T.blue, T.yellow, T.green];
+  const tileShapes = ["▲", "◆", "●", "■"];
+
+  const pick = (i) => {
+    if (picked !== null) return;
+    setPicked(i);
+    if (i === q.correct) setScore(s => s + 1);
+  };
+  const next = () => {
+    if (qi + 1 >= deck.questions.length) { setPhase("done"); return; }
+    setQi(qi + 1); setPicked(null);
+  };
+  const restart = () => { setQi(0); setPicked(null); setScore(0); setPhase("intro"); };
+
+  if (phase === "intro")
+    return <GameIntro game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")} startLabel="מתחילות חידון" />;
+
+  if (phase === "done") {
+    const pct = Math.round((score / deck.questions.length) * 100);
+    return (
+      <>
+        <StatusBar />
+        <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column" }}>
+          <TopBar onBack={onBack} title={game.t} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <h1 style={{ fontSize: 28, fontWeight: 900, margin: "0 0 6px" }}>
+              {pct >= 70 ? "מכירה אותה מצוין" : pct >= 40 ? "לא רע בכלל" : "צריך להכיר יותר"}
+            </h1>
+            <PaperCard bg={T.lavender} padding={20} style={{ width: "100%", marginTop: 14 }}>
+              <div style={{ fontSize: 64, fontWeight: 900, color: T.ink, lineHeight: 1, fontFamily: T.fontMono }}>{score}/{deck.questions.length}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 4 }}>תשובות נכונות</div>
+            </PaperCard>
+          </div>
+          <ChunkyButton onClick={restart}>עוד פעם</ChunkyButton>
+          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 12, fontWeight: 700, color: T.inkMuted, cursor: "pointer" }}>לרשימת המשחקים</button>
+        </div>
+        <HomeBar />
+      </>
+    );
+  }
+
+  const quizBody = (big) => (
+    <>
+      <div style={{ textAlign: "center", flexShrink: 0 }}>
+        <span style={{
+          display: "inline-block", padding: big ? "6px 20px" : "5px 14px",
+          background: T.yellow, color: T.ink, border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: 999, fontSize: big ? "clamp(14px,1.8vw,22px)" : 12, fontWeight: 900, fontFamily: T.fontMono,
+        }}>שאלה {qi + 1} / {deck.questions.length}</span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "20px 0", flexShrink: 0 }}>
+        <div style={{
+          width: big ? "min(92%,1000px)" : "100%",
+          background: big ? "rgba(255,255,255,0.97)" : T.paper,
+          border: `${big ? 5 : 2.5}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: big ? 28 : 22, boxShadow: big ? "0 20px 50px -10px rgba(0,0,0,0.4)" : T.shadow(5, 5),
+          padding: big ? "clamp(24px,4vw,52px)" : "24px 20px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: big ? "clamp(30px,5vw,64px)" : 22, fontWeight: 900, lineHeight: 1.2, color: T.ink, textWrap: "balance" }}>{q.q}</div>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: big ? 14 : 10, flexShrink: 0 }}>
+        {q.a.map((ans, i) => {
+          const isCorrect = picked !== null && i === q.correct;
+          const isWrong = picked === i && i !== q.correct;
+          const dim = picked !== null && i !== q.correct && picked !== i;
+          return (
+            <button key={i} onClick={() => pick(i)} disabled={picked !== null} style={{
+              background: tileColors[i], color: i === 2 ? T.ink : "#fff",
+              border: `${big ? 4 : 2.5}px solid ${isCorrect ? T.ink : (big ? "#fff" : T.ink)}`,
+              borderRadius: big ? 20 : 16,
+              boxShadow: big ? "0 8px 0 rgba(0,0,0,0.25)" : T.shadow(3, 3),
+              padding: big ? "clamp(18px,2.5vw,32px)" : "16px 14px",
+              fontSize: big ? "clamp(18px,2.4vw,34px)" : 15, fontWeight: 900,
+              fontFamily: T.font, cursor: picked !== null ? "default" : "pointer",
+              display: "flex", alignItems: "center", gap: big ? 14 : 8,
+              opacity: dim ? 0.4 : 1,
+              transform: isCorrect ? "scale(1.03)" : "none",
+              transition: "opacity 200ms, transform 200ms",
+              position: "relative", textAlign: "right",
+            }}>
+              <span style={{ fontSize: big ? "clamp(20px,2.4vw,34px)" : 18, flexShrink: 0 }}>{tileShapes[i]}</span>
+              <span style={{ flex: 1 }}>{ans}</span>
+              {isCorrect && <span style={{ fontSize: big ? 30 : 20 }}>✓</span>}
+              {isWrong && <span style={{ fontSize: big ? 30 : 20 }}>✗</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {picked !== null && (
+        <button onClick={next} style={{
+          marginTop: big ? 20 : 14,
+          alignSelf: big ? "center" : "stretch",
+          padding: big ? "clamp(14px,1.8vw,20px) clamp(40px,5vw,72px)" : "16px",
+          background: T.pink, color: "#fff",
+          border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`, borderRadius: 16,
+          fontSize: big ? "clamp(16px,2vw,26px)" : 16, fontWeight: 900,
+          boxShadow: big ? "none" : T.shadow(3, 3), cursor: "pointer", fontFamily: T.font,
+        }}>{qi + 1 >= deck.questions.length ? "לתוצאות" : "השאלה הבאה"}</button>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 24px", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <button onClick={onBack} style={{
+            width: 40, height: 40, borderRadius: 12, background: T.paper,
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(3, 3),
+            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0,
+          }}><Icon name="close" size={14} color={T.ink} stroke={2.4}/></button>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>{game.t}</div>
+          <button onClick={() => setProjecting(true)} style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "#fff",
+            padding: "7px 12px", background: T.ink, border: `2px solid ${T.ink}`, borderRadius: 10,
+            cursor: "pointer", fontFamily: T.font, boxShadow: T.shadow(2, 2),
+          }}><Icon name="tv" size={14} color="#fff" stroke={2.2}/> הקרנה</button>
+        </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
+          {quizBody(false)}
+        </div>
+      </div>
+      <HomeBar />
+      {projecting && ReactDOM.createPortal(
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999, direction: "rtl", fontFamily: T.font,
+          background: `radial-gradient(circle at 15% 15%, #2A1F45 0%, transparent 55%), radial-gradient(circle at 85% 85%, #3A1530 0%, transparent 55%), #1F1530`,
+          display: "flex", flexDirection: "column", padding: "clamp(16px,4vw,48px)", animation: "screenIn 300ms ease-out",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, marginBottom: "clamp(8px,2vh,20px)" }}>
+            <div style={{ color: "#fff", fontSize: "clamp(16px,2.2vw,28px)", fontWeight: 900 }}>{deck.headline}</div>
+            <button onClick={() => setProjecting(false)} style={{
+              padding: "10px 18px", background: "rgba(255,255,255,0.12)", color: "#fff",
+              border: "2px solid rgba(255,255,255,0.3)", borderRadius: 12,
+              fontSize: "clamp(13px,1.5vw,18px)", fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+              display: "flex", alignItems: "center", gap: 8,
+            }}><Icon name="close" size={16} color="#fff"/> סגירת הקרנה</button>
+          </div>
+          {quizBody(true)}
+        </div>, document.body)}
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CARD GAME
+   ────────────────────────────────────────────────────────────── */
+function CardGame({ game, onBack }) {
+  const deck = CARD_DECKS[game.id];
+  const [phase, setPhase] = React.useState("intro");
+  const [i, setI] = React.useState(0);
+  const [projecting, setProjecting] = React.useState(false);
+
+  const total = deck.prompts.length;
+  const prompt = deck.prompts[i];
+  const next = () => setI(x => Math.min(x + 1, total - 1));
+  const prev = () => setI(x => Math.max(x - 1, 0));
+  const atStart = i === 0, atEnd = i === total - 1;
+  const isNhie = game.id === "nhie";
+
+  if (phase === "intro")
+    return <GameIntro game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")}
+      startLabel={isNhie ? "מוזגות ומתחילות" : "מתחילות שאלון"} />;
+
+  const body = (big) => (
+    <>
+      <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap", flexShrink: 0, marginBottom: big ? 0 : 4 }}>
+        {deck.prompts.map((_, idx) => (
+          <div key={idx} style={{
+            width: idx === i ? (big ? 36 : 24) : (big ? 12 : 7), height: big ? 12 : 7, borderRadius: 6,
+            background: idx === i ? (big ? "#fff" : T.pink) : (idx < i ? (big ? "rgba(255,255,255,0.5)" : T.ink) : (big ? "rgba(255,255,255,0.2)" : "#E5DCC9")),
+            border: big ? "none" : `1.5px solid ${T.ink}`, transition: "all 200ms",
+          }} />
+        ))}
+      </div>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "20px 0", minHeight: 0 }}>
+        <div key={i} style={{
+          width: big ? "min(90%,920px)" : "100%",
+          background: game.bg,
+          border: `${big ? 5 : 2.5}px solid ${big ? "#fff" : T.ink}`,
+          borderRadius: big ? 32 : 24,
+          boxShadow: big ? "0 24px 60px -10px rgba(0,0,0,0.5)" : T.shadow(6, 6),
+          padding: big ? "clamp(32px,6vw,72px)" : "32px 24px",
+          position: "relative",
+          animation: "cardIn 280ms cubic-bezier(.18,.89,.43,1.19)",
+          minHeight: big ? "auto" : 240,
+          display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: big ? 24 : 16,
+        }}>
+          <div style={{
+            position: "absolute", top: big ? -18 : -12, right: big ? 32 : 20,
+            padding: big ? "6px 18px" : "4px 12px", background: T.ink, color: T.yellow,
+            border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`, borderRadius: 12,
+            fontSize: big ? "clamp(14px,1.6vw,20px)" : 11, fontWeight: 800,
+          }}>{deck.label}</div>
+
+          <div style={{
+            fontSize: big ? (prompt.length > 40 ? "clamp(32px,5vw,68px)" : "clamp(40px,6vw,84px)") : (prompt.length > 40 ? 22 : 26),
+            fontWeight: 900, lineHeight: 1.25,
+            color: game.fg === "#fff" ? "#fff" : T.ink, textAlign: "center", textWrap: "balance",
+          }}>{prompt}</div>
+
+          {isNhie && (
+            <div style={{
+              fontSize: big ? "clamp(14px,1.6vw,22px)" : 12, fontWeight: 800,
+              color: game.fg === "#fff" ? "rgba(255,255,255,0.85)" : "rgba(31,21,48,0.6)",
+            }}>מי שכן — לוגמת</div>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: big ? 16 : 10, justifyContent: "center", flexShrink: 0 }}>
+        <button onClick={prev} disabled={atStart} style={{
+          padding: big ? "clamp(12px,1.6vw,18px) clamp(20px,2.4vw,32px)" : "14px",
+          minWidth: big ? "auto" : 56, flex: big ? "none" : "0 0 auto",
+          background: atStart ? (big ? "rgba(255,255,255,0.15)" : "#E5DCC9") : (big ? "#fff" : T.paper),
+          color: T.ink, border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`, borderRadius: 16,
+          fontSize: big ? "clamp(16px,2vw,24px)" : 16, fontWeight: 900,
+          boxShadow: big || atStart ? "none" : T.shadow(3, 3),
+          cursor: atStart ? "not-allowed" : "pointer", opacity: atStart ? 0.45 : 1, fontFamily: T.font,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>{big ? "הקודם" : <Icon name="back" size={16} color={T.ink} stroke={2.6}/>}</button>
+        <button onClick={next} disabled={atEnd} style={{
+          flex: big ? "none" : 1,
+          padding: big ? "clamp(12px,1.6vw,18px) clamp(36px,4vw,60px)" : "14px",
+          background: atEnd ? (big ? "rgba(255,255,255,0.15)" : "#E5DCC9") : (isNhie ? T.green : T.pink),
+          color: isNhie ? T.ink : (atEnd ? T.ink : "#fff"),
+          border: `${big ? 3 : 2}px solid ${big ? "#fff" : T.ink}`, borderRadius: 16,
+          fontSize: big ? "clamp(16px,2vw,24px)" : 16, fontWeight: 900,
+          boxShadow: big || atEnd ? "none" : T.shadow(3, 3),
+          cursor: atEnd ? "not-allowed" : "pointer", opacity: atEnd ? 0.6 : 1, fontFamily: T.font,
+        }}>{atEnd ? "סיימנו" : "הבא"}</button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 28px", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <button onClick={onBack} style={{
+            width: 40, height: 40, borderRadius: 12, background: T.paper,
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(3, 3),
+            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0,
+          }}><Icon name="close" size={14} color={T.ink} stroke={2.4}/></button>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>{game.t}</div>
+          <button onClick={() => setProjecting(true)} style={{
+            display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "#fff",
+            padding: "7px 12px", background: T.ink, border: `2px solid ${T.ink}`, borderRadius: 10,
+            cursor: "pointer", fontFamily: T.font, boxShadow: T.shadow(2, 2),
+          }}><Icon name="tv" size={14} color="#fff" stroke={2.2}/> הקרנה</button>
+        </div>
+        {body(false)}
+      </div>
+      <HomeBar />
+      {projecting && ReactDOM.createPortal(
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999, direction: "rtl", fontFamily: T.font,
+          background: `radial-gradient(circle at 15% 15%, #2A1F45 0%, transparent 55%), radial-gradient(circle at 85% 85%, #3A1530 0%, transparent 55%), #1F1530`,
+          display: "flex", flexDirection: "column", padding: "clamp(16px,4vw,48px)", animation: "screenIn 300ms ease-out",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, marginBottom: "clamp(8px,2vh,20px)" }}>
+            <div style={{ color: "#fff", fontSize: "clamp(16px,2.2vw,28px)", fontWeight: 900 }}>{deck.headline}</div>
+            <button onClick={() => setProjecting(false)} style={{
+              padding: "10px 18px", background: "rgba(255,255,255,0.12)", color: "#fff",
+              border: "2px solid rgba(255,255,255,0.3)", borderRadius: 12,
+              fontSize: "clamp(13px,1.5vw,18px)", fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+              display: "flex", alignItems: "center", gap: 8,
+            }}><Icon name="close" size={16} color="#fff"/> סגירת הקרנה</button>
+          </div>
+          {body(true)}
+        </div>, document.body)}
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CHECKLIST / PLAYLIST / BUDGET
+   ────────────────────────────────────────────────────────────── */
+const CHECKLIST_SEED = [
+  { id: 1, t: "לסגור תאריך עם הכלה", done: true },
+  { id: 2, t: "להזמין את כל החברות", done: true },
+  { id: 3, t: "להזמין שולחן במסעדה", done: true },
+  { id: 4, t: "לארגן זר ואביזרים לכלה", done: false, tag: "דחוף" },
+  { id: 5, t: "להכין פלייליסט", done: false },
+  { id: 6, t: "לסדר תחפושות לנושא", done: false },
+  { id: 7, t: "לאסוף כסף מכולן", done: false, tag: "כסף" },
+  { id: 8, t: "להזמין מתנה משותפת", done: false },
+];
+
+function ScreenChecklist({ onBack }) {
+  const [items, setItems] = React.useState(CHECKLIST_SEED);
+  const [adding, setAdding] = React.useState("");
+  const done = items.filter(i => i.done).length;
+  const pct = Math.round((done / items.length) * 100);
+
+  const toggle = (id) => setItems(items.map(i => i.id === id ? { ...i, done: !i.done } : i));
+  const add = () => {
+    if (!adding.trim()) return;
+    setItems([...items, { id: Date.now(), t: adding.trim(), done: false }]);
+    setAdding("");
+  };
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 24px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} title="צ'קליסט" />
+
+        <PaperCard bg={T.green} padding={16} style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: T.ink }}>{done}/{items.length} בוצעו</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(31,21,48,0.7)", marginTop: 2 }}>עוד קצת ואתן מוכנות.</div>
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 900, color: T.ink, fontFamily: T.fontMono }}>{pct}%</div>
+          </div>
+          <div style={{ marginTop: 12, height: 12, background: "rgba(255,255,255,0.55)", borderRadius: 8, border: `2px solid ${T.ink}`, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: T.ink, transition: "width 300ms" }} />
+          </div>
+        </PaperCard>
+
+        <div style={{ flex: 1, overflow: "auto", marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+          {items.map((it) => (
+            <button key={it.id} onClick={() => toggle(it.id)} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: it.done ? "#F3EEE3" : T.paper,
+              border: `2px solid ${T.ink}`, borderRadius: 14,
+              boxShadow: it.done ? "none" : T.shadow(2, 2),
+              padding: "12px 14px", cursor: "pointer",
+              fontFamily: T.font, textAlign: "right", width: "100%",
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                background: it.done ? T.green : "#fff",
+                border: `2px solid ${T.ink}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{it.done && <Icon name="check" size={14} color={T.ink} stroke={2.6}/>}</div>
+              <div style={{
+                flex: 1, fontSize: 14, fontWeight: 700,
+                color: it.done ? T.inkMuted : T.ink,
+                textDecoration: it.done ? "line-through" : "none",
+              }}>{it.t}</div>
+              {it.tag && !it.done && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6,
+                  background: it.tag === "דחוף" ? T.pink : T.yellow,
+                  color: it.tag === "דחוף" ? "#fff" : T.ink,
+                  border: `1.5px solid ${T.ink}`,
+                }}>{it.tag}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <input
+            value={adding}
+            onChange={e => setAdding(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && add()}
+            placeholder="להוסיף משימה..."
+            style={{
+              flex: 1, padding: "13px 16px", borderRadius: 14,
+              border: `2px solid ${T.ink}`, background: T.paper,
+              fontSize: 14, fontWeight: 700, fontFamily: T.font,
+              color: T.ink, outline: "none", boxShadow: T.shadow(2, 2),
+            }}
+          />
+          <button onClick={add} style={{
+            width: 50, borderRadius: 14, background: T.pink, color: "#fff",
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(2, 2),
+            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          }}><Icon name="plus" size={22} color="#fff" stroke={2.8}/></button>
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+const SONGS = [
+  { t: "Single Ladies", a: "Beyoncé", len: "3:13" },
+  { t: "Dance Monkey", a: "Tones and I", len: "3:29" },
+  { t: "טיק טאק", a: "עדן בן זקן", len: "3:02" },
+  { t: "Levitating", a: "Dua Lipa", len: "3:23" },
+  { t: "אהבה ממבט ראשון", a: "נועה קירל", len: "2:58" },
+  { t: "Padam Padam", a: "Kylie Minogue", len: "2:21" },
+];
+
+function ScreenPlaylist({ onBack }) {
+  const [linked, setLinked] = React.useState(true);
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 24px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} title="פלייליסט" />
+
+        <PaperCard bg={"#1DB954"} padding={16} style={{ marginTop: 16, color: "#fff" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff", border: `2px solid ${T.ink}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="spotify" size={32}/>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.85 }}>{linked ? "מחובר ל-" : "חברי את"} Spotify</div>
+              <div style={{ fontSize: 17, fontWeight: 900 }}>הרווקות של מאיה</div>
+            </div>
+            {linked && <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#fff", boxShadow: "0 0 8px #fff" }} />}
+          </div>
+          <ChunkyButton size="sm" bg={T.ink} fg="#fff" onClick={() => alert("פתיחת ספוטיפיי (דמו)")}
+            style={{ border: `2px solid #fff`, boxShadow: "none", marginTop: 12 }}>
+            <Icon name="play" size={14} color="#fff"/> פתחי בספוטיפיי
+          </ChunkyButton>
+        </PaperCard>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <input
+            placeholder="הדביקי קישור פלייליסט..."
+            style={{
+              flex: 1, padding: "12px 16px", borderRadius: 14,
+              border: `2px solid ${T.ink}`, background: T.paper,
+              fontSize: 13, fontWeight: 600, fontFamily: T.font,
+              color: T.ink, outline: "none", boxShadow: T.shadow(2, 2),
+              direction: "ltr", textAlign: "right",
+            }}
+          />
+          <button onClick={() => setLinked(true)} style={{
+            padding: "0 16px", borderRadius: 14, background: T.green, color: T.ink,
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(2, 2),
+            fontSize: 13, fontWeight: 800, cursor: "pointer",
+          }}>חברי</button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18, marginBottom: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>{SONGS.length} שירים בתור</div>
+          <div style={{ fontSize: 11, color: T.inkMuted, fontWeight: 700 }}>1 ש' 32 ד'</div>
+        </div>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
+          {SONGS.map((s, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: T.paper, border: `2px solid ${T.ink}`, borderRadius: 12,
+              padding: "9px 12px",
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 8,
+                background: [T.pinkSoft, T.yellowSoft, T.lavSoft][i % 3],
+                border: `2px solid ${T.ink}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>{i === 0 ? <Icon name="play" size={14} color={T.ink}/> : <Icon name="music" size={14} color={T.ink} stroke={2.2}/>}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>{s.t}</div>
+                <div style={{ fontSize: 11, color: T.inkMuted, fontWeight: 600 }}>{s.a}</div>
+              </div>
+              <div style={{ fontSize: 11, color: T.inkMuted, fontWeight: 700, fontFamily: T.fontMono }}>{s.len}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+const EXPENSES = [
+  { t: "מסעדה (הזמנה מראש)", who: "נועה", amount: 800 },
+  { t: "אביזרים וזר לכלה",   who: "ליהי", amount: 240 },
+  { t: "אלכוהול",              who: "שירה", amount: 520 },
+  { t: "מתנה משותפת",         who: "תמר",  amount: 280 },
+];
+
+function ScreenBudget({ onBack }) {
+  const total = EXPENSES.reduce((s, e) => s + e.amount, 0);
+  const people = 5;
+  const perPerson = Math.round(total / people);
+
+  return (
+    <>
+      <StatusBar />
+      <div style={{ position: "absolute", inset: 0, padding: "52px 22px 24px", display: "flex", flexDirection: "column" }}>
+        <TopBar onBack={onBack} title="תקציב" />
+
+        <PaperCard bg={T.ink} padding={18} style={{ marginTop: 16, color: "#fff", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -20, left: -20, width: 90, height: 90, borderRadius: "50%", background: "rgba(91,184,255,0.3)" }} />
+          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.65)", position: "relative" }}>סך הוצאות עד כה</div>
+          <div style={{ fontSize: 40, fontWeight: 900, fontFamily: T.fontMono, position: "relative", marginTop: 2 }}>₪{total.toLocaleString()}</div>
+          <div style={{ display: "flex", gap: 10, marginTop: 12, position: "relative" }}>
+            <div style={{ flex: 1, background: "rgba(255,255,255,0.1)", border: "2px solid rgba(255,255,255,0.25)", borderRadius: 12, padding: "8px 12px" }}>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>חלוקה ל-{people} בנות</div>
+              <div style={{ fontSize: 18, fontWeight: 900 }}>₪{perPerson}</div>
+            </div>
+            <div style={{ flex: 1, background: T.green, border: `2px solid ${T.ink}`, borderRadius: 12, padding: "8px 12px", color: T.ink }}>
+              <div style={{ fontSize: 10, fontWeight: 700 }}>נאספו</div>
+              <div style={{ fontSize: 18, fontWeight: 900 }}>₪1,200</div>
+            </div>
+          </div>
+        </PaperCard>
+
+        <ChunkyButton bg={T.green} fg={T.ink} onClick={() => alert("בקשת תשלום מהבנות (דמו)")}
+          style={{ marginTop: 12 }} size="md">
+          <Icon name="send" size={16} color={T.ink} stroke={2.2}/> בקשי השלמת תשלום
+        </ChunkyButton>
+
+        <div style={{ fontSize: 15, fontWeight: 900, marginTop: 18, marginBottom: 10 }}>הוצאות</div>
+        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+          {EXPENSES.map((e, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: T.paper, border: `2px solid ${T.ink}`, borderRadius: 12,
+              padding: "10px 12px",
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10,
+                background: [T.pinkSoft, T.yellowSoft, T.lavSoft, T.greenSoft][i % 4],
+                border: `2px solid ${T.ink}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, fontWeight: 900, color: T.ink, fontFamily: T.fontMono,
+              }}>{i + 1}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>{e.t}</div>
+                <div style={{ fontSize: 11, color: T.inkMuted, fontWeight: 600 }}>שילמה: {e.who}</div>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: T.ink, fontFamily: T.fontMono }}>₪{e.amount}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <button onClick={() => alert("הוספת הוצאה (דמו)")} style={{
+            flex: 1, padding: "13px", borderRadius: 14, background: T.paper, color: T.ink,
+            border: `2px solid ${T.ink}`, boxShadow: T.shadow(2, 2),
+            fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}><Icon name="plus" size={16} color={T.ink} stroke={2.6}/> הוספת הוצאה</button>
+        </div>
+      </div>
+      <HomeBar />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   APP SHELL
+   ────────────────────────────────────────────────────────────── */
+function App() {
+  const [screen, setScreen] = React.useState("welcome");
+  const [name, setName] = React.useState("");
+  const [event, setEvent] = React.useState(null);
+  const [eventName, setEventName] = React.useState("");
+  const [gameId, setGameId] = React.useState("lipread");
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem("chogegot_state");
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.screen) setScreen(s.screen);
+        if (s.name) setName(s.name);
+        if (s.event) setEvent(s.event);
+        if (s.eventName) setEventName(s.eventName);
+        if (s.gameId) setGameId(s.gameId);
+      }
+    } catch (e) {}
+  }, []);
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("chogegot_state", JSON.stringify({ screen, name, event, eventName, gameId }));
+    } catch (e) {}
+  }, [screen, name, event, eventName, gameId]);
+
+  const nav = (to, params = {}) => {
+    if (params.gameId) setGameId(params.gameId);
+    setScreen(to);
+  };
+  const reset = () => {
+    setScreen("welcome"); setName(""); setEvent(null); setEventName("");
+    localStorage.removeItem("chogegot_state");
+  };
+
+  let content;
+  if (screen === "welcome") content = <ScreenWelcome onNext={() => setScreen("username")} />;
+  else if (screen === "username") content = <ScreenUsername onNext={() => setScreen("event")} onBack={() => setScreen("welcome")} name={name} setName={setName} />;
+  else if (screen === "event") content = <ScreenEventPicker onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent} />;
+  else if (screen === "nameEvent") content = <ScreenNameEvent eventId={event} eventName={eventName} setEventName={setEventName}
+    onNext={() => setScreen(event === "bach" ? "bachHome" : "comingSoon")} onBack={() => setScreen("event")} />;
+  else if (screen === "bachHome") content = <ScreenBachHome onNav={nav} user={{ name }} eventName={eventName} />;
+  else if (screen === "qrjoin") content = <ScreenQRJoin onBack={() => setScreen("bachHome")} />;
+  else if (screen === "checklist") content = <ScreenChecklist onBack={() => setScreen("bachHome")} />;
+  else if (screen === "playlist") content = <ScreenPlaylist onBack={() => setScreen("bachHome")} />;
+  else if (screen === "budget") content = <ScreenBudget onBack={() => setScreen("bachHome")} />;
+  else if (screen === "games") content = <ScreenGamesHub onNav={nav} onBack={() => setScreen("bachHome")} />;
+  else if (screen === "game") {
+    const g = GAMES.find(x => x.id === gameId) || GAMES[0];
+    const back = () => setScreen("games");
+    if (g.type === "timer") content = <TimerGame game={g} onBack={back} />;
+    else if (g.type === "quiz") content = <QuizGame game={g} onBack={back} />;
+    else content = <CardGame game={g} onBack={back} />;
+  }
+  else if (screen === "comingSoon") content = <ScreenComingSoon eventId={event} onBack={() => setScreen("event")} />;
+
+  return (
+    <>
+      <PhoneShell>
+        <div key={screen} style={{ position: "absolute", inset: 0, animation: "screenIn 280ms ease-out" }}>
+          {content}
+        </div>
+      </PhoneShell>
+
+      <button onClick={reset} title="התחל מההתחלה" style={{
+        position: "fixed", top: 16, left: 16, zIndex: 1000,
+        padding: "8px 12px", background: "rgba(31,21,48,0.85)", color: "#fff",
+        border: "none", borderRadius: 999, fontSize: 11, fontWeight: 700,
+        cursor: "pointer", fontFamily: T.font,
+        backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
+      }}>אפס</button>
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
