@@ -50,10 +50,10 @@ const T_BASE = {
   muted:        "#A7A39F",
   line:         "#ECE8E4",
   lineStrong:   "#DBD6D1",
-  ok:           "#4F8B61",
-  okSoft:       "#E6EEE6",
-  warn:         "#C77A1C",
-  warnSoft:     "#FBEEDB",
+  ok:           "#E8512A",
+  okSoft:       "#FBE4DB",
+  warn:         "#E8512A",
+  warnSoft:     "#FBE4DB",
   radius:       18,
   radiusLg:     22,
   radiusSm:     12,
@@ -357,7 +357,7 @@ function ScreenWelcome({ T, onNext }) {
               <Icon name="lock" size={14} color={T.muted} w={1.5}/> 6 ספרות
             </span>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, direction: "ltr" }}>
             {code.map((ch, i) => {
               const active = !isWrong && (ch || (i === code.findIndex(c => !c)));
               return (
@@ -1735,8 +1735,9 @@ function QuizGame({ T: parentT, game, onBack }) {
   const [projecting, setProjecting] = React.useState(false);
 
   const q = deck.questions[qi];
-  const tileColors = [PB.orange.main, PB.pink.main, T.surfaceInk, T.ok];
-  const tileFg     = ["#fff", T.ink, "#fff", "#fff"];
+  // brand palette only: pink · black · orange · deep rose
+  const tileColors = ["#EAA0BA", "#1A1A1A", "#E8512A", "#C75E82"];
+  const tileFg     = ["#1A1A1A", "#fff", "#fff", "#fff"];
   const tileShapes = ["▲", "◆", "●", "■"];
 
   const pick = i => { if (picked !== null) return; setPicked(i); if (i === q.correct) setScore(s => s + 1); };
@@ -1915,7 +1916,7 @@ function CardGame({ T: parentT, game, onBack }) {
           {isNhie && (
             <div style={{
               fontSize: big ? "clamp(13px,1.5vw,20px)" : 12, fontWeight: 600,
-              color: big ? "rgba(255,255,255,0.75)" : T.inkSoft, letterSpacing: 0.4,
+              color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.4,
             }}>מי שכן — לוגמת</div>
           )}
         </div>
