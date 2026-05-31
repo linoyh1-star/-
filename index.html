@@ -447,14 +447,21 @@ function ScreenUsername({ T, onNext, onBack, name, setName }) {
             או בחרי כינוי מהיר
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {suggestions.map((s, i) => (
-              <button key={i} onClick={() => setName(s)} style={{
-                padding: "9px 14px", borderRadius: 999,
-                background: T.surface, border: T.border,
-                fontSize: 13.5, fontWeight: 600, color: T.ink,
-                boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
-              }}>{s}</button>
-            ))}
+            {suggestions.map((s, i) => {
+              const palette = [PB.pink, PB.orange, PB.ink, PB.pink];
+              const p = palette[i % palette.length];
+              const isInk = p === PB.ink;
+              return (
+                <button key={i} onClick={() => setName(s)} style={{
+                  padding: "9px 14px", borderRadius: 999,
+                  background: isInk ? p.main : p.soft,
+                  color: isInk ? "#fff" : p.deep,
+                  border: isInk ? "none" : `1px solid ${p.main}55`,
+                  fontSize: 13.5, fontWeight: 700,
+                  boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
+                }}>{s}</button>
+              );
+            })}
           </div>
         </div>
 
@@ -467,16 +474,16 @@ function ScreenUsername({ T, onNext, onBack, name, setName }) {
 }
 
 const EVENT_OPTS = [
-  { id: "bach", t: "מסיבת רווקות", s: "פרידה מהרווקות בסטייל", icon: "ring",
+  { id: "bach", t: "מסיבת רווקות", s: "פרידה מהרווקות בסטייל", icon: "ring", pop: "pink",
     nameTitle: "תני שם\nלמסיבה", nameHint: "איך נקרא לחגיגה? זה יופיע לכל המשתתפות.",
     placeholder: "הרווקות של מאיה", samples: ["הרווקות של מאיה", "Last Dance", "מאיה נשארת איתנו"] },
-  { id: "bday", t: "יום הולדת", s: "החוגגים מתחילים כאן", icon: "cake",
+  { id: "bday", t: "יום הולדת", s: "החוגגים מתחילים כאן", icon: "cake", pop: "orange",
     nameTitle: "תני שם\nלאירוע", nameHint: "שם החגיגה שיראו כל האורחים.",
     placeholder: "היומולדת של דניאל", samples: ["היומולדת של דניאל", "דני בן 30", "מסיבת הפתעה"] },
-  { id: "team", t: "גיבוש צוות", s: "שוברי קרח לעבודה", icon: "rocket",
+  { id: "team", t: "גיבוש צוות", s: "שוברי קרח לעבודה", icon: "rocket", pop: "ink",
     nameTitle: "תני שם\nלגיבוש", nameHint: "שם האירוע שיראו כל חברי הצוות.",
     placeholder: "גיבוש צוות פיתוח", samples: ["גיבוש צוות פיתוח", "Team Offsite 2026", "יום כיף חברה"] },
-  { id: "date", t: "ערב זוגי", s: "רק שניכם", icon: "heart",
+  { id: "date", t: "ערב זוגי", s: "רק שניכם", icon: "heart", pop: "pink",
     nameTitle: "תני שם\nלערב", nameHint: "שם קטן ומתוק לערב שלכם.",
     placeholder: "ערב של נועה ויואב", samples: ["דייט נייט", "נועה ויואב", "ערב בלי טלפונים"] },
 ];
@@ -501,32 +508,34 @@ function ScreenEventPicker({ T, onNext, onBack, selected, setSelected }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
           {EVENT_OPTS.map(e => {
             const sel = selected === e.id;
+            const p = PB[e.pop];
             return (
               <button key={e.id} onClick={() => setSelected(e.id)} style={{
                 display: "flex", alignItems: "center", gap: 14, padding: "15px 16px",
-                background: T.surface, borderRadius: T.radiusLg,
-                border: sel ? `1.5px solid ${T.accent}` : T.border,
+                background: sel ? p.main : p.soft, borderRadius: T.radiusLg,
+                border: sel ? `1.5px solid ${p.deep}` : `1px solid ${p.main}33`,
                 boxShadow: sel ? T.shadow : T.shadowSm,
                 cursor: "pointer", fontFamily: T.font, textAlign: "right",
-                transition: "border-color 150ms, box-shadow 150ms",
+                color: sel ? p.on : T.ink,
+                transition: "all 150ms",
               }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13, flexShrink: 0,
-                  background: sel ? T.accent : T.accentSoft,
+                  background: sel ? "rgba(255,255,255,0.25)" : p.main,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <Icon name={e.icon} size={23} color={sel ? T.onAccent : T.accentDeep} w={1.5}/>
+                  <Icon name={e.icon} size={23} color={sel ? p.on : p.on} w={1.5}/>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{e.t}</div>
-                  <div style={{ fontSize: 13, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{e.s}</div>
+                  <div style={{ fontSize: 16.5, fontWeight: 700, letterSpacing: -0.2 }}>{e.t}</div>
+                  <div style={{ fontSize: 13, marginTop: 2, fontWeight: 500, opacity: 0.85 }}>{e.s}</div>
                 </div>
                 <div style={{
                   width: 24, height: 24, borderRadius: 999, flexShrink: 0,
-                  border: sel ? "none" : `1.5px solid ${T.lineStrong}`,
-                  background: sel ? T.accent : "transparent",
+                  border: sel ? "none" : `1.5px solid ${p.main}`,
+                  background: sel ? "#fff" : "transparent",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{sel && <Icon name="check" size={14} color={T.onAccent} w={2}/>}</div>
+                }}>{sel && <Icon name="check" size={14} color={p.deep} w={2}/>}</div>
               </button>
             );
           })}
@@ -585,14 +594,21 @@ function ScreenNameEvent({ T, onNext, onBack, eventId, eventName, setEventName }
             הצעות מהירות
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {ev.samples.map((s, i) => (
-              <button key={i} onClick={() => setEventName(s)} style={{
-                padding: "9px 14px", borderRadius: 999,
-                background: T.surface, border: T.border,
-                fontSize: 13.5, fontWeight: 600, color: T.ink,
-                boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
-              }}>{s}</button>
-            ))}
+            {ev.samples.map((s, i) => {
+              const palette = [PB.pink, PB.orange, PB.ink];
+              const p = palette[i % palette.length];
+              const isInk = p === PB.ink;
+              return (
+                <button key={i} onClick={() => setEventName(s)} style={{
+                  padding: "9px 14px", borderRadius: 999,
+                  background: isInk ? p.main : p.soft,
+                  color: isInk ? "#fff" : p.deep,
+                  border: isInk ? "none" : `1px solid ${p.main}55`,
+                  fontSize: 13.5, fontWeight: 700,
+                  boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
+                }}>{s}</button>
+              );
+            })}
           </div>
         </div>
 
@@ -633,10 +649,10 @@ function MiniQR({ size = 70, color = "#161616", bg = "#fff", radius = 10 }) {
    BACHELORETTE HOME
    ────────────────────────────────────────────────────────────── */
 const HOST_CATS = [
-  { id: "checklist", t: "צ'קליסט", s: "ארגון המסיבה",      icon: "list",    pop: "pink" },
-  { id: "playlist",  t: "פלייליסט", s: "מחובר לספוטיפיי",   icon: "music",   pop: "orange" },
-  { id: "budget",    t: "תקציב",   s: "מי חייבת כמה",      icon: "wallet",  pop: "orange" },
-  { id: "games",     t: "משחקים",  s: "להקרנה לכולן",      icon: "sparkle", pop: "pink" },
+  { id: "checklist", t: "צ'קליסט", s: "ארגון המסיבה",      icon: "list",    pop: "pink",   badge: "0/30" },
+  { id: "playlist",  t: "פלייליסט", s: "מחובר לספוטיפיי",   icon: "music",   pop: "orange", badge: "6 שירים" },
+  { id: "budget",    t: "תקציב",   s: "מי חייבת כמה",      icon: "wallet",  pop: "ink",    badge: "₪6,650" },
+  { id: "games",     t: "משחקים",  s: "להקרנה לכולן",      icon: "sparkle", pop: "pink",   badge: "5 משחקים" },
 ];
 
 function ScreenBachHome({ T, onNav, user, eventName }) {
@@ -706,27 +722,34 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {HOST_CATS.map(c => {
             const p = PB[c.pop];
+            const isInk = c.pop === "ink";
             return (
               <button key={c.id} onClick={() => onNav(c.id)} style={{
-                background: T.surface, border: T.border, borderRadius: T.radiusLg,
-                padding: 15, boxShadow: T.shadowSm,
-                display: "flex", flexDirection: "column", gap: 18, minHeight: 118,
+                background: isInk ? p.main : p.soft,
+                color: isInk ? "#fff" : T.ink,
+                border: isInk ? "none" : `1px solid ${p.main}33`,
+                borderRadius: T.radiusLg,
+                padding: 15, boxShadow: T.shadow,
+                display: "flex", flexDirection: "column", gap: 18, minHeight: 122,
                 cursor: "pointer", fontFamily: T.font, textAlign: "right",
                 transition: "transform 100ms",
               }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 11,
-                    background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name={c.icon} size={21} color={p.deep} w={1.5}/></div>
+                    width: 42, height: 42, borderRadius: 12,
+                    background: isInk ? "rgba(255,255,255,0.18)" : p.main,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}><Icon name={c.icon} size={22} color={isInk ? "#fff" : p.on} w={1.5}/></div>
                   <div style={{
-                    fontSize: 11, fontWeight: 700, color: T.inkSoft, background: T.surfaceAlt,
+                    fontSize: 11, fontWeight: 700,
+                    color: isInk ? "rgba(255,255,255,0.85)" : p.deep,
+                    background: isInk ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)",
                     padding: "4px 9px", borderRadius: 999,
-                  }}>{c.badge || ""}</div>
+                  }}>{c.badge}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{c.t}</div>
-                  <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{c.s}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: -0.2 }}>{c.t}</div>
+                  <div style={{ fontSize: 12.5, marginTop: 2, fontWeight: 500, opacity: 0.85 }}>{c.s}</div>
                 </div>
               </button>
             );
@@ -776,7 +799,7 @@ function ScreenQRJoin({ T, onBack }) {
           </div>
         </div>
 
-        <Btn T={T} variant="quiet" icon="share" onClick={() => alert("שיתוף קישור הזמנה (דמו)")}>
+        <Btn T={{ ...T, accent: PB.orange.main, onAccent: PB.orange.on }} icon="share" onClick={() => alert("שיתוף קישור הזמנה (דמו)")}>
           שיתוף קישור במקום
         </Btn>
         <button onClick={onBack} style={{
@@ -821,7 +844,7 @@ function ScreenComingSoon({ T, eventId, onBack }) {
    CHECKLIST (from PDF)
    ────────────────────────────────────────────────────────────── */
 const CHECKLIST_SECTIONS = [
-  { id: "4-6m", t: "4–6 חודשים לפני", sub: "מה עושות?", items: [
+  { id: "4-6m", t: "4–6 חודשים לפני", sub: "מה עושות?", pop: "pink", items: [
     "פתיחת קבוצה של המלוות והכלה",
     "סיעור מוחות עם הכלה",
     "רשימת מוזמנות",
@@ -829,32 +852,32 @@ const CHECKLIST_SECTIONS = [
     "אופציות לתאריכים מהכלה",
     "מקום / אזור מוערך (בית של מישהי הכי טוב)",
   ]},
-  { id: "3-4m", t: "3–4 חודשים לפני", sub: "מתחממות", items: [
+  { id: "3-4m", t: "3–4 חודשים לפני", sub: "מתחממות", pop: "orange", items: [
     "פתיחת קבוצה עם כלל המוזמנות — סינון ראשוני",
     "סקר אופציות לתאריכים",
     "סגירת תאריך", "סגירת מקום", "בקשה לתשלום",
     "הזמנת קישוטים ופיצ'פקס",
   ]},
-  { id: "2m", t: "חודשיים לפני", sub: "סוגרות", items: [
+  { id: "2m", t: "חודשיים לפני", sub: "סוגרות", pop: "ink", items: [
     "סקר מי שותה מה (מומלץ על מנת לחסוך באלכוהול)",
     "סגירת אטרקציה", "סגירת ספק אוכל", "הפצת הזמנה",
   ]},
-  { id: "2-3w", t: "שבועיים–שלושה לפני", sub: "סגורות", items: [
+  { id: "2-3w", t: "שבועיים–שלושה לפני", sub: "סגורות", pop: "pink", items: [
     "סגירת לו\"ז מול המוזמנות והכלה (מומלץ לגזור זמנים לבעייתיות)",
     "קניות (חד\"פ, חטיפים, אלכוהול)",
     "וידוא הגעה סופית של כל הבנות",
     "הכנת פלייליסט",
   ]},
-  { id: "1w", t: "שבוע לפני", sub: "מוודאות", items: [
+  { id: "1w", t: "שבוע לפני", sub: "מוודאות", pop: "orange", items: [
     "וידוא הגעת ספקים", "סגירת לו\"ז למלוות",
   ]},
-  { id: "1d", t: "יום לפני", sub: "לא שוכחות", items: [
+  { id: "1d", t: "יום לפני", sub: "לא שוכחות", pop: "ink", items: [
     "קישוטים", "קניות (חד\"פ, חטיפים, אלכוהול)",
     "נגן מוזיקה ומטען",
     "אם שכרתן מקום — וודאו שיש לכן סרטונים והנחיות לתפעול מהבעלים",
     "מתנות אם יש", "לשלוח מיקום בקבוצת הווטסאפ",
   ]},
-  { id: "day", t: "היום הגדול", sub: "נהנות", items: [
+  { id: "day", t: "היום הגדול", sub: "נהנות", pop: "pink", items: [
     "הגעה מוקדמת לסידור המקום",
     "לשתות קפה ולקחת ציפרלקס",
     "להינות",
@@ -904,22 +927,30 @@ function ScreenChecklist({ T, onBack }) {
         </Card>
 
         {/* Sections */}
-        <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
           {CHECKLIST_SECTIONS.map(sec => {
             const sectionItems = items.filter(i => i.section === sec.id);
             const secDone = sectionItems.filter(i => i.done).length;
             const secPct = sectionItems.length ? Math.round((secDone / sectionItems.length) * 100) : 0;
+            const p = PB[sec.pop || "pink"];
+            const isInk = sec.pop === "ink";
             return (
               <div key={sec.id}>
+                {/* Colored section header pill */}
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  marginBottom: 10, padding: "0 4px",
+                  padding: "8px 14px", marginBottom: 8,
+                  background: isInk ? p.main : p.soft,
+                  color: isInk ? "#fff" : p.deep,
+                  borderRadius: 12, border: isInk ? "none" : `1px solid ${p.main}33`,
                 }}>
                   <div>
-                    <div style={{ fontSize: 14.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{sec.t}</div>
-                    <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginTop: 1, letterSpacing: 0.3 }}>{sec.sub}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: -0.2 }}>{sec.t}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 1, letterSpacing: 0.3, opacity: 0.85 }}>{sec.sub}</div>
                   </div>
-                  <div className="num" style={{ fontSize: 12, fontWeight: 700, color: secPct === 100 ? T.ok : T.inkSoft }}>
+                  <div className="num" style={{ fontSize: 12.5, fontWeight: 800,
+                    padding: "3px 9px", borderRadius: 999,
+                    background: isInk ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.7)" }}>
                     {secDone}/{sectionItems.length}
                   </div>
                 </div>
@@ -927,17 +958,20 @@ function ScreenChecklist({ T, onBack }) {
                   {sectionItems.map(it => (
                     <div key={it.id} style={{
                       display: "flex", alignItems: "center", gap: 11,
-                      background: T.surface, border: T.border, borderRadius: 14,
+                      background: it.done ? T.surfaceAlt : T.surface,
+                      borderInlineStart: `3px solid ${p.main}`,
+                      border: T.border,
+                      borderRadius: 12,
                       boxShadow: it.done ? "none" : T.shadowSm,
                       padding: "11px 13px",
                     }}>
                       <button onClick={() => toggle(it.id)} style={{
                         width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-                        background: it.done ? T.ok : "transparent",
-                        border: it.done ? "none" : `1.5px solid ${T.lineStrong}`,
+                        background: it.done ? p.main : "transparent",
+                        border: it.done ? "none" : `1.5px solid ${p.main}`,
                         padding: 0, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>{it.done && <Icon name="check" size={13} color="#fff" w={2}/>}</button>
+                      }}>{it.done && <Icon name="check" size={13} color={p.on} w={2}/>}</button>
                       <div onClick={() => toggle(it.id)} style={{
                         flex: 1, fontSize: 13.5, fontWeight: 500,
                         color: it.done ? T.muted : T.ink,
@@ -1053,24 +1087,33 @@ function ScreenPlaylist({ T, onBack }) {
           <div className="num" style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>1 ש' 32 ד'</div>
         </div>
         <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
-          {SONGS.map((s, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "center", gap: 11,
-              background: T.surface, border: T.border, borderRadius: 12,
-              padding: "9px 12px",
-            }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 9,
-                background: T.surfaceAlt, color: T.inkSoft,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{i === 0 ? <Icon name="play" size={13} color={T.ink}/> : <Icon name="music" size={14} color={T.inkSoft} w={1.5}/>}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.t}</div>
-                <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500 }}>{s.a}</div>
+          {SONGS.map((s, i) => {
+            const cycle = [PB.pink, PB.orange, PB.ink];
+            const p = cycle[i % cycle.length];
+            const isInk = p === PB.ink;
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", gap: 11,
+                background: T.surface, border: T.border,
+                borderInlineStart: `3px solid ${p.main}`,
+                borderRadius: 12, padding: "9px 12px",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: isInk ? p.main : p.soft,
+                  color: isInk ? "#fff" : p.deep,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{i === 0
+                  ? <Icon name="play" size={13} color={isInk ? "#fff" : p.deep}/>
+                  : <Icon name="music" size={14} color={isInk ? "#fff" : p.deep} w={1.5}/>}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.t}</div>
+                  <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500 }}>{s.a}</div>
+                </div>
+                <div className="num" style={{ fontSize: 12, color: p.deep, fontWeight: 700 }}>{s.len}</div>
               </div>
-              <div className="num" style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>{s.len}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <HomeBar/>
@@ -1215,36 +1258,42 @@ function ScreenBudget({ T, onBack }) {
 
           {tab === "expenses" && (
             <>
-              {expenses.map((e, i) => (
-                <div key={e.id} style={{
-                  display: "flex", alignItems: "center", gap: 11,
-                  background: T.surface, border: T.border, borderRadius: 13,
-                  padding: "11px 12px", boxShadow: T.shadowSm,
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    background: T.surfaceAlt, color: T.ink,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 12.5, fontWeight: 700, flexShrink: 0,
-                  }} className="num">{i + 1}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink }}>{e.item}</div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center" }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{e.cat}</span>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 999,
-                        background: e.type === "fixed" ? PB.pink.soft : PB.orange.soft,
-                        color: e.type === "fixed" ? PB.pink.deep : PB.orange.deep,
-                      }}>{e.type === "fixed" ? "קבועה" : "משתנה"}</span>
+              {expenses.map((e, i) => {
+                const cycle = [PB.pink, PB.orange, PB.ink];
+                const p = cycle[i % cycle.length];
+                const isInk = p === PB.ink;
+                return (
+                  <div key={e.id} style={{
+                    display: "flex", alignItems: "center", gap: 11,
+                    background: T.surface, border: T.border,
+                    borderInlineStart: `3px solid ${p.main}`,
+                    borderRadius: 13, padding: "11px 12px", boxShadow: T.shadowSm,
+                  }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10,
+                      background: isInk ? p.main : p.soft,
+                      color: isInk ? "#fff" : p.deep,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 13, fontWeight: 800, flexShrink: 0,
+                    }} className="num">{i + 1}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink }}>{e.item}</div>
+                      <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center" }}>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 7px", borderRadius: 999,
+                          background: p.soft, color: p.deep }}>{e.cat}</span>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 999,
+                          background: T.surfaceAlt, color: T.inkSoft }}>{e.type === "fixed" ? "קבועה" : "משתנה"}</span>
+                      </div>
                     </div>
+                    <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: p.deep }}>₪{e.amount.toLocaleString()}</div>
+                    <button onClick={() => removeExpense(e.id)} style={{
+                      width: 24, height: 24, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0, color: T.muted,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
                   </div>
-                  <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>₪{e.amount.toLocaleString()}</div>
-                  <button onClick={() => removeExpense(e.id)} style={{
-                    width: 24, height: 24, borderRadius: 7, background: "transparent",
-                    border: "none", cursor: "pointer", padding: 0, color: T.muted,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Add form */}
               <div style={{ marginTop: 8, padding: 12, background: T.surfaceAlt,
@@ -1300,39 +1349,52 @@ function ScreenBudget({ T, onBack }) {
               <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginBottom: 4, padding: "0 4px", letterSpacing: 0.2 }}>
                 לחיצה על שם — הופכת ל"לא מגיעה". ✓ — שילמה.
               </div>
-              {participants.map(p => (
-                <div key={p.id} style={{
-                  display: "flex", alignItems: "center", gap: 11,
-                  background: p.coming ? T.surface : T.surfaceAlt,
-                  border: T.border, borderRadius: 13,
-                  padding: "11px 12px", boxShadow: p.coming ? T.shadowSm : "none",
-                  opacity: p.coming ? 1 : 0.65, transition: "opacity 150ms",
-                }}>
-                  <button onClick={() => togglePaid(p.id)} disabled={!p.coming} style={{
-                    width: 24, height: 24, borderRadius: 7, flexShrink: 0,
-                    background: p.paid && p.coming ? T.ok : "transparent",
-                    border: p.paid && p.coming ? "none" : `1.5px solid ${T.lineStrong}`,
-                    padding: 0, cursor: p.coming ? "pointer" : "not-allowed",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>{p.paid && p.coming && <Icon name="check" size={13} color="#fff" w={2}/>}</button>
-                  <button onClick={() => toggleComing(p.id)} style={{
-                    flex: 1, fontSize: 13.5, fontWeight: 600, color: T.ink,
-                    background: "transparent", border: "none", cursor: "pointer",
-                    textAlign: "right", fontFamily: T.font,
-                    textDecoration: p.coming ? "none" : "line-through",
-                    padding: 0, minWidth: 0,
-                  }}>{p.name}</button>
-                  <div className="num" style={{ fontSize: 12, fontWeight: 700,
-                    color: p.coming ? (p.paid ? T.ok : T.inkSoft) : T.muted }}>
-                    {!p.coming ? "לא מגיעה" : p.paid ? `שילמה · ₪${perPerson}` : `חייבת ₪${perPerson}`}
+              {participants.map((p, i) => {
+                const cycle = [PB.pink, PB.orange, PB.ink];
+                const pl = cycle[i % cycle.length];
+                const isInk = pl === PB.ink;
+                return (
+                  <div key={p.id} style={{
+                    display: "flex", alignItems: "center", gap: 11,
+                    background: p.coming ? T.surface : T.surfaceAlt,
+                    border: T.border,
+                    borderInlineStart: `3px solid ${pl.main}`,
+                    borderRadius: 13, padding: "11px 12px",
+                    boxShadow: p.coming ? T.shadowSm : "none",
+                    opacity: p.coming ? 1 : 0.55, transition: "opacity 150ms",
+                  }}>
+                    <button onClick={() => togglePaid(p.id)} disabled={!p.coming} style={{
+                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                      background: p.paid && p.coming ? pl.main : "transparent",
+                      border: p.paid && p.coming ? "none" : `1.5px solid ${pl.main}`,
+                      padding: 0, cursor: p.coming ? "pointer" : "not-allowed",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>{p.paid && p.coming && <Icon name="check" size={14} color={pl.on} w={2}/>}</button>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                      background: isInk ? pl.main : pl.soft, color: isInk ? "#fff" : pl.deep,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 800,
+                    }}>{p.name.replace(/[^א-תa-zA-Z]/g, "").charAt(0) || "?"}</div>
+                    <button onClick={() => toggleComing(p.id)} style={{
+                      flex: 1, fontSize: 13.5, fontWeight: 700, color: T.ink,
+                      background: "transparent", border: "none", cursor: "pointer",
+                      textAlign: "right", fontFamily: T.font,
+                      textDecoration: p.coming ? "none" : "line-through",
+                      padding: 0, minWidth: 0,
+                    }}>{p.name}</button>
+                    <div className="num" style={{ fontSize: 11.5, fontWeight: 700,
+                      color: p.coming ? (p.paid ? pl.deep : T.inkSoft) : T.muted }}>
+                      {!p.coming ? "לא מגיעה" : p.paid ? `שילמה · ₪${perPerson}` : `₪${perPerson}`}
+                    </div>
+                    <button onClick={() => removeParticipant(p.id)} style={{
+                      width: 22, height: 22, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="close" size={12} color={T.muted} w={1.6}/></button>
                   </div>
-                  <button onClick={() => removeParticipant(p.id)} style={{
-                    width: 24, height: 24, borderRadius: 7, background: "transparent",
-                    border: "none", cursor: "pointer", padding: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
-                </div>
-              ))}
+                );
+              })}
 
               <div style={{ marginTop: 8, padding: 10, background: T.surfaceAlt,
                 border: `1px dashed ${T.lineStrong}`, borderRadius: T.radius,
@@ -1449,30 +1511,37 @@ function ScreenGamesHub({ T, onNav, onBack }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
           {GAMES.map((g) => {
             const p = PB[g.pop];
+            const isInk = g.pop === "ink";
             return (
               <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
                 display: "flex", alignItems: "center", gap: 13,
-                background: T.surface, border: T.border, borderRadius: T.radiusLg,
-                boxShadow: T.shadowSm, padding: "13px 14px",
+                background: isInk ? p.main : p.soft,
+                color: isInk ? "#fff" : T.ink,
+                border: isInk ? "none" : `1px solid ${p.main}33`,
+                borderRadius: T.radiusLg, boxShadow: T.shadow, padding: "13px 14px",
                 cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
               }}>
                 <div style={{
-                  width: 50, height: 50, borderRadius: 14, flexShrink: 0,
-                  background: p.soft, color: p.deep,
+                  width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                  background: isInk ? "rgba(255,255,255,0.18)" : p.main,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                }}><Icon name={g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users"} size={24} color={p.deep} w={1.5}/></div>
+                }}><Icon name={g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users"} size={24} color={isInk ? "#fff" : p.on} w={1.5}/></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
-                    {g.hot && <span style={{ fontSize: 9.5, padding: "2px 7px", background: PB.orange.main, color: "#fff", borderRadius: 999, fontWeight: 700 }}>פופולרי</span>}
+                    <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: -0.2 }}>{g.t}</div>
+                    {g.hot && <span style={{ fontSize: 9.5, padding: "2px 7px", background: "#fff", color: PB.orange.deep, borderRadius: 999, fontWeight: 800 }}>פופולרי</span>}
                   </div>
-                  <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 500, marginTop: 1, opacity: 0.85 }}>{g.s}</div>
                   <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.time}</span>
-                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.players}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
+                      background: isInk ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)",
+                      color: isInk ? "#fff" : p.deep }}>{g.time}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999,
+                      background: isInk ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)",
+                      color: isInk ? "#fff" : p.deep }}>{g.players}</span>
                   </div>
                 </div>
-                <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
+                <Icon name="chevL" size={18} color={isInk ? "rgba(255,255,255,0.7)" : p.deep} w={1.5}/>
               </button>
             );
           })}
