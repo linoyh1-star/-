@@ -83,7 +83,7 @@ const SCREEN_SKIN = {
   welcome: "orange", username: "orange",
   event: "pink", nameEvent: "pink",
   bachHome: "ink", qrjoin: "ink", comingSoon: "ink",
-  checklist: "pink", playlist: "ink", budget: "orange",
+  checklist: "orange", playlist: "ink", budget: "orange",
   games: "ink", game: "ink",
 };
 
@@ -112,6 +112,7 @@ const Icon = ({ name, size = 22, color = "currentColor", w = 1.5 }) => {
     camera: <><rect x="3.5" y="7" width="17" height="12.5" rx="2.6" {...p}/><circle cx="12" cy="13.2" r="3.6" {...p}/><path d="M8.5 7l1.5-2.4h4L15.5 7" {...p}/></>,
     tv: <><rect x="3.5" y="5.5" width="17" height="11" rx="2.2" {...p}/><path d="M9 20h6M12 16.5V20" {...p}/></>,
     dots: <><circle cx="5" cy="12" r="1.4" fill={color} stroke="none"/><circle cx="12" cy="12" r="1.4" fill={color} stroke="none"/><circle cx="19" cy="12" r="1.4" fill={color} stroke="none"/></>,
+    home: <><path d="M3.5 11l8.5-7.5L20.5 11M5.5 9.5V20h13V9.5" {...p}/><path d="M10 20v-5.5h4V20" {...p}/></>,
     share: <><path d="M12 3.5v11M8.5 7L12 3.5 15.5 7M6 13v5.5a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V13" {...p}/></>,
     users: <><circle cx="9" cy="8.5" r="3" {...p}/><path d="M3.5 19c0-3 2.7-4.8 5.5-4.8s5.5 1.8 5.5 4.8M16 6a2.8 2.8 0 0 1 0 5.6M20.5 19c0-2.4-1.6-3.9-3.8-4.4" {...p}/></>,
     send: <path d="M20 4L3.5 11.2l6.4 2.4L12.3 20 20 4z" {...p}/>,
@@ -664,7 +665,7 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
               <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: -0.3 }}>{eventName || "הרווקות של מאיה"}</div>
             </div>
           </div>
-          <RoundBtn T={T} icon="dots"/>
+          <RoundBtn T={T} icon="home"/>
         </div>
 
         {/* invite card */}
@@ -783,7 +784,7 @@ function ScreenQRJoin({ T, onBack }) {
           </div>
         </div>
 
-        <Btn T={T} variant="quiet" icon="share" onClick={() => alert("שיתוף קישור הזמנה (דמו)")}>
+        <Btn T={{ ...T, accent: PB.orange.main, onAccent: PB.orange.on }} icon="share" onClick={() => alert("שיתוף קישור הזמנה (דמו)")}>
           שיתוף קישור במקום
         </Btn>
         <button onClick={onBack} style={{
@@ -896,19 +897,32 @@ function ScreenChecklist({ T, onBack }) {
       <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
         <TopBar T={T} onBack={onBack} title="צ'קליסט המארגנת"/>
 
-        {/* Progress hero */}
-        <Card T={T} padding={16} style={{ marginTop: 14, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <div>
-              <div className="num" style={{ fontSize: 24, fontWeight: 800, color: T.ink, letterSpacing: -0.4 }}>{done}/{items.length}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: T.inkSoft, marginTop: 1 }}>בוצעו עד כה</div>
+        {/* Hero — mirrors budget */}
+        <div style={{ background: T.surfaceInk, color: "#fff", borderRadius: T.radiusLg,
+          padding: "18px 18px 16px", boxShadow: T.shadow, marginTop: 12, flexShrink: 0 }}>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: 0.3 }}>סך משימות לארגון</div>
+          <div className="num" style={{ fontSize: 38, fontWeight: 800, marginTop: 2, letterSpacing: -0.5 }}>{items.length}</div>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
+              background: PB.orange.main, color: "#fff" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.9 }}>בוצעו</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{done}</div>
             </div>
-            <div className="num" style={{ fontSize: 28, fontWeight: 800, color: T.accent, letterSpacing: -0.5 }}>{pct}%</div>
+            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
+              background: PB.pink.main, color: PB.pink.on }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>נשארו</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{items.length - done}</div>
+            </div>
+            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
+              background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.16)" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>התקדמות</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{pct}%</div>
+            </div>
           </div>
-          <div style={{ marginTop: 12, height: 6, background: T.surfaceAlt, borderRadius: 999, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: T.accent, borderRadius: 999, transition: "width 300ms" }}/>
+          <div style={{ marginTop: 12, height: 6, background: "rgba(255,255,255,0.10)", borderRadius: 999, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: PB.orange.main, borderRadius: 999, transition: "width 300ms" }}/>
           </div>
-        </Card>
+        </div>
 
         {/* Sections */}
         <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
@@ -952,13 +966,11 @@ function ScreenChecklist({ T, onBack }) {
                         textDecoration: it.done ? "line-through" : "none",
                         cursor: "pointer", lineHeight: 1.4,
                       }}>{it.t}</div>
-                      {it.custom && (
-                        <button onClick={() => removeItem(it.id)} style={{
-                          width: 24, height: 24, borderRadius: 7, background: "transparent",
-                          border: "none", cursor: "pointer", padding: 0,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
-                      )}
+                      <button onClick={() => removeItem(it.id)} title="הסרת משימה" style={{
+                        width: 26, height: 26, borderRadius: 7, background: "transparent",
+                        border: "none", cursor: "pointer", padding: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
                     </div>
                   ))}
                 </div>
@@ -1003,88 +1015,61 @@ function ScreenChecklist({ T, onBack }) {
 /* ──────────────────────────────────────────────────────────────
    PLAYLIST
    ────────────────────────────────────────────────────────────── */
-const SONGS = [
-  { t: "Single Ladies", a: "Beyoncé", len: "3:13" },
-  { t: "Dance Monkey", a: "Tones and I", len: "3:29" },
-  { t: "טיק טאק", a: "עדן בן זקן", len: "3:02" },
-  { t: "Levitating", a: "Dua Lipa", len: "3:23" },
-  { t: "אהבה ממבט ראשון", a: "נועה קירל", len: "2:58" },
-  { t: "Padam Padam", a: "Kylie Minogue", len: "2:21" },
-];
-
 function ScreenPlaylist({ T, onBack }) {
-  const [linked, setLinked] = React.useState(true);
+  const [link, setLink] = React.useState("");
+  const isValid = /^https?:\/\/(open\.)?spotify\.com\//i.test(link.trim());
+  const open = () => {
+    if (isValid) window.open(link.trim(), "_blank", "noopener");
+    else alert("הדביקי קודם קישור תקין מספוטיפיי");
+  };
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 28px", display: "flex", flexDirection: "column" }}>
         <TopBar T={T} onBack={onBack} title="פלייליסט"/>
 
-        <Card T={T} padding={16} style={{ marginTop: 14, background: "#1DB954", color: "#fff", border: "none" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 999, background: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="spotify" size={30}/>
+        <div style={{ marginTop: 18 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, lineHeight: 1.15, letterSpacing: -0.4 }}>הפלייליסט של המסיבה</h1>
+          <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.55, fontWeight: 500, marginTop: 8 }}>
+            הדביקי קישור לפלייליסט שיצרת בספוטיפיי. הוא יפתח ישירות באפליקציה כשתלחצי על הכפתור.
+          </p>
+        </div>
+
+        {/* Big Spotify hero card */}
+        <Card T={T} padding={22} style={{ marginTop: 18, background: "#1DB954", color: "#fff", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 60, height: 60, borderRadius: 999, background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon name="spotify" size={44}/>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 600, opacity: 0.85, letterSpacing: 0.3 }}>{linked ? "מחובר ל-" : "חברי את"} Spotify</div>
-              <div style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>הרווקות של מאיה</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.85, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
+              <div style={{ fontSize: 19, fontWeight: 800, marginTop: 2, letterSpacing: -0.3 }}>{isValid ? "מוכן לפתיחה" : "מחכה לקישור"}</div>
             </div>
-            {linked && <div style={{ width: 9, height: 9, borderRadius: 999, background: "#fff" }}/>}
           </div>
-          <button onClick={() => alert("פתיחת ספוטיפיי (דמו)")} style={{
-            marginTop: 12, width: "100%", padding: "11px", borderRadius: T.radius,
-            background: "rgba(0,0,0,0.25)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)",
-            fontSize: 13.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-          }}><Icon name="play" size={14} color="#fff"/> פתחי בספוטיפיי</button>
         </Card>
 
-        <div style={{ display: "flex", gap: 7, marginTop: 12 }}>
-          <input
-            placeholder="הדביקי קישור פלייליסט..."
-            style={{
-              flex: 1, padding: "11px 14px", borderRadius: 12,
-              border: T.border, background: T.surface,
-              fontSize: 13, fontWeight: 500, fontFamily: T.font,
-              color: T.ink, outline: "none", boxShadow: T.shadowSm,
-              direction: "ltr", textAlign: "right", minWidth: 0,
-            }}/>
-          <button onClick={() => setLinked(true)} style={{
-            padding: "0 18px", borderRadius: 12, background: T.surfaceInk, color: "#fff",
-            border: "none", fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-          }}>חברי</button>
+        {/* Link input */}
+        <div style={{ marginTop: 22, fontSize: 12, color: T.muted, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", marginBottom: 10 }}>
+          קישור לפלייליסט
+        </div>
+        <input
+          value={link} onChange={e => setLink(e.target.value)}
+          placeholder="https://open.spotify.com/playlist/..."
+          style={{
+            width: "100%", padding: "13px 16px", borderRadius: T.radius,
+            border: `1px solid ${isValid ? T.accent : T.lineStrong}`,
+            background: T.surface,
+            fontSize: 13.5, fontWeight: 500, fontFamily: T.font,
+            color: T.ink, outline: "none", boxShadow: T.shadowSm,
+            direction: "ltr", textAlign: "left",
+          }}/>
+        <div style={{ marginTop: 8, fontSize: 11.5, color: T.muted, fontWeight: 500, lineHeight: 1.5 }}>
+          איך מוצאים קישור: ב-Spotify → פתחי את הפלייליסט → ⋯ → שיתוף → העתקת קישור.
         </div>
 
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: 18, marginBottom: 10 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, letterSpacing: -0.2 }}>{SONGS.length} שירים בתור</div>
-          <div className="num" style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>1 ש' 32 ד'</div>
-        </div>
-        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 7 }}>
-          {SONGS.map((s, i) => {
-            const tile = [PB.orange, PB.pink, PB.orange, PB.pink];
-            const p = tile[i % tile.length];
-            return (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: 11,
-                background: T.surface, border: T.border, borderRadius: 12,
-                padding: "9px 12px",
-              }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: 9,
-                  background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{i === 0
-                  ? <Icon name="play" size={13} color={p.deep}/>
-                  : <Icon name="music" size={14} color={p.deep} w={1.35}/>}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.t}</div>
-                  <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500 }}>{s.a}</div>
-                </div>
-                <div className="num" style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>{s.len}</div>
-              </div>
-            );
-          })}
-        </div>
+        <div style={{ flex: 1 }}/>
+        <Btn T={T} icon="play" onClick={open} disabled={!isValid}>פתחי בספוטיפיי</Btn>
       </div>
       <HomeBar/>
     </>
