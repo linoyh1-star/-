@@ -69,7 +69,12 @@ const SKINS = {
   pink:   { accent: "#EAA0BA", accentDeep: "#C75E82", accentSoft: "#F9E8EE", onAccent: "#1A1A1A" },
   ink:    { accent: "#1A1A1A", accentDeep: "#000000", accentSoft: "#ECEAE8", onAccent: "#FFFFFF" },
 };
-const PB = SKINS; // alias for cross-skin access
+// PB — palette using design's exact property names (main/deep/soft/on)
+const PB = {
+  orange: { main: "#E8512A", deep: "#C73E1C", soft: "#FBE4DB", on: "#FFFFFF" },
+  pink:   { main: "#EAA0BA", deep: "#C75E82", soft: "#F9E8EE", on: "#1A1A1A" },
+  ink:    { main: "#1A1A1A", deep: "#000000", soft: "#ECEAE8", on: "#FFFFFF" },
+};
 
 const skin = (name) => ({ ...T_BASE, ...SKINS[name], _skin: name });
 
