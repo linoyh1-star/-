@@ -80,8 +80,8 @@ const skin = (name) => ({ ...T_BASE, ...SKINS[name], _skin: name });
 
 // per-screen skin assignment
 const SCREEN_SKIN = {
-  welcome: "orange", username: "orange",
-  event: "pink", nameEvent: "pink",
+  welcome: "orange", smsVerify: "orange", username: "orange",
+  event: "pink", nameEvent: "pink", slideshow: "pink",
   bachHome: "ink", qrjoin: "ink", comingSoon: "ink",
   checklist: "orange", playlist: "ink", budget: "orange",
   games: "ink", game: "ink",
@@ -346,12 +346,12 @@ function ScreenWelcome({ T, onNext }) {
 
         {/* Hero */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <Eyebrow T={T}>ברוכה הבאה</Eyebrow>
-          <h1 style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.12, margin: "12px 0 0", letterSpacing: -0.8 }}>
-            מה קורה,<br/>נשמות שלי?
+          <Eyebrow T={T}>ברוכים הבאים!</Eyebrow>
+          <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.15, margin: "12px 0 0", letterSpacing: -0.6 }}>
+            איזה כיף<br/>שהצטרפתם.ן
           </h1>
-          <p style={{ fontSize: 15.5, lineHeight: 1.6, color: T.inkSoft, margin: "16px 0 0", maxWidth: 280, fontWeight: 500 }}>
-            פה מתחילים את הכיף. הזיני את הקוד שקיבלת במייל ויאללה.
+          <p style={{ fontSize: 15, lineHeight: 1.65, color: T.inkSoft, margin: "16px 0 0", maxWidth: 300, fontWeight: 500 }}>
+            לפני כל הכיף, הזינו את הקוד שנשלח לכם.ן למייל ממש כאן למטה.
           </p>
         </div>
 
@@ -400,6 +400,118 @@ function ScreenWelcome({ T, onNext }) {
         </Btn>
         <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
           עוד לא רכשת? <span style={{ color: T.accent, fontWeight: 700, borderBottom: `1.5px solid ${T.accentSoft}` }}>בואי נסדר את זה</span>
+        </div>
+      </div>
+      <HomeBar/>
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   SMS PHONE VERIFICATION (after email code)
+   ────────────────────────────────────────────────────────────── */
+const VALID_SMS_CODE = "654321";
+
+function ScreenSmsVerify({ T, onNext, onBack }) {
+  const [code, setCode] = React.useState(["", "", "", "", "", ""]);
+  const [seconds, setSeconds] = React.useState(45);
+  const inputsRef = React.useRef([]);
+  React.useEffect(() => { inputsRef.current[0]?.focus(); }, []);
+  React.useEffect(() => {
+    if (seconds <= 0) return;
+    const t = setTimeout(() => setSeconds(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [seconds]);
+
+  const setDigit = (i, v) => {
+    const clean = (v || "").replace(/[^0-9]/g, "");
+    if (!clean) { const next = [...code]; next[i] = ""; setCode(next); return; }
+    if (clean.length > 1) {
+      const next = [...code];
+      for (let k = 0; k < clean.length && i + k < 6; k++) next[i + k] = clean[k];
+      setCode(next);
+      inputsRef.current[Math.min(i + clean.length, 5)]?.focus(); return;
+    }
+    const next = [...code]; next[i] = clean; setCode(next);
+    if (i < 5) inputsRef.current[i + 1]?.focus();
+  };
+  const onKey = (i, e) => {
+    if (e.key === "Backspace") {
+      if (code[i]) { const next = [...code]; next[i] = ""; setCode(next); }
+      else if (i > 0) { inputsRef.current[i - 1]?.focus(); const n = [...code]; n[i-1]=""; setCode(n); }
+      e.preventDefault();
+    } else if (e.key === "ArrowLeft" && i < 5) inputsRef.current[i + 1]?.focus();
+    else if (e.key === "ArrowRight" && i > 0) inputsRef.current[i - 1]?.focus();
+  };
+  const filled = code.every(c => c.length === 1);
+  const isValid = code.join("") === VALID_SMS_CODE;
+  const isWrong = filled && !isValid;
+
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, padding: "48px 24px 28px", display: "flex", flexDirection: "column" }}>
+        <TopBar T={T} onBack={onBack}/>
+
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <Eyebrow T={T}>אימות בטחוני</Eyebrow>
+          <h1 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.15, margin: "12px 0 0", letterSpacing: -0.5 }}>
+            אימות מספר<br/>הנייד שלכם.ן
+          </h1>
+          <p style={{ fontSize: 15, lineHeight: 1.65, color: T.inkSoft, margin: "16px 0 0", maxWidth: 300, fontWeight: 500 }}>
+            שלחנו קוד בן 6 ספרות למספר שמסרת ברכישה. הזיני אותו כדי להמשיך.<br/>
+            <span style={{ fontSize: 12, color: T.muted }}>(הקוד מבטיח שהאפליקציה לא מועברת למישהי אחרת.)</span>
+          </p>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>קוד מ-SMS</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: T.muted, fontWeight: 600 }}>
+              <Icon name="lock" size={14} color={T.muted} w={1.5}/> ***1234
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 8, direction: "ltr" }}>
+            {code.map((ch, i) => {
+              const active = !isWrong && (ch || (i === code.findIndex(c => !c)));
+              return (
+                <input key={i}
+                  ref={el => { inputsRef.current[i] = el; }}
+                  value={ch}
+                  onChange={e => setDigit(i, e.target.value)}
+                  onKeyDown={e => onKey(i, e)}
+                  onFocus={e => e.target.select()}
+                  inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*"
+                  style={{
+                    flex: 1, width: 0, height: 56, borderRadius: 13,
+                    background: isWrong ? "#FDEDE9" : T.surfaceAlt,
+                    boxShadow: isWrong ? `inset 0 0 0 1.5px ${T.accent}` :
+                              active ? `inset 0 0 0 1.5px ${T.accent}` :
+                              `inset 0 0 0 1px ${T.line}`,
+                    border: "none", textAlign: "center",
+                    fontSize: 24, fontWeight: 700, color: T.ink,
+                    outline: "none", padding: 0, direction: "ltr",
+                    fontVariantNumeric: "tabular-nums",
+                  }}/>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12.5, color: isWrong ? T.accent : T.inkSoft, fontWeight: 500 }}>
+            {isWrong ? "אופס, הקוד לא נכון. נסי שוב." : (
+              <>רמז (לדמו): <span style={{ color: T.accent, fontWeight: 700 }}>654321</span></>
+            )}
+          </div>
+        </div>
+
+        <Btn T={T} onClick={onNext} disabled={!isValid}>
+          {isValid ? "אישור והמשך" : isWrong ? "קוד שגוי" : "ממתינות לקוד..."}
+        </Btn>
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
+          {seconds > 0 ? (
+            <>לא קיבלת? אפשר לשלוח שוב בעוד <b className="num" style={{ color: T.ink }}>{seconds}</b> שניות</>
+          ) : (
+            <span onClick={() => setSeconds(45)} style={{ color: T.accent, fontWeight: 700, cursor: "pointer", borderBottom: `1.5px solid ${T.accentSoft}` }}>שלחי לי קוד חדש</span>
+          )}
         </div>
       </div>
       <HomeBar/>
@@ -633,6 +745,127 @@ function MiniQR({ size = 70, color = "#161616", bg = "#fff", radius = 10 }) {
       {cells.map((c, i) => <rect key={i} x={c.x*u+u*0.12} y={c.y*u+u*0.12} width={u*0.76} height={u*0.76} rx={u*0.25} fill={color}/>)}
       <F ox={0} oy={0}/><F ox={N-3} oy={0}/><F ox={0} oy={N-3}/>
     </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   BACH SLIDESHOW — feature tour before entering the host home
+   ────────────────────────────────────────────────────────────── */
+const BACH_SLIDES = [
+  { icon: "sparkle", pop: "pink",
+    title: "ברוכה הבאה לארגון",
+    desc: "אפליקציית חוגגות תוביל אותך צעד אחר צעד מהתכנון הראשון ועד היום הגדול." },
+  { icon: "list", pop: "orange",
+    title: "צ'קליסט חכם",
+    desc: "כל המשימות מסודרות לפי לוח זמנים — מ-6 חודשים לפני ועד היום עצמו. אפשר להוסיף ולהסיר." },
+  { icon: "wallet", pop: "orange",
+    title: "תקציב דינמי",
+    desc: "כל הוצאה מתחלקת אוטומטית בין הבנות. מסמנת מי שילמה ומי חייבת, וזה מתעדכן בזמן אמת." },
+  { icon: "music", pop: "pink",
+    title: "פלייליסט מספוטיפיי",
+    desc: "מדביקה קישור לפלייליסט שיצרת, וכל הבנות יכולות לפתוח אותו ישר במכשיר שלהן." },
+  { icon: "sparkle", pop: "pink",
+    title: "5 משחקים מוכנים",
+    desc: "פנטומימה, חידון על הכלה, מפה לאוזן ועוד — כולל מצב הקרנה לטלוויזיה או מקרן." },
+  { icon: "qr", pop: "orange",
+    title: "צירוף החברות מיד",
+    desc: "החברות סורקות QR מהמכשיר שלך ומצטרפות. את המארחת — רק את רואה את ארגז הכלים." },
+];
+
+function ScreenSlideshow({ T, slides, onDone, eventName }) {
+  const scrollRef = React.useRef(null);
+  const [idx, setIdx] = React.useState(0);
+  const isLast = idx === slides.length - 1;
+
+  const goTo = (newIdx) => {
+    const clamped = Math.max(0, Math.min(slides.length - 1, newIdx));
+    const w = scrollRef.current?.clientWidth || 0;
+    scrollRef.current?.scrollTo({ left: clamped * w, behavior: "smooth" });
+  };
+  const onScroll = () => {
+    const el = scrollRef.current; if (!el) return;
+    const w = el.clientWidth; if (!w) return;
+    const newIdx = Math.round(el.scrollLeft / w);
+    if (newIdx !== idx) setIdx(newIdx);
+  };
+
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, paddingTop: 48, paddingBottom: 28, display: "flex", flexDirection: "column" }}>
+        {/* Header — skip on left, brand on right */}
+        <div style={{ padding: "0 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: T.accent,
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="sparkle" size={15} color={T.onAccent} w={1.6}/>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: -0.2 }}>חוגגות</div>
+          </div>
+          <button onClick={onDone} style={{
+            background: "transparent", border: "none",
+            fontSize: 13, fontWeight: 600, color: T.inkSoft,
+            cursor: "pointer", fontFamily: T.font, padding: "8px 4px",
+          }}>דלגי</button>
+        </div>
+
+        {/* Slides scroller (LTR for predictable scroll math) */}
+        <div ref={scrollRef} onScroll={onScroll} style={{
+          flex: 1, overflowX: "auto", overflowY: "hidden",
+          display: "flex", scrollSnapType: "x mandatory",
+          scrollbarWidth: "none", direction: "ltr", WebkitOverflowScrolling: "touch",
+        }}>
+          {slides.map((s, i) => {
+            const p = PB[s.pop || "pink"];
+            return (
+              <div key={i} dir="rtl" style={{
+                minWidth: "100%", scrollSnapAlign: "start",
+                padding: "20px 28px",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                textAlign: "center",
+              }}>
+                <div style={{
+                  width: 124, height: 124, borderRadius: 32,
+                  background: p.soft, border: T.border, boxShadow: T.shadow,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 28,
+                }}>
+                  <Icon name={s.icon} size={56} color={p.deep} w={1.5}/>
+                </div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 1.8, textTransform: "uppercase", color: p.deep, marginBottom: 8 }}>
+                  שלב {i + 1} / {slides.length}
+                </div>
+                <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: -0.5, lineHeight: 1.18 }}>{s.title}</h1>
+                <p style={{ fontSize: 15.5, color: T.inkSoft, lineHeight: 1.65, fontWeight: 500, marginTop: 14, maxWidth: 300 }}>
+                  {s.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Dots */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 7, padding: "14px 0 12px" }}>
+          {slides.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)} aria-label={`לשקופית ${i+1}`} style={{
+              width: i === idx ? 28 : 8, height: 8,
+              borderRadius: 4,
+              background: i === idx ? T.accent : T.lineStrong,
+              border: "none", padding: 0, cursor: "pointer",
+              transition: "all 250ms",
+            }}/>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div style={{ padding: "0 22px" }}>
+          <Btn T={T} onClick={isLast ? onDone : () => goTo(idx + 1)}>
+            {isLast ? `כניסה ל${eventName || "הרווקות של מאיה"}` : "הבא"}
+          </Btn>
+        </div>
+      </div>
+      <HomeBar/>
+    </>
   );
 }
 
@@ -2004,11 +2237,13 @@ function App() {
   const T = skin(skinName);
 
   let content;
-  if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("username")}/>;
-  else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("welcome")} name={name} setName={setName}/>;
+  if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")}/>;
+  else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")}/>;
+  else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("smsVerify")} name={name} setName={setName}/>;
   else if (screen === "event") content = <ScreenEventPicker T={T} onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent}/>;
   else if (screen === "nameEvent") content = <ScreenNameEvent T={T} eventId={event} eventName={eventName} setEventName={setEventName}
-    onNext={() => setScreen(event === "bach" ? "bachHome" : "comingSoon")} onBack={() => setScreen("event")}/>;
+    onNext={() => setScreen(event === "bach" ? "slideshow" : "comingSoon")} onBack={() => setScreen("event")}/>;
+  else if (screen === "slideshow") content = <ScreenSlideshow T={T} slides={BACH_SLIDES} eventName={eventName} onDone={() => setScreen("bachHome")}/>;
   else if (screen === "bachHome") content = <ScreenBachHome T={T} onNav={nav} user={{ name }} eventName={eventName}/>;
   else if (screen === "qrjoin") content = <ScreenQRJoin T={T} onBack={() => setScreen("bachHome")}/>;
   else if (screen === "checklist") content = <ScreenChecklist T={T} onBack={() => setScreen("bachHome")}/>;
