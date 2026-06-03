@@ -956,7 +956,7 @@ function MockupHome({ T }) {
     { t: "צ'קליסט", s: "ארגון המסיבה", badge: "5/30", icon: "list", p: PB.orange },
     { t: "פלייליסט", s: "מחובר לספוטיפיי", badge: "קישור", icon: "music", p: PB.pink },
     { t: "תקציב", s: "מי חייבת כמה", badge: "₪6,650", icon: "wallet", p: PB.orange },
-    { t: "משחקים", s: "להקרנה לכולן", badge: "5", icon: "sparkle", p: PB.pink },
+    { t: "משחקים", s: "להקרנה לכולן", badge: "6", icon: "sparkle", p: PB.pink },
   ];
   return (
     <PhoneMockup T={T}>
@@ -1197,34 +1197,30 @@ function MockupPlaylist({ T }) {
 /* ───── Mockup 5: Games ───── */
 function MockupGames({ T }) {
   const games = [
-    { t: "מפה לאוזן", s: "קריאת שפתיים בזוג", p: PB.orange },
-    { t: "פנטומימה", s: "להעביר בלי מילים", p: PB.pink },
-    { t: "חידון על הכלה", s: "מי מכירה הכי טוב?", p: PB.orange },
-    { t: "שאלון עם החתן", s: "כמה הם מכירים?", p: PB.pink },
+    { t: "מפה לאוזן", s: "קריאת שפתיים בזוג", p: PB.orange, ic: "clock" },
+    { t: "בלי לומר מילה", s: "פנטומימה על מילים", p: PB.pink, ic: "clock" },
+    { t: "שאלון עם החתן", s: "כמה הוא מכיר אותך?", p: PB.orange, ic: "users" },
+    { t: "חידון על הכלה", s: "מי מכירה הכי טוב?", p: PB.pink, ic: "star" },
+    { t: "Never Have I Ever", s: "משחק שתייה", p: PB.orange, ic: "users" },
+    { t: "Fuck Marry Kill", s: "3 אופציות, החלטה", p: PB.pink, ic: "ring" },
   ];
   return (
     <PhoneMockup T={T}>
       <MiniTopBar T={T} title="משחקים"/>
-      <div style={{ fontSize: 14, fontWeight: 800, marginTop: 4 }}>במה משחקים?</div>
-      {/* projection note dark */}
-      <div style={{ background: "#161616", color: "#fff", borderRadius: 8, padding: "5px 8px",
-        marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
-        <div style={{ width: 12, height: 9, border: "1px solid #fff", borderRadius: 2 }}/>
-        <MiniBar w={120} h={3} bg="rgba(255,255,255,0.7)"/>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, marginTop: 4 }}>במה משחקים?</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
         {games.map((g, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 7,
-            background: "#fff", border: T.border, borderRadius: 8, padding: "6px 7px" }}>
-            <div style={{ width: 26, height: 26, borderRadius: 7, background: g.p.soft,
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="sparkle" size={14} color={g.p.deep} w={1.4}/>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6,
+            background: "#fff", border: T.border, borderRadius: 7, padding: "5px 6px" }}>
+            <div style={{ width: 22, height: 22, borderRadius: 6, background: g.p.soft,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon name={g.ic} size={12} color={g.p.deep} w={1.4}/>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 800 }}>{g.t}</div>
-              <div style={{ fontSize: 7.5, color: "#6B6764", marginTop: 1 }}>{g.s}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 8.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.t}</div>
+              <div style={{ fontSize: 7, color: "#6B6764", marginTop: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.s}</div>
             </div>
-            <Icon name="chevL" size={10} color="#A7A39F" w={1.5}/>
+            <Icon name="chevL" size={9} color="#A7A39F" w={1.5}/>
           </div>
         ))}
       </div>
@@ -1287,7 +1283,7 @@ const BACH_SLIDES = [
     desc: "כל הוצאה מתחלקת אוטומטית. רואים מי שילמה, מי חייבת, וכמה חסר." },
   { Mockup: MockupPlaylist,  pop: "pink",   title: "פלייליסט מספוטיפיי",
     desc: "מדביקה קישור לפלייליסט שלך — והוא נפתח באירוע במכשיר של כולן." },
-  { Mockup: MockupGames,     pop: "pink",   title: "5 משחקים מוכנים",
+  { Mockup: MockupGames,     pop: "pink",   title: "6 משחקים מוכנים",
     desc: "פנטומימה, חידון על הכלה, מפה לאוזן ועוד — עם מצב הקרנה למסך גדול." },
   { Mockup: MockupJoin,      pop: "orange", title: "צירוף החברות מיד",
     desc: "כל אחת סורקת QR מהמכשיר שלה ומצטרפת — בלי הורדת אפליקציה." },
@@ -1391,7 +1387,7 @@ const HOST_CATS = [
   { id: "checklist", t: "צ'קליסט", s: "ארגון המסיבה",      icon: "list",    pop: "pink",   badge: "0/30" },
   { id: "playlist",  t: "פלייליסט", s: "מחובר לספוטיפיי",   icon: "music",   pop: "orange", badge: "6 שירים" },
   { id: "budget",    t: "תקציב",   s: "מי חייבת כמה",      icon: "wallet",  pop: "ink",    badge: "₪6,650" },
-  { id: "games",     t: "משחקים",  s: "להקרנה לכולן",      icon: "sparkle", pop: "pink",   badge: "5 משחקים" },
+  { id: "games",     t: "משחקים",  s: "להקרנה לכולן",      icon: "sparkle", pop: "pink",   badge: "6 משחקים" },
 ];
 
 function ScreenBachHome({ T, onNav, user, eventName }) {
@@ -2151,41 +2147,25 @@ const TIMER_DECKS = {
     ],
   },
   charades: { label: "להציג בפנטומימה", headline: "בלי לומר מילה",
-    images: true,
     rules: [
       "זוג נגד זוג — אפשר יותר משני זוגות.",
       "שחקנית א' עומדת עם הגב למסך.",
-      "שחקנית ב' רואה את התמונה ומציגה בפנטומימה בלבד.",
+      "שחקנית ב' רואה את המילה ומציגה בפנטומימה בלבד.",
       "מותר: להגזים, להשתטות. אסור: לדבר, גם לא אפקטים קוליים.",
-      "2 דקות לכל סבב, 2 סבבים. בנק התמונות מתחדש בין סבב לסבב.",
+      "2 דקות לסבב. בנק המילים מתחדש בין סבב לסבב.",
     ],
     rounds: 2, secondsPerRound: 120,
     prompts: [
-      { he: "סושי", en: "sushi" }, { he: "פלאפל", en: "falafel" },
-      { he: "עוגת שוקולד", en: "chocolate cake" }, { he: "ארטישוק", en: "artichoke" },
-      { he: "מקרון צרפתי", en: "macaron" }, { he: "שווארמה", en: "shawarma" },
-      { he: "קרם ברולה", en: "creme brulee" }, { he: "סביח", en: "sabich pita" },
-      { he: "ג'חנון", en: "jachnun" }, { he: "ענבים", en: "grapes" },
-      { he: "פסטה", en: "pasta" }, { he: "סלט קיסר", en: "caesar salad" },
-      { he: "פיצה", en: "pizza" }, { he: "מטריה", en: "umbrella" },
-      { he: "גיטרה", en: "guitar" }, { he: "מכונת כביסה", en: "washing machine" },
-      { he: "תמי 4", en: "water dispenser" }, { he: "סודה סטרים", en: "sodastream" },
-      { he: "טלסקופ", en: "telescope" }, { he: "מזוודה", en: "suitcase" },
-      { he: "מדוזה", en: "jellyfish" }, { he: "סופרמן", en: "superman" },
-      { he: "מכונת קפה", en: "coffee machine" }, { he: "שק שינה", en: "sleeping bag" },
-      { he: "מאוורר", en: "fan" }, { he: "שימפנזה", en: "chimpanzee" },
-      { he: "בלנדר", en: "blender" }, { he: "ברק בשמיים", en: "lightning sky" },
-      { he: "קשת בענן", en: "rainbow" }, { he: "הר געש מתפרץ", en: "volcano eruption" },
-      { he: "מדרגות נעות", en: "escalator" }, { he: "זברה", en: "zebra" },
-      { he: "גמל", en: "camel" }, { he: "מקק", en: "cockroach" },
-      { he: "ביבי נתניהו", en: "politician suit" }, { he: "דנה אינטרנשיונל", en: "drag queen" },
-      { he: "מדורה", en: "bonfire" }, { he: "אוהל", en: "tent camping" },
-      { he: "טלטביז", en: "teletubbies" }, { he: "מגבונים לחים", en: "wet wipes" },
-      { he: "ספיידרמן", en: "spiderman" }, { he: "בננה", en: "banana" },
-      { he: "מסטיק בזוקה", en: "bubblegum" }, { he: "פינים של באולינג", en: "bowling pins" },
-      { he: "דולפין", en: "dolphin" }, { he: "מצנם", en: "toaster" },
-      { he: "שדכן", en: "matchmaker" }, { he: "מגדל אייפל", en: "eiffel tower" },
-      { he: "אבו נפחא", en: "pufferfish" }, { he: "אסלה", en: "toilet bowl" },
+      "סושי", "פלאפל", "עוגת שוקולד", "ארטישוק", "מקרון צרפתי",
+      "שווארמה", "קרם ברולה", "סביח", "ג'חנון", "ענבים",
+      "פסטה", "סלט קיסר", "פיצה", "מטריה", "גיטרה",
+      "מכונת כביסה", "תמי 4", "סודה סטרים", "טלסקופ", "מזוודה",
+      "מדוזה", "סופרמן", "מכונת קפה", "שק שינה", "מאוורר",
+      "שימפנזה", "בלנדר", "ברק בשמיים", "קשת בענן", "הר געש מתפרץ",
+      "מדרגות נעות", "זברה", "גמל", "מקק", "ביבי נתניהו",
+      "דנה אינטרנשיונל", "מדורה", "אוהל", "טלטביז", "מגבונים לחים",
+      "ספיידרמן", "בננה", "מסטיק בזוקה", "פינים של באולינג", "דולפין",
+      "מצנם", "שדכן", "מגדל אייפל", "אבו נפחא", "אסלה",
     ],
   },
 };
@@ -2221,18 +2201,17 @@ const CARD_DECKS = {
       "ברגע שכולן סימנו, ממשיכות לכרטיס הבא.",
     ],
     prompts: [
-      ["השכן הסקסי", "המתאמן בג'ים", "החבר של אח שלך"],
-      ["מורה ליוגה", "פסיכולוג", "מורה לסלסה"],
-      ["שף מסעדה", "מציל בבריכה", "טייס אל־על"],
-      ["ראיין גוסלינג", "ראיין ריינולדס", "ראיין סקוט"],
-      ["טום קרוז", "ג'ורג' קלוני", "מתיו מקונהיי"],
-      ["המנכ\"ל בהייטק", "האמן הבוהמייני", "המתכנת המסתורי"],
-      ["ספיידרמן", "באטמן", "סופרמן"],
-      ["אדוארד קאלן", "ג'ייקוב בלאק", "כריסטיאן גריי"],
-      ["איש העסקים", "מלצר בבר", "מתאגרף"],
-      ["וטרינר", "מציל", "טייס"],
-      ["הברטנדר", "השליח של פיצה", "מאמן הטניס"],
-      ["דייט מטינדר", "אקס מהתיכון", "החתן של החברה"],
+      ["הארי פוטר", "דמבלדור", "רון וויזלי"],
+      ["בראד פיט", "בראדלי קופר", "לאונרדו דיקפריו"],
+      ["פאר טסי", "איתי לוי", "ששון שאולוב"],
+      ["עידן עמדי", "ליאור רז", "צחי הלוי"],
+      ["דני קושמרו", "ברהנו טגניה", "תמיר סטיינמן"],
+      ["טיילור סוויפט", "ביונסה", "מיילי סיירוס"],
+      ["מיקי מאוס", "דונלד דאק", "גופי"],
+      ["ג'סטין ביבר", "ג'סטין טימברלייק", "ברונו מארס"],
+      ["עומר אדם", "אייל גולן", "משה פרץ"],
+      ["נועה קירל", "עדי ביטי", "אגם בוחבוט"],
+      ["ישראל אהרוני", "חיים כהן", "אייל שני"],
     ],
   },
   nhie: { label: "אף פעם לא...", headline: "Never Have I Ever",
@@ -3243,13 +3222,47 @@ function CardGame({ T: parentT, game, onBack }) {
                   </div>
                 );
               })}
-              {/* Hint when complete */}
-              {fmkAllAssigned && (
-                <div style={{
-                  textAlign: "center", fontSize: big ? "clamp(12px,1.4vw,18px)" : 11.5, fontWeight: 700,
-                  color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, marginTop: 2,
-                }}>✓ סימנת — אפשר להמשיך</div>
-              )}
+              {/* Results summary when complete */}
+              {fmkAllAssigned && (() => {
+                const letterColors = { F: PB.orange, M: PB.pink, K: PB.ink };
+                const inv = {};
+                Object.entries(currentFmk).forEach(([nameIdx, letter]) => { inv[letter] = prompt[nameIdx]; });
+                return (
+                  <div style={{
+                    marginTop: big ? 14 : 10,
+                    padding: big ? "clamp(14px,1.8vw,22px)" : "12px 13px",
+                    background: big ? "rgba(0,0,0,0.85)" : "#161616",
+                    borderRadius: big ? 16 : 12,
+                    border: big ? "1.5px solid rgba(255,255,255,0.25)" : "none",
+                  }}>
+                    <div style={{
+                      fontSize: big ? "clamp(10.5px,1.2vw,16px)" : 10, fontWeight: 800,
+                      color: "rgba(255,255,255,0.55)", letterSpacing: 1.6, textTransform: "uppercase",
+                      marginBottom: big ? 10 : 8, textAlign: "center",
+                    }}>✓ הבחירה שלך</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: big ? 8 : 6 }}>
+                      {["F", "M", "K"].map(letter => {
+                        const lc = letterColors[letter];
+                        return (
+                          <div key={letter} style={{
+                            display: "flex", alignItems: "center", gap: big ? 12 : 9,
+                            padding: big ? "clamp(8px,1.2vw,14px) clamp(10px,1.6vw,18px)" : "7px 10px",
+                            background: lc.main, color: lc.on,
+                            borderRadius: big ? 10 : 8,
+                          }}>
+                            <span style={{
+                              fontSize: big ? "clamp(15px,1.8vw,22px)" : 13, fontWeight: 800,
+                              background: "rgba(255,255,255,0.22)", color: lc.on,
+                              padding: big ? "3px 9px" : "2px 7px", borderRadius: 5,
+                            }}>{letter}</span>
+                            <span style={{ flex: 1, fontSize: big ? "clamp(16px,2vw,26px)" : 14.5, fontWeight: 800, letterSpacing: -0.2 }}>{inv[letter] || ""}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div style={{
@@ -3268,15 +3281,16 @@ function CardGame({ T: parentT, game, onBack }) {
               <Icon name="close" size={big ? 28 : 18} color="#fff" w={2.6}/>
             </div>
           )}
-          {/* Groom answer reveal + bride scoring — only for groomq when answers exist */}
-          {isGroomq && groomAnswerForPrompt && (
-            revealed[i] ? (
-              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: big ? 12 : 8 }}>
+          {/* Groomq: reveal answer (if loaded) + ✓/✗ marking */}
+          {isGroomq && (
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: big ? 12 : 8 }}>
+              {/* If groom answer is loaded and revealed, show it */}
+              {groomAnswerForPrompt && revealed[i] && (
                 <div style={{
                   width: "100%",
                   padding: big ? "clamp(16px,2vw,28px)" : "12px 14px",
                   background: big ? "rgba(255,255,255,0.95)" : PB.orange.soft,
-                  color: big ? PB.orange.deep : PB.orange.deep,
+                  color: PB.orange.deep,
                   border: big ? "none" : `1px solid ${PB.orange.main}55`,
                   borderRadius: big ? 18 : 12,
                   animation: "cardIn 280ms ease-out",
@@ -3288,60 +3302,64 @@ function CardGame({ T: parentT, game, onBack }) {
                     {groomAnswerForPrompt}
                   </div>
                 </div>
-                {groomMarks[i] ? (
-                  <div style={{
-                    padding: big ? "10px 16px" : "8px 14px",
-                    background: groomMarks[i] === "right" ? T.ok : PB.pink.main,
-                    color: groomMarks[i] === "right" ? "#fff" : PB.pink.on,
-                    borderRadius: 999, textAlign: "center",
-                    fontSize: big ? "clamp(13px,1.4vw,18px)" : 13, fontWeight: 800,
-                  }}>
-                    {groomMarks[i] === "right" ? "✓ נקודה לכלה" : "✗ פספסה — לגימה לכלה"}
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", gap: big ? 12 : 8 }}>
-                    <button onClick={() => {
-                      const next = { ...groomMarks, [i]: "wrong" };
-                      setGroomMarks(next);
-                      if (i + 1 >= total) setGroomSummary(true);
-                    }} style={{
-                      flex: 1,
-                      padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
-                      background: big ? "rgba(255,255,255,0.18)" : PB.pink.main,
-                      color: big ? "#fff" : PB.pink.on,
-                      border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
-                      borderRadius: T.radius,
-                      fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
-                    }}>✗ פספסה</button>
-                    <button onClick={() => {
-                      const next = { ...groomMarks, [i]: "right" };
-                      setGroomMarks(next);
-                      if (i + 1 >= total) setGroomSummary(true);
-                    }} style={{
-                      flex: 1,
-                      padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
-                      background: T.ok, color: "#fff",
-                      border: "none", borderRadius: T.radius,
-                      fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
-                    }}>✓ צדקה!</button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button onClick={() => setRevealed({ ...revealed, [i]: true })} style={{
-                marginTop: big ? 8 : 4,
-                padding: big ? "clamp(12px,1.4vw,20px) clamp(24px,3vw,40px)" : "10px 20px",
-                background: big ? "rgba(255,255,255,0.18)" : PB.orange.main,
-                color: "#fff",
-                border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
-                borderRadius: 999,
-                fontSize: big ? "clamp(13px,1.5vw,20px)" : 13, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
-                display: "flex", alignItems: "center", gap: 8,
-              }}>
-                <Icon name="check" size={big ? 18 : 14} color="#fff" w={2}/>
-                חשפי את תשובת החתן
-              </button>
-            )
+              )}
+
+              {/* Reveal button if answers loaded and not yet revealed */}
+              {groomAnswerForPrompt && !revealed[i] && (
+                <button onClick={() => setRevealed({ ...revealed, [i]: true })} style={{
+                  padding: big ? "clamp(12px,1.4vw,20px) clamp(24px,3vw,40px)" : "10px 20px",
+                  background: big ? "rgba(255,255,255,0.18)" : PB.orange.main,
+                  color: "#fff",
+                  border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
+                  borderRadius: 999,
+                  fontSize: big ? "clamp(13px,1.5vw,20px)" : 13, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8, alignSelf: "center",
+                }}>
+                  <Icon name="check" size={big ? 18 : 14} color="#fff" w={2}/>
+                  חשפי את תשובת החתן
+                </button>
+              )}
+
+              {/* ✓/✗ marking — ALWAYS available (works with or without groom answers) */}
+              {groomMarks[i] ? (
+                <div style={{
+                  padding: big ? "10px 16px" : "8px 14px",
+                  background: groomMarks[i] === "right" ? T.ok : PB.pink.main,
+                  color: groomMarks[i] === "right" ? "#fff" : PB.pink.on,
+                  borderRadius: 999, textAlign: "center",
+                  fontSize: big ? "clamp(13px,1.4vw,18px)" : 13, fontWeight: 800,
+                }}>
+                  {groomMarks[i] === "right" ? "✓ נקודה לכלה" : "✗ פספסה — לגימה לכלה"}
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: big ? 12 : 8 }}>
+                  <button onClick={() => {
+                    const next = { ...groomMarks, [i]: "wrong" };
+                    setGroomMarks(next);
+                    if (i + 1 >= total) setGroomSummary(true);
+                  }} style={{
+                    flex: 1,
+                    padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
+                    background: big ? "rgba(255,255,255,0.18)" : PB.pink.main,
+                    color: big ? "#fff" : PB.pink.on,
+                    border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
+                    borderRadius: T.radius,
+                    fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                  }}>✗ פספסה</button>
+                  <button onClick={() => {
+                    const next = { ...groomMarks, [i]: "right" };
+                    setGroomMarks(next);
+                    if (i + 1 >= total) setGroomSummary(true);
+                  }} style={{
+                    flex: 1,
+                    padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
+                    background: T.ok, color: "#fff",
+                    border: "none", borderRadius: T.radius,
+                    fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                  }}>✓ צדקה!</button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
