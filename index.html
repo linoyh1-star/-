@@ -37,6 +37,40 @@
 
 <script type="text/babel">
 /* ──────────────────────────────────────────────────────────────
+   URL HASH ENCODER — stateless data sharing between bride ↔ groom
+   - #groom=... → contains the questionnaire (bride sends this)
+   - #answers=... → contains groom's answers (groom sends back)
+   Encoded as URL-safe base64 of UTF-8 JSON (handles Hebrew).
+   ────────────────────────────────────────────────────────────── */
+const b64Encode = (obj) =>
+  btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64Decode = (str) => {
+  try {
+    let s = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    return JSON.parse(decodeURIComponent(escape(atob(s))));
+  } catch (e) { return null; }
+};
+const baseUrl = () => window.location.href.split("#")[0].split("?")[0];
+const buildGroomLink   = (data) => `${baseUrl()}#groom=${b64Encode(data)}`;
+const buildAnswersLink = (data) => `${baseUrl()}#answers=${b64Encode(data)}`;
+const openWhatsApp = (text) => {
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank", "noopener");
+};
+
+const GROOM_STORAGE_KEY = "chogegot_groom_answers";
+const saveGroomAnswers = (payload) => {
+  try { localStorage.setItem(GROOM_STORAGE_KEY, JSON.stringify({ ...payload, receivedAt: Date.now() })); } catch (e) {}
+};
+const loadGroomAnswers = () => {
+  try { const raw = localStorage.getItem(GROOM_STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch (e) { return null; }
+};
+const clearGroomAnswers = () => { try { localStorage.removeItem(GROOM_STORAGE_KEY); } catch (e) {} };
+
+/* ──────────────────────────────────────────────────────────────
    THEME — variant B "Love · Laugh · Get Lucky"
    White base + accent that shifts per screen (orange / pink / ink)
    ────────────────────────────────────────────────────────────── */
@@ -85,6 +119,7 @@ const SCREEN_SKIN = {
   bachHome: "ink", qrjoin: "ink", comingSoon: "ink",
   checklist: "orange", playlist: "ink", budget: "orange",
   games: "ink", game: "ink",
+  groomMode: "pink",
 };
 
 /* ──────────────────────────────────────────────────────────────
@@ -745,6 +780,127 @@ function MiniQR({ size = 70, color = "#161616", bg = "#fff", radius = 10 }) {
       {cells.map((c, i) => <rect key={i} x={c.x*u+u*0.12} y={c.y*u+u*0.12} width={u*0.76} height={u*0.76} rx={u*0.25} fill={color}/>)}
       <F ox={0} oy={0}/><F ox={N-3} oy={0}/><F ox={0} oy={N-3}/>
     </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   GROOM MODE — side entrance for the groom to answer the questionnaire
+   ────────────────────────────────────────────────────────────── */
+function ScreenGroomMode({ T, data, onSent }) {
+  const questions = data?.q || [];
+  const [answers, setAnswers] = React.useState(questions.map(() => ""));
+  const [sent, setSent] = React.useState(false);
+
+  const filledCount = answers.filter(a => a.trim()).length;
+  const allFilled = filledCount === questions.length && questions.length > 0;
+  const pct = questions.length ? Math.round((filledCount / questions.length) * 100) : 0;
+
+  const update = (i, v) => setAnswers(answers.map((a, idx) => idx === i ? v : a));
+
+  const submit = () => {
+    if (!allFilled) return;
+    const link = buildAnswersLink({
+      a: answers.map(s => s.trim()),
+      q: questions,
+      bn: data.bn || "הכלה",
+      en: data.en || "",
+      gid: data.gid || "groomq",
+    });
+    const msg = `היי ${data.bn || ""}, ענייתי על הכל. הנה התשובות שלי 💍\n${link}`;
+    setSent(true);
+    openWhatsApp(msg);
+  };
+
+  if (!questions.length) {
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 24px", display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>הקישור לא תקין</h1>
+          <p style={{ fontSize: 14, color: T.inkSoft, marginTop: 12, lineHeight: 1.5 }}>נראה שהשאלון פג או שהקישור נחתך באמצע. בקשי מהכלה לשלוח שאלון חדש.</p>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+        {/* Brand mini-header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 4 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: T.accent,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="sparkle" size={16} color={T.onAccent} w={1.6}/>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: -0.2 }}>חוגגות · שאלון לחתן</div>
+        </div>
+
+        {/* Hero */}
+        <div style={{ marginTop: 18 }}>
+          <Eyebrow T={T}>{data.en || "מסיבת רווקות"}</Eyebrow>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: "10px 0 0", letterSpacing: -0.4, lineHeight: 1.15 }}>
+            {data.bn ? `${data.bn} רוצה לדעת...` : "הכלה רוצה לדעת..."}
+          </h1>
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: T.inkSoft, marginTop: 10, fontWeight: 500 }}>
+            ענה על כל השאלות בקצרה (משפט-שניים) ולחץ "שלחי לכלה". התשובות יחזרו אליה אוטומטית.
+          </p>
+        </div>
+
+        {/* Progress */}
+        <div style={{ marginTop: 14, padding: "10px 14px", background: T.surfaceAlt, borderRadius: T.radius,
+          display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="num" style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>
+            {filledCount} / {questions.length} שאלות
+          </div>
+          <div className="num" style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{pct}%</div>
+        </div>
+
+        {/* Questions */}
+        <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 14, paddingBottom: 8 }}>
+          {questions.map((q, i) => (
+            <div key={i}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: 999,
+                  background: answers[i].trim() ? T.accent : T.surfaceAlt,
+                  color: answers[i].trim() ? T.onAccent : T.inkSoft,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 800, flexShrink: 0,
+                }}>{i + 1}</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, color: T.ink, lineHeight: 1.35 }}>{q}</div>
+              </div>
+              <textarea
+                value={answers[i]}
+                onChange={e => update(i, e.target.value)}
+                placeholder="התשובה שלי..."
+                rows={2}
+                style={{
+                  width: "100%", padding: "11px 13px", borderRadius: T.radius,
+                  border: `1px solid ${answers[i].trim() ? T.accent : T.lineStrong}`,
+                  background: T.surface, color: T.ink,
+                  fontSize: 14, fontWeight: 500, fontFamily: T.font,
+                  outline: "none", resize: "vertical", minHeight: 50,
+                  boxShadow: T.shadowSm, direction: "rtl",
+                }}/>
+            </div>
+          ))}
+        </div>
+
+        {sent ? (
+          <div style={{ padding: "14px 16px", background: PB.orange.soft, color: PB.orange.deep,
+            borderRadius: T.radius, fontSize: 13.5, fontWeight: 700, textAlign: "center" }}>
+            ✓ נשלח! חזור לוואטסאפ ולחץ "שלח" כדי שיגיע לכלה.
+          </div>
+        ) : (
+          <Btn T={T} icon="send" onClick={submit} disabled={!allFilled}>
+            {allFilled ? "שלחי לכלה בוואטסאפ" : `עוד ${questions.length - filledCount} שאלות`}
+          </Btn>
+        )}
+      </div>
+      <HomeBar/>
+    </>
   );
 }
 
@@ -2088,7 +2244,7 @@ function GStat({ T, label, value }) {
   );
 }
 
-function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, מתחילות" }) {
+function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, מתחילות", extras }) {
   const p = PB[game.pop];
   return (
     <>
@@ -2129,6 +2285,7 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
           </div>
         </Card>
 
+        {extras}
         <div style={{ flex: 1, minHeight: 16 }}/>
         <Btn T={{ ...T, accent: p.main, onAccent: p.on }} onClick={onStart}>{startLabel}</Btn>
       </div>
@@ -2451,6 +2608,8 @@ function CardGame({ T: parentT, game, onBack }) {
   const [phase, setPhase] = React.useState("intro");
   const [i, setI] = React.useState(0);
   const [projecting, setProjecting] = React.useState(false);
+  const [revealed, setRevealed] = React.useState({});
+  const [groomData, setGroomData] = React.useState(loadGroomAnswers);
 
   const total = deck.prompts.length;
   const prompt = deck.prompts[i];
@@ -2458,10 +2617,89 @@ function CardGame({ T: parentT, game, onBack }) {
   const prev = () => setI(x => Math.max(x - 1, 0));
   const atStart = i === 0, atEnd = i === total - 1;
   const isNhie = game.id === "nhie";
+  const isGroomq = game.id === "groomq";
+
+  // Groom answer lookup — only meaningful for groomq game
+  const groomAnswerForPrompt = (() => {
+    if (!isGroomq || !groomData?.a) return null;
+    // match by question text (since order may differ if questions were edited)
+    const qList = groomData.q || [];
+    const idx = qList.indexOf(prompt);
+    if (idx >= 0) return groomData.a[idx];
+    // fallback to positional match
+    return groomData.a[i] || null;
+  })();
+
+  const sendToGroom = () => {
+    const link = buildGroomLink({
+      q: deck.prompts,
+      bn: window.localStorage.getItem("chogegot_state") ? (JSON.parse(localStorage.getItem("chogegot_state"))?.name || "הכלה") : "הכלה",
+      en: window.localStorage.getItem("chogegot_state") ? (JSON.parse(localStorage.getItem("chogegot_state"))?.eventName || "") : "",
+      gid: "groomq",
+    });
+    const bride = JSON.parse(localStorage.getItem("chogegot_state") || "{}")?.name || "הכלה";
+    const msg = `היי 💍 אני מארגנת מסיבת רווקות באפליקציית "חוגגות" ויש בה שאלון מצחיק עליך. תוכל למלא? קח דקה ותענה לכל אחת בקצרה:\n\n${link}\n\nתודה! - ${bride}`;
+    openWhatsApp(msg);
+  };
+
+  const clearAndResend = () => {
+    if (confirm("למחוק את התשובות הקיימות ולשלוח שאלון חדש?")) {
+      clearGroomAnswers(); setGroomData(null); setRevealed({});
+    }
+  };
+
+  const groomExtras = isGroomq ? (
+    groomData?.a?.length ? (
+      <Card T={T} padding={"12px 14px"} style={{ marginTop: 14, background: PB.orange.soft, border: `1px solid ${PB.orange.main}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 999, background: PB.orange.main,
+            color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="check" size={18} color="#fff" w={2.2}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: PB.orange.deep }}>תשובות החתן נטענו</div>
+            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 1 }}>
+              {groomData.a.length} תשובות · במשחק תוכלי לחשוף כל אחת
+            </div>
+          </div>
+          <button onClick={clearAndResend} style={{
+            background: "transparent", border: "none", fontSize: 11.5, fontWeight: 700,
+            color: PB.orange.deep, cursor: "pointer", padding: "4px 8px",
+            textDecoration: "underline", fontFamily: T.font,
+          }}>שלחי שאלון חדש</button>
+        </div>
+      </Card>
+    ) : (
+      <Card T={T} padding={"14px 16px"} style={{ marginTop: 14, background: T.surfaceAlt, border: `1px dashed ${T.lineStrong}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 11, background: PB.pink.soft, color: PB.pink.deep,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="send" size={20} color={PB.pink.deep} w={1.6}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: T.ink }}>שלחי שאלון לחתן בווטסאפ</div>
+            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 1 }}>
+              הוא ימלא והתשובות יחזרו אלייך אוטומטית.
+            </div>
+          </div>
+        </div>
+        <button onClick={sendToGroom} style={{
+          marginTop: 11, width: "100%", padding: "11px 14px",
+          background: PB.pink.main, color: PB.pink.on, border: "none", borderRadius: T.radius,
+          fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}>
+          <Icon name="share" size={16} color={PB.pink.on} w={1.6}/>
+          שלחי שאלון לחתן
+        </button>
+      </Card>
+    )
+  ) : null;
 
   if (phase === "intro")
     return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")}
-      startLabel={isNhie ? "מוזגות ומתחילות" : "מתחילות שאלון"}/>;
+      startLabel={isNhie ? "מוזגות ומתחילות" : (isGroomq && !groomData?.a?.length ? "מתחילות גם בלי תשובות" : "מתחילות שאלון")}
+      extras={groomExtras}/>;
 
   const body = (big) => (
     <>
@@ -2508,6 +2746,42 @@ function CardGame({ T: parentT, game, onBack }) {
               fontSize: big ? "clamp(13px,1.5vw,20px)" : 12, fontWeight: 600,
               color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.4,
             }}>מי שכן — לוגמת</div>
+          )}
+          {/* Groom answer reveal — only for groomq when answers exist */}
+          {isGroomq && groomAnswerForPrompt && (
+            revealed[i] ? (
+              <div style={{
+                width: "100%",
+                marginTop: big ? 8 : 4,
+                padding: big ? "clamp(16px,2vw,28px)" : "12px 14px",
+                background: big ? "rgba(255,255,255,0.95)" : PB.orange.soft,
+                color: big ? PB.orange.deep : PB.orange.deep,
+                border: big ? "none" : `1px solid ${PB.orange.main}55`,
+                borderRadius: big ? 18 : 12,
+                animation: "cardIn 280ms ease-out",
+              }}>
+                <div style={{ fontSize: big ? "clamp(11px,1.2vw,16px)" : 10.5, fontWeight: 800,
+                  letterSpacing: 1.2, textTransform: "uppercase", opacity: 0.75 }}>תשובת החתן</div>
+                <div style={{ fontSize: big ? "clamp(22px,3vw,42px)" : 16, fontWeight: 700,
+                  lineHeight: 1.35, marginTop: big ? 6 : 4, color: big ? "#1A1A1A" : PB.orange.deep }}>
+                  {groomAnswerForPrompt}
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setRevealed({ ...revealed, [i]: true })} style={{
+                marginTop: big ? 8 : 4,
+                padding: big ? "clamp(12px,1.4vw,20px) clamp(24px,3vw,40px)" : "10px 20px",
+                background: big ? "rgba(255,255,255,0.18)" : PB.orange.main,
+                color: big ? "#fff" : "#fff",
+                border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
+                borderRadius: 999,
+                fontSize: big ? "clamp(13px,1.5vw,20px)" : 13, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                display: "flex", alignItems: "center", gap: 8,
+              }}>
+                <Icon name="check" size={big ? 18 : 14} color="#fff" w={2}/>
+                חשפי את תשובת החתן
+              </button>
+            )
           )}
         </div>
       </div>
@@ -2564,8 +2838,29 @@ function App() {
   const [event, setEvent] = React.useState(null);
   const [eventName, setEventName] = React.useState("");
   const [gameId, setGameId] = React.useState("lipread");
+  const [groomData, setGroomData] = React.useState(null);
+  const [toast, setToast] = React.useState(null);
 
+  // hash detection — runs ONCE on mount before anything else
   React.useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash.startsWith("groom=")) {
+      const data = b64Decode(hash.slice(6));
+      if (data && Array.isArray(data.q)) {
+        setGroomData(data);
+        setScreen("groomMode");
+        return; // skip localStorage restore — groom uses a fresh session
+      }
+    } else if (hash.startsWith("answers=")) {
+      const data = b64Decode(hash.slice(8));
+      if (data && Array.isArray(data.a)) {
+        saveGroomAnswers(data);
+        setToast({ msg: "✓ תשובות החתן נטענו", type: "ok" });
+        // clean URL so refresh doesn't re-trigger
+        try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+      }
+    }
+    // normal session restore (only when not in groom mode)
     try {
       const raw = localStorage.getItem("chogegot_state");
       if (raw) {
@@ -2578,6 +2873,13 @@ function App() {
       }
     } catch (e) {}
   }, []);
+
+  // auto-dismiss toast
+  React.useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3800);
+    return () => clearTimeout(t);
+  }, [toast]);
   React.useEffect(() => {
     try { localStorage.setItem("chogegot_state", JSON.stringify({ screen, name, event, eventName, gameId })); } catch (e) {}
   }, [screen, name, event, eventName, gameId]);
@@ -2617,6 +2919,7 @@ function App() {
     else content = <CardGame T={T} game={g} onBack={back}/>;
   }
   else if (screen === "comingSoon") content = <ScreenComingSoon T={T} eventId={event} onBack={() => setScreen("event")}/>;
+  else if (screen === "groomMode") content = <ScreenGroomMode T={T} data={groomData} onSent={() => {}}/>;
 
   return (
     <>
@@ -2625,6 +2928,21 @@ function App() {
           {content}
         </div>
       </PhoneShell>
+      {/* Toast notification (groom answers loaded, etc.) */}
+      {toast && (
+        <div style={{
+          position: "fixed", top: 28, left: "50%", transform: "translateX(-50%)",
+          zIndex: 1100,
+          padding: "12px 22px",
+          background: "#1A1A1A", color: "#fff",
+          border: "none", borderRadius: 999,
+          fontSize: 13.5, fontWeight: 700,
+          boxShadow: "0 12px 32px -10px rgba(20,18,16,0.5)",
+          fontFamily: '"Assistant", system-ui, sans-serif',
+          animation: "screenIn 280ms ease-out",
+        }}>{toast.msg}</div>
+      )}
+
       <button onClick={reset} title="התחל מההתחלה" style={{
         position: "fixed", top: 16, left: 16, zIndex: 1000,
         padding: "8px 12px", background: "rgba(20,18,16,0.85)", color: "#fff",
