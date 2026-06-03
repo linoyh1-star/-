@@ -3628,17 +3628,46 @@ function App() {
     const t = setTimeout(() => setToast(null), 3800);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Firebase Auth state — UID for Firestore sync
+  const [uid, setUid] = React.useState(null);
+  React.useEffect(() => {
+    if (!window.FB) return;
+    const off = fbOnAuthChange(async (user) => {
+      setUid(user?.uid || null);
+      if (user) {
+        // First-time-on-this-device load: pull from cloud if exists
+        const cloud = await fbLoadUserData(user.uid);
+        if (cloud) {
+          if (cloud.name) setName(cloud.name);
+          if (cloud.event) setEvent(cloud.event);
+          if (cloud.eventName) setEventName(cloud.eventName);
+          if (cloud.screen && cloud.screen !== "welcome" && cloud.screen !== "smsVerify") setScreen(cloud.screen);
+          if (cloud.gameId) setGameId(cloud.gameId);
+        }
+      }
+    });
+    return () => off && off();
+  }, []);
+
+  // Persist to localStorage (always) + Firestore (when authenticated, debounced)
   React.useEffect(() => {
     try { localStorage.setItem("chogegot_state", JSON.stringify({ screen, name, event, eventName, gameId })); } catch (e) {}
-  }, [screen, name, event, eventName, gameId]);
+    if (!uid) return;
+    const t = setTimeout(() => {
+      fbSaveUserData(uid, { screen, name, event, eventName, gameId, phone: fbCurrentUser()?.phoneNumber || null, lastSeen: Date.now() });
+    }, 1500); // debounce 1.5s
+    return () => clearTimeout(t);
+  }, [screen, name, event, eventName, gameId, uid]);
 
   const nav = (to, params = {}) => {
     if (params.gameId) setGameId(params.gameId);
     setScreen(to);
   };
-  const reset = () => {
+  const reset = async () => {
     setScreen("welcome"); setName(""); setEvent(null); setEventName("");
     localStorage.removeItem("chogegot_state");
+    try { await fbSignOut(); } catch (e) {}
   };
 
   // pick skin
