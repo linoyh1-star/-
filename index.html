@@ -30,10 +30,36 @@
 </head>
 <body>
 <div id="root"></div>
+<div id="recaptcha-container"></div>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- Firebase SDK (compat — exposes global `firebase` for inline use) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  // Initialize Firebase ASAP, before React mounts
+  const firebaseConfig = {
+    apiKey: "AIzaSyDAoM3oSOYmMdyd4-rJ8TYNh1hQA-KgofA",
+    authDomain: "game-app-c8da5.firebaseapp.com",
+    projectId: "game-app-c8da5",
+    storageBucket: "game-app-c8da5.firebasestorage.app",
+    messagingSenderId: "844727557377",
+    appId: "1:844727557377:web:7945ebf5b6b2b46a708f00",
+    measurementId: "G-62NJB1QLK9"
+  };
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.FB = { app: firebase.app(), auth: firebase.auth(), db: firebase.firestore() };
+    console.log("[Firebase] initialized:", firebase.app().name);
+  } catch (e) {
+    console.error("[Firebase] init failed:", e);
+    window.FB = null;
+  }
+</script>
 
 <script type="text/babel">
 /* ──────────────────────────────────────────────────────────────
@@ -69,6 +95,55 @@ const loadGroomAnswers = () => {
   catch (e) { return null; }
 };
 const clearGroomAnswers = () => { try { localStorage.removeItem(GROOM_STORAGE_KEY); } catch (e) {} };
+
+/* ──────────────────────────────────────────────────────────────
+   FIREBASE HELPERS — Auth (phone) + Firestore (user data)
+   The `firebase` global is set up in <head> before React mounts.
+   ────────────────────────────────────────────────────────────── */
+const FB = window.FB; // { auth, db } — null if init failed
+
+// reCAPTCHA verifier (invisible) — Firebase requires this for web phone auth.
+let _recaptcha = null;
+const ensureRecaptcha = () => {
+  if (!FB || _recaptcha) return _recaptcha;
+  try {
+    _recaptcha = new firebase.auth.RecaptchaVerifier("recaptcha-container", {
+      size: "invisible",
+      callback: () => {},
+      "expired-callback": () => { _recaptcha = null; },
+    });
+    return _recaptcha;
+  } catch (e) {
+    console.error("[Firebase] recaptcha error:", e);
+    return null;
+  }
+};
+
+const fbSendSMS = async (phoneE164) => {
+  if (!FB) throw new Error("Firebase לא הותחל");
+  const verifier = ensureRecaptcha();
+  if (!verifier) throw new Error("reCAPTCHA לא הוטען");
+  return FB.auth.signInWithPhoneNumber(phoneE164, verifier);
+};
+
+const fbCurrentUser = () => FB?.auth?.currentUser || null;
+const fbOnAuthChange = (cb) => FB ? FB.auth.onAuthStateChanged(cb) : () => {};
+const fbSignOut = () => FB ? FB.auth.signOut() : Promise.resolve();
+
+// Firestore — store user data under /users/{uid}
+const fbSaveUserData = async (uid, data) => {
+  if (!FB || !uid) return;
+  try {
+    await FB.db.collection("users").doc(uid).set(data, { merge: true });
+  } catch (e) { console.error("[FS] save failed:", e); }
+};
+const fbLoadUserData = async (uid) => {
+  if (!FB || !uid) return null;
+  try {
+    const doc = await FB.db.collection("users").doc(uid).get();
+    return doc.exists ? doc.data() : null;
+  } catch (e) { console.error("[FS] load failed:", e); return null; }
+};
 
 /* ──────────────────────────────────────────────────────────────
    THEME — variant B "Love · Laugh · Get Lucky"
