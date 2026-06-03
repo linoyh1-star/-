@@ -2121,7 +2121,7 @@ const GAMES = [
     tagline: "מי מכירה אותה הכי טוב? אולי אפילו יותר טוב ממה שהיא מכירה את עצמה." },
   { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",             type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
     tagline: "מה אף פעם לא… עשית? המשחק שיגרום לך לשתות כהוגן." },
-  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true,
+  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true, icon: "ring",
     tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
 ];
 
@@ -2194,9 +2194,10 @@ const CARD_DECKS = {
   groomq: { label: "שאלה לחתן ולכלה", headline: "שאלון עם החתן",
     rules: [
       "החתן ענה מראש על השאלות (דרך הקישור ששלחת לו).",
-      "אם הכלה תענה נכון (כלומר זהה לתשובת החתן) — שאר הבנות שותות צ'ייסר.",
-      "אם החתן 'טעה' / סוטה מהציפיות — הכלה שותה צ'ייסר.",
-      "בוא נראה מה תצא מכאן שיכורה…",
+      "המשחק הוא 1-על-1 בין הכלה לחתן — שאר הבנות צופות בלבד.",
+      "הכלה מנחשת מה החתן ענה. הצליחה? נקודה לכלה.",
+      "פספסה? נקודה לחתן (=לגימה לכלה).",
+      "בסוף המשחק רואים מי הכיר את מי טוב יותר.",
     ],
     prompts: [
       "מה עשיתם בדייט הראשון שלכם?",
@@ -2214,19 +2215,24 @@ const CARD_DECKS = {
   fmk: { label: "F · M · K", headline: "Fuck Marry Kill",
     rules: [
       "כל כרטיס מציג 3 אופציות.",
-      "כל משתתפת אומרת בקול: עם מי היא שוכבת, מתחתנת ומחסלת לנצח.",
-      "אין כאן 'תשובה נכונה' — האנרגיה והספונטניות מנצחות.",
-      "אם הקבוצה רוצה — מצביעות ובוחרות גרסה משותפת לסיבוב.",
+      "בסבב — כל משתתפת מסמנת בלחיצה אחת מי F, מי M ומי K.",
+      "כל אות מותרת רק פעם אחת בכרטיס.",
+      "אין 'תשובה נכונה' — הספונטניות והשיחה מנצחות.",
+      "ברגע שכולן סימנו, ממשיכות לכרטיס הבא.",
     ],
     prompts: [
-      ["אדוארד קאלן", "ג'ייקוב בלאק", "כריסטיאן גריי"],
-      ["מורה לספורט", "פסיכולוג", "טייס אל־על"],
+      ["השכן הסקסי", "המתאמן בג'ים", "החבר של אח שלך"],
+      ["מורה ליוגה", "פסיכולוג", "מורה לסלסה"],
+      ["שף מסעדה", "מציל בבריכה", "טייס אל־על"],
       ["ראיין גוסלינג", "ראיין ריינולדס", "ראיין סקוט"],
-      ["שכן הורס", "מתאמן מהג'ים", "החבר של אח שלך"],
-      ["שף מסעדה", "מוזיקאי", "אדריכל"],
-      ["מנכ\"ל הייטק", "אומן רחוב", "מטייל עולם"],
-      ["טום קרוז", "ברד פיט", "הריסון פורד"],
-      ["קעקועים בכל הגוף", "חליפה ושעון יוקרה", "ג'ינס ויוגה"],
+      ["טום קרוז", "ג'ורג' קלוני", "מתיו מקונהיי"],
+      ["המנכ\"ל בהייטק", "האמן הבוהמייני", "המתכנת המסתורי"],
+      ["ספיידרמן", "באטמן", "סופרמן"],
+      ["אדוארד קאלן", "ג'ייקוב בלאק", "כריסטיאן גריי"],
+      ["איש העסקים", "מלצר בבר", "מתאגרף"],
+      ["וטרינר", "מציל", "טייס"],
+      ["הברטנדר", "השליח של פיצה", "מאמן הטניס"],
+      ["דייט מטינדר", "אקס מהתיכון", "החתן של החברה"],
     ],
   },
   nhie: { label: "אף פעם לא...", headline: "Never Have I Ever",
@@ -2346,7 +2352,7 @@ function ScreenGamesHub({ T, onNav, onBack }) {
                 <div style={{
                   width: 50, height: 50, borderRadius: 14, flexShrink: 0,
                   background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                }}><Icon name={g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users"} size={24} color={p.deep} w={1.35}/></div>
+                }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={24} color={p.deep} w={1.35}/></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
@@ -2397,7 +2403,7 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
             width: 84, height: 84, borderRadius: 22, background: p.soft, color: p.deep,
             margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center",
             border: T.border, boxShadow: T.shadowSm,
-          }}><Icon name={game.type === "timer" ? "clock" : game.type === "quiz" ? "star" : "users"} size={40} color={p.deep} w={1.4}/></div>
+          }}><Icon name={game.icon || (game.type === "timer" ? "clock" : game.type === "quiz" ? "star" : "users")} size={40} color={p.deep} w={1.4}/></div>
           <h1 style={{ fontSize: 28, fontWeight: 800, margin: "4px 0 6px", lineHeight: 1.1, letterSpacing: -0.5 }}>{game.t}</h1>
           <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 18px", lineHeight: 1.55, fontWeight: 500 }}>{game.tagline}</p>
 
@@ -2434,16 +2440,12 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
   );
 }
 
-function GameTopBar({ T, onBack, onProject, title, dark = false }) {
+function GameTopBar({ T, onBack, title, dark = false }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
       <RoundBtn T={T} icon="close" onClick={onBack} dark={dark}/>
       <div style={{ fontSize: 14.5, fontWeight: 700, color: dark ? "#fff" : T.ink }}>{title}</div>
-      <button onClick={onProject} style={{
-        display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 700, color: "#fff",
-        padding: "8px 13px", background: T.surfaceInk, border: "none", borderRadius: 11,
-        cursor: "pointer", fontFamily: T.font, boxShadow: T.shadowSm,
-      }}><Icon name="tv" size={14} color="#fff" w={1.5}/> הקרנה</button>
+      <div style={{ width: 40 }}/>
     </div>
   );
 }
@@ -2508,7 +2510,7 @@ function TimerGame({ T: parentT, game, onBack }) {
       const usedThisRound = order.current.slice(0, idx);
       setUsedIdx(prev => [...prev, ...usedThisRound]);
       setRoundScores(prev => [...prev, { got, skipped }]);
-      setPhase(round < totalRounds ? "roundEnd" : "done");
+      setPhase("roundEnd"); // always — user decides whether to continue or finish
       return;
     }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
@@ -2526,7 +2528,7 @@ function TimerGame({ T: parentT, game, onBack }) {
 
   if (phase === "intro")
     return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
-      onStart={() => startRound(1, true)} startLabel={`התחילו סבב 1 / ${totalRounds}`}/>;
+      onStart={() => startRound(1, true)} startLabel="התחילו סבב 1"/>;
 
   if (phase === "roundEnd") {
     return (
@@ -2535,9 +2537,9 @@ function TimerGame({ T: parentT, game, onBack }) {
         <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
           <TopBar T={T} onBack={onBack} title={game.t}/>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-            <Eyebrow T={T}>סבב {round} מתוך {totalRounds}</Eyebrow>
+            <Eyebrow T={T}>סבב {round}</Eyebrow>
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: "10px 0 6px", letterSpacing: -0.5 }}>נגמר הסבב</h1>
-            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 20px" }}>זמן לזוג השני להחליף.</p>
+            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 20px" }}>זמן להחליף זוג ולהמשיך, או לעצור פה.</p>
             <Card T={T} padding={22} style={{ width: "100%", textAlign: "center" }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: T.inkSoft, letterSpacing: 0.3, textTransform: "uppercase" }}>צברתן</div>
               <div className="num" style={{ fontSize: 60, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1, marginTop: 8 }}>{got}</div>
@@ -2549,7 +2551,7 @@ function TimerGame({ T: parentT, game, onBack }) {
             </p>
           </div>
           <Btn T={T} onClick={() => startRound(round + 1)}>התחילו סבב {round + 1}</Btn>
-          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>סיימו משחק</button>
+          <Btn T={T} variant="quiet" onClick={() => setPhase("done")} style={{ marginTop: 10 }}>סיימו משחק</Btn>
         </div>
         <HomeBar/>
       </>
@@ -2557,39 +2559,46 @@ function TimerGame({ T: parentT, game, onBack }) {
   }
 
   if (phase === "done") {
-    const r1 = roundScores[0] || { got: 0, skipped: 0 };
-    const r2 = roundScores[1] || { got: 0, skipped: 0 };
-    const winner = r1.got > r2.got ? 1 : r2.got > r1.got ? 2 : 0;
+    const max = roundScores.length ? Math.max(...roundScores.map(r => r.got)) : 0;
+    const winningRounds = roundScores.map((r, i) => r.got === max ? i + 1 : null).filter(Boolean);
     return (
       <>
         <StatusBar T={T}/>
         <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
           <TopBar T={T} onBack={onBack} title={game.t}/>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", textAlign: "center", overflow: "auto", paddingTop: 12 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.5 }}>סיכום המשחק</h1>
-            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 22px" }}>השוואה בין הסבבים</p>
-            <div style={{ display: "flex", gap: 10, width: "100%" }}>
-              {[r1, r2].map((r, i) => {
-                const isWin = winner === i + 1;
+            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 18px" }}>{roundScores.length} סבבים שיחקתן</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+              {roundScores.map((r, i) => {
+                const isWin = r.got === max && max > 0;
                 return (
-                  <Card key={i} T={T} padding={20} style={{ flex: 1, textAlign: "center",
+                  <Card key={i} T={T} padding={14} style={{ display: "flex", alignItems: "center", gap: 12,
                     background: isWin ? T.accentSoft : T.surface,
-                    border: isWin ? `1.5px solid ${T.accent}` : T.border }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.8, textTransform: "uppercase" }}>סבב {i + 1}</div>
-                    <div className="num" style={{ fontSize: 44, fontWeight: 800, color: T.accent, lineHeight: 1, marginTop: 8 }}>{r.got}</div>
-                    <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 4 }}>דילוגים: {r.skipped}</div>
-                    {isWin && <div style={{ marginTop: 8, padding: "3px 10px", display: "inline-block",
-                      background: T.accent, color: T.onAccent, borderRadius: 999, fontSize: 10.5, fontWeight: 800 }}>מנצח</div>}
+                    border: isWin ? `1.5px solid ${T.accent}` : T.border, textAlign: "right" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: isWin ? T.accent : T.surfaceAlt,
+                      color: isWin ? T.onAccent : T.inkSoft,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 13, fontWeight: 800 }} className="num">{i + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: T.ink }}>סבב {i + 1}</div>
+                      <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600 }}>דילוגים: {r.skipped}</div>
+                    </div>
+                    <div className="num" style={{ fontSize: 28, fontWeight: 800, color: isWin ? T.accent : T.ink, letterSpacing: -0.5 }}>{r.got}</div>
+                    {isWin && <div style={{ padding: "3px 10px",
+                      background: T.accent, color: T.onAccent, borderRadius: 999, fontSize: 10, fontWeight: 800 }}>הכי</div>}
                   </Card>
                 );
               })}
             </div>
-            <div style={{ marginTop: 22, padding: "12px 20px", background: T.surfaceAlt, borderRadius: T.radius,
-              fontSize: 15, fontWeight: 800, color: T.ink }}>
-              {winner === 0 ? "תיקו 🤝" : `הזוג של סבב ${winner} ניצח 🎉`}
+            <div style={{ marginTop: 18, padding: "10px 18px", background: T.surfaceAlt, borderRadius: T.radius,
+              fontSize: 14, fontWeight: 800, color: T.ink }}>
+              {winningRounds.length > 1 ? `תיקו בסבבים ${winningRounds.join(", ")} 🤝` :
+               winningRounds.length === 1 ? `הזוג של סבב ${winningRounds[0]} ניצח 🎉` : "אין מנצח עדיין"}
             </div>
           </div>
-          <Btn T={T} onClick={() => startRound(1, true)}>שחקו עוד</Btn>
+          <Btn T={T} onClick={() => startRound(1, true)} style={{ marginTop: 12 }}>שחקו עוד</Btn>
           <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>לרשימת המשחקים</button>
         </div>
         <HomeBar/>
@@ -2597,105 +2606,107 @@ function TimerGame({ T: parentT, game, onBack }) {
     );
   }
 
-  const playBody = (big) => (
+  // Card color rotation — orange / pink / deep rose / ink
+  const cardCycle = [
+    { bg: "#E8512A", fg: "#fff" },     // orange
+    { bg: "#EAA0BA", fg: "#1A1A1A" },  // soft pink
+    { bg: "#C75E82", fg: "#fff" },     // deep rose
+    { bg: "#1A1A1A", fg: "#fff" },     // ink
+  ];
+  const cc = cardCycle[idx % cardCycle.length];
+
+  const playBody = () => (
     <>
-      {/* Top row: timer + round badge + score badge */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: big ? 12 : 8, flexWrap: "wrap" }}>
+      {/* Top row: timer + round + score */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
         <div style={{
           background: danger ? T.accent : T.surfaceInk,
           color: "#fff", border: `1px solid ${danger ? T.accent : T.surfaceInk}`,
-          borderRadius: 999, padding: big ? "10px 32px" : "10px 22px",
-          fontSize: big ? "clamp(34px,5.5vw,68px)" : 30, fontWeight: 800,
-          letterSpacing: 1.5,
+          borderRadius: 999, padding: "10px 22px",
+          fontSize: 30, fontWeight: 800, letterSpacing: 1.5,
           animation: danger ? "pulse 0.7s ease-in-out infinite" : "none",
         }} className="num">{mins}:{secs}</div>
         <div style={{
-          background: big ? "rgba(255,255,255,0.12)" : T.surfaceAlt,
-          color: big ? "#fff" : T.ink,
-          border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
-          borderRadius: 999, padding: big ? "8px 16px" : "7px 12px",
-          fontSize: big ? "clamp(13px,1.4vw,18px)" : 12, fontWeight: 800, letterSpacing: 0.4,
-        }}>סבב {round}/{totalRounds}</div>
+          background: T.surfaceAlt, color: T.ink, border: T.border,
+          borderRadius: 999, padding: "7px 12px",
+          fontSize: 12, fontWeight: 800, letterSpacing: 0.4,
+        }}>סבב {round}</div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: big ? 14 : 10 }}>
-        <span style={{
-          fontSize: big ? "clamp(13px,1.6vw,18px)" : 12, fontWeight: 700,
-          background: T.ok, color: "#fff",
-          borderRadius: 999, padding: big ? "6px 16px" : "5px 12px",
-          display: "inline-flex", alignItems: "center", gap: 6,
-        }}>✓ {got} נכון</span>
-        <span style={{
-          fontSize: big ? "clamp(13px,1.6vw,18px)" : 12, fontWeight: 700,
-          background: big ? "rgba(255,255,255,0.10)" : T.surfaceAlt, color: big ? "#fff" : T.inkSoft,
-          border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
-          borderRadius: 999, padding: big ? "6px 14px" : "5px 11px",
-        }}>{deck.label}</span>
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, background: T.ok, color: "#fff",
+          borderRadius: 999, padding: "5px 12px",
+          display: "inline-flex", alignItems: "center", gap: 6 }}>✓ {got} נכון</span>
+        <span style={{ fontSize: 12, fontWeight: 700, background: T.surfaceAlt, color: T.inkSoft, border: T.border,
+          borderRadius: 999, padding: "5px 11px" }}>{deck.label}</span>
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(14px,3vh,30px) 0" : "12px 0", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", minHeight: 0 }}>
         <div key={idx} style={{
-          width: big ? "min(90%,720px)" : "100%",
-          background: big ? T.accent : T.surface,
-          border: big ? "none" : T.border,
-          borderRadius: big ? 32 : 22,
-          boxShadow: big ? "0 24px 60px -10px rgba(0,0,0,0.5)" : T.shadow,
-          padding: isImagePrompt ? 0 : (big ? "clamp(24px,4vw,52px)" : "32px 22px"),
+          width: "100%",
+          background: cc.bg,
+          color: cc.fg,
+          border: "none",
+          borderRadius: 22,
+          boxShadow: "0 12px 28px -10px rgba(20,18,16,0.35)",
+          padding: isImagePrompt ? 0 : "32px 22px",
           overflow: "hidden",
           textAlign: "center",
           animation: "cardIn 280ms cubic-bezier(.18,.89,.43,1.19)",
           display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "center",
-          minHeight: big ? "auto" : 220,
+          minHeight: 240,
         }}>
           {isImagePrompt ? (
             <>
-              <div style={{ position: "relative", width: "100%",
-                height: big ? "min(58vh,520px)" : 230,
-                background: T.surfaceAlt, overflow: "hidden",
+              <div style={{ position: "relative", width: "100%", height: 240,
+                background: "rgba(0,0,0,0.15)", overflow: "hidden",
                 display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <img
-                  src={`https://source.unsplash.com/featured/800x800/?${encodeURIComponent(prompt.en)}`}
+                  src={`https://loremflickr.com/600/600/${encodeURIComponent(prompt.en)}?lock=${currentI + 1}`}
                   alt={prompt.he}
                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  onError={(e) => { e.target.style.display = "none"; }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    const fallback = e.target.parentElement.querySelector("[data-fallback]");
+                    if (fallback) fallback.style.display = "flex";
+                  }}
                 />
+                <div data-fallback style={{
+                  display: "none", position: "absolute", inset: 0,
+                  alignItems: "center", justifyContent: "center",
+                  fontSize: 24, fontWeight: 800, color: cc.fg, padding: 24, textAlign: "center",
+                }}>{prompt.he}</div>
               </div>
               <div style={{
-                padding: big ? "clamp(14px,2vw,24px)" : "13px 16px",
-                fontSize: big ? "clamp(22px,3vw,42px)" : 20,
-                fontWeight: 800,
-                color: big ? T.onAccent : T.ink,
-                background: big ? "rgba(0,0,0,0.18)" : T.surfaceAlt,
+                padding: "14px 16px",
+                fontSize: 22, fontWeight: 800, color: cc.fg,
+                background: "rgba(0,0,0,0.18)",
                 textAlign: "center", letterSpacing: -0.3,
               }}>{prompt.he}</div>
             </>
           ) : (
             <div style={{
-              fontSize: big ? "clamp(38px,6vw,84px)" : 30,
+              fontSize: 32,
               fontWeight: 800, lineHeight: 1.15,
-              color: big ? T.onAccent : T.ink, textWrap: "balance", letterSpacing: -0.6,
+              color: cc.fg, textWrap: "balance", letterSpacing: -0.6,
             }}>{prompt}</div>
           )}
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: big ? 16 : 10, justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
         <button onClick={skip} style={{
-          flex: big ? "none" : 1,
-          padding: big ? "clamp(14px,1.8vw,20px) clamp(28px,3vw,44px)" : "15px",
-          background: big ? "rgba(255,255,255,0.10)" : T.surface,
-          color: big ? "#fff" : T.ink,
-          border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
-          borderRadius: T.radius, fontSize: big ? "clamp(16px,2vw,24px)" : 15, fontWeight: 700,
-          boxShadow: big ? "none" : T.shadowSm, cursor: "pointer", fontFamily: T.font,
+          flex: 1, padding: "15px",
+          background: T.surface, color: T.ink, border: T.border,
+          borderRadius: T.radius, fontSize: 15, fontWeight: 700,
+          boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
         }}>עבור</button>
         <button onClick={correct} style={{
-          flex: big ? "none" : 2,
-          padding: big ? "clamp(14px,1.8vw,20px) clamp(36px,4vw,60px)" : "15px",
+          flex: 2, padding: "15px",
           background: T.ok, color: "#fff",
           border: "none", borderRadius: T.radius,
-          fontSize: big ? "clamp(16px,2vw,24px)" : 15, fontWeight: 700,
-          boxShadow: big ? "none" : T.shadowSm, cursor: "pointer", fontFamily: T.font,
+          fontSize: 15, fontWeight: 700,
+          boxShadow: T.shadowSm, cursor: "pointer", fontFamily: T.font,
         }}>נכון!</button>
       </div>
     </>
@@ -2705,15 +2716,10 @@ function TimerGame({ T: parentT, game, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
-        <GameTopBar T={T} onBack={onBack} onProject={() => setProjecting(true)} title={game.t}/>
-        {playBody(false)}
+        <GameTopBar T={T} onBack={onBack} title={game.t}/>
+        {playBody()}
       </div>
       <HomeBar/>
-      {projecting && (
-        <ProjectionShell T={T} headline={deck.headline} onClose={() => setProjecting(false)}>
-          {playBody(true)}
-        </ProjectionShell>
-      )}
     </>
   );
 }
@@ -2728,18 +2734,26 @@ function QuizGame({ T: parentT, game, onBack }) {
   const [phase, setPhase] = React.useState("intro"); // intro | play | timeUp | revealed | done
   const [qi, setQi] = React.useState(0);
   const [timeLeft, setTimeLeft] = React.useState(timerSec);
-  const [projecting, setProjecting] = React.useState(false);
+  const [brideAnswer, setBrideAnswer] = React.useState("");
+  const [savedAnswers, setSavedAnswers] = React.useState({}); // {qi: "answer"}
 
   React.useEffect(() => {
     if (phase !== "play") return;
-    if (timeLeft <= 0) { setPhase("timeUp"); return; }
+    if (timeLeft <= 0) {
+      setSavedAnswers(s => ({ ...s, [qi]: brideAnswer }));
+      setPhase("timeUp"); return;
+    }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [phase, timeLeft]);
 
-  const startQ = (idx) => { setQi(idx); setTimeLeft(timerSec); setPhase("play"); };
+  const startQ = (idx) => { setQi(idx); setTimeLeft(timerSec); setBrideAnswer(""); setPhase("play"); };
   const nextQ = () => { if (qi + 1 >= total) { setPhase("done"); return; } startQ(qi + 1); };
-  const restart = () => { setQi(0); setPhase("intro"); };
+  const restart = () => { setQi(0); setBrideAnswer(""); setSavedAnswers({}); setPhase("intro"); };
+  const submitNow = () => {
+    setSavedAnswers(s => ({ ...s, [qi]: brideAnswer }));
+    setPhase("timeUp");
+  };
 
   const question = questions[qi];
   const mockAnswers = deck.mockAnswers?.[qi] || [];
@@ -2814,18 +2828,51 @@ function QuizGame({ T: parentT, game, onBack }) {
         }}>00:{String(Math.max(timeLeft, 0)).padStart(2, "0")}</div>
       </div>
 
-      {/* Question (plain large text, no card) */}
+      {/* Question + input */}
       <div style={{
-        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-        padding: big ? "clamp(24px,4vh,60px) clamp(24px,4vw,80px)" : "30px 16px",
-        minHeight: 0,
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: big ? "clamp(24px,4vh,60px) clamp(24px,4vw,80px)" : "20px 8px",
+        minHeight: 0, gap: big ? 32 : 18,
       }}>
         <h1 style={{
-          fontSize: big ? "clamp(40px,6vw,90px)" : 27,
+          fontSize: big ? "clamp(36px,5.5vw,80px)" : 22,
           fontWeight: 800, lineHeight: 1.2,
           color: big ? "#fff" : T.ink,
           textAlign: "center", textWrap: "balance", letterSpacing: -0.4, margin: 0,
         }}>{question}</h1>
+
+        {/* Bride's text input */}
+        <div style={{ width: "100%", maxWidth: big ? "min(70%,800px)" : "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+          <textarea
+            value={brideAnswer}
+            onChange={e => setBrideAnswer(e.target.value.slice(0, 100))}
+            placeholder="התשובה שלי..."
+            rows={big ? 3 : 2}
+            style={{
+              width: "100%",
+              padding: big ? "clamp(14px,2vw,22px)" : "12px 14px",
+              background: big ? "rgba(255,255,255,0.10)" : T.surface,
+              color: big ? "#fff" : T.ink,
+              border: big ? "1.5px solid rgba(255,255,255,0.25)" : `1.5px solid ${T.lineStrong}`,
+              borderRadius: T.radius,
+              fontSize: big ? "clamp(15px,1.8vw,24px)" : 14.5,
+              fontWeight: 500, fontFamily: T.font, outline: "none",
+              resize: "none", textAlign: "right", direction: "rtl",
+            }}/>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: big ? "clamp(11px,1.2vw,15px)" : 11, color: big ? "rgba(255,255,255,0.6)" : T.muted, fontWeight: 600 }}>
+              {brideAnswer.length}/100
+            </span>
+            {brideAnswer.trim().length > 0 && (
+              <button onClick={submitNow} style={{
+                padding: big ? "clamp(8px,1.2vw,14px) clamp(18px,2vw,30px)" : "8px 16px",
+                background: T.accent, color: T.onAccent,
+                border: "none", borderRadius: 999,
+                fontSize: big ? "clamp(12px,1.4vw,18px)" : 12.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+              }}>סיימתי לכתוב</button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Time-up overlay */}
@@ -2875,6 +2922,29 @@ function QuizGame({ T: parentT, game, onBack }) {
           </div>
 
           <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: big ? 10 : 8 }}>
+            {/* Bride's saved answer */}
+            {savedAnswers[qi] && savedAnswers[qi].trim() && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: big ? 14 : 11,
+                background: big ? "rgba(232,81,42,0.22)" : PB.orange.soft,
+                border: big ? "1.5px solid rgba(232,81,42,0.5)" : `1.5px solid ${PB.orange.main}`,
+                borderRadius: big ? 14 : 12, padding: big ? "12px 16px" : "10px 12px",
+              }}>
+                <div style={{
+                  width: big ? 38 : 32, height: big ? 38 : 32, borderRadius: 999, flexShrink: 0,
+                  background: PB.orange.main, color: PB.orange.on,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: big ? 13 : 11, fontWeight: 800,
+                }}>כ</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: big ? "clamp(12px,1.4vw,18px)" : 11.5, fontWeight: 800,
+                    color: big ? "rgba(255,255,255,0.85)" : PB.orange.deep, letterSpacing: 0.4, textTransform: "uppercase" }}>הכלה</div>
+                  <div style={{ fontSize: big ? "clamp(15px,1.8vw,24px)" : 14, fontWeight: 700,
+                    color: big ? "#fff" : T.ink, marginTop: 1, lineHeight: 1.3 }}>{savedAnswers[qi]}</div>
+                </div>
+              </div>
+            )}
+
             {mockAnswers.length === 0 ? (
               <div style={{ padding: 20, color: big ? "rgba(255,255,255,0.7)" : T.inkSoft,
                 textAlign: "center", fontSize: 13, fontWeight: 500 }}>
@@ -2882,8 +2952,8 @@ function QuizGame({ T: parentT, game, onBack }) {
               </div>
             ) : (
               mockAnswers.map((ans, idx) => {
-                const cycle = [PB.orange, PB.pink, PB.ink];
-                const p = cycle[idx % 3];
+                const cycle = [PB.pink, PB.ink, PB.pink];
+                const p = cycle[idx % cycle.length];
                 return (
                   <div key={idx} style={{
                     display: "flex", alignItems: "center", gap: big ? 14 : 11,
@@ -2948,6 +3018,19 @@ function CardGame({ T: parentT, game, onBack }) {
   const [groomData, setGroomData] = React.useState(loadGroomAnswers);
   const [groomMarks, setGroomMarks] = React.useState({});
   const [groomSummary, setGroomSummary] = React.useState(false);
+  const [fmkChoices, setFmkChoices] = React.useState({}); // { cardIdx: { 0: 'F', 1: 'M', 2: 'K' } }
+
+  const currentFmk = fmkChoices[i] || {};
+  const assignFmk = (nameIdx, letter) => {
+    const next = { ...currentFmk };
+    // Remove this letter from any other name (each letter used once)
+    Object.keys(next).forEach(k => { if (next[k] === letter) delete next[k]; });
+    // Toggle: clicking the same again clears
+    if (currentFmk[nameIdx] === letter) delete next[nameIdx];
+    else next[nameIdx] = letter;
+    setFmkChoices({ ...fmkChoices, [i]: next });
+  };
+  const fmkAllAssigned = Object.keys(currentFmk).length === 3;
 
   const total = deck.prompts.length;
   const prompt = deck.prompts[i];
@@ -3118,26 +3201,59 @@ function CardGame({ T: parentT, game, onBack }) {
           }}>{deck.label}</div>
           {isMultiOption ? (
             <div style={{ width: "100%", display: "flex", flexDirection: "column",
-              gap: big ? "clamp(10px,1.5vw,18px)" : 9 }}>
-              {prompt.map((opt, idx) => (
-                <div key={idx} style={{
-                  padding: big ? "clamp(14px,2vw,26px) clamp(16px,2.4vw,32px)" : "13px 16px",
-                  background: big ? "rgba(255,255,255,0.95)" : "#FFFFFF",
-                  color: "#1A1A1A",
-                  borderRadius: big ? 16 : 12,
-                  fontSize: big ? "clamp(22px,3.2vw,46px)" : 20, fontWeight: 800,
-                  textAlign: "center", letterSpacing: -0.3, lineHeight: 1.2,
-                  boxShadow: big ? "0 6px 18px -8px rgba(0,0,0,0.3)" : T.shadowSm,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: big ? 12 : 8,
-                }}>
-                  <span style={{
-                    fontSize: big ? "clamp(12px,1.4vw,20px)" : 11, fontWeight: 800,
-                    background: [PB.orange.main, PB.pink.main, "#1A1A1A"][idx % 3], color: "#fff",
-                    padding: big ? "3px 10px" : "2px 8px", borderRadius: 999, letterSpacing: 0.5,
-                  }}>{["F", "M", "K"][idx % 3]}</span>
-                  <span style={{ flex: 1 }}>{opt}</span>
-                </div>
-              ))}
+              gap: big ? "clamp(10px,1.5vw,16px)" : 10 }}>
+              {prompt.map((opt, idx) => {
+                const assigned = currentFmk[idx];
+                const letters = [
+                  { l: "F", c: PB.orange.main, label: "Fuck" },
+                  { l: "M", c: PB.pink.main, label: "Marry" },
+                  { l: "K", c: "#1A1A1A", label: "Kill" },
+                ];
+                return (
+                  <div key={idx} style={{
+                    padding: big ? "clamp(12px,1.6vw,22px) clamp(14px,2vw,28px)" : "11px 12px",
+                    background: assigned
+                      ? letters.find(x => x.l === assigned).c
+                      : (big ? "rgba(255,255,255,0.96)" : "#FFFFFF"),
+                    color: assigned ? (assigned === "M" ? "#1A1A1A" : "#fff") : "#1A1A1A",
+                    borderRadius: big ? 16 : 12,
+                    boxShadow: big ? "0 6px 18px -8px rgba(0,0,0,0.3)" : T.shadowSm,
+                    display: "flex", alignItems: "center", gap: big ? 12 : 8,
+                    transition: "background 180ms",
+                  }}>
+                    <div style={{ display: "flex", gap: big ? 5 : 4, flexShrink: 0 }}>
+                      {letters.map((it) => {
+                        const isSel = assigned === it.l;
+                        const isUsedByOther = Object.values(currentFmk).includes(it.l) && !isSel;
+                        return (
+                          <button key={it.l} onClick={() => assignFmk(idx, it.l)} disabled={isUsedByOther} style={{
+                            width: big ? 38 : 30, height: big ? 38 : 30, borderRadius: 8,
+                            background: isSel ? "#fff" : (isUsedByOther ? "rgba(0,0,0,0.05)" : "transparent"),
+                            color: isSel ? it.c : (isUsedByOther ? "#A7A39F" : (assigned ? "rgba(255,255,255,0.7)" : it.c)),
+                            border: isSel ? "none" : (isUsedByOther ? "1px solid rgba(0,0,0,0.08)" :
+                              `1.5px solid ${assigned ? (assigned === "M" ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.45)") : it.c}`),
+                            fontSize: big ? 15 : 12.5, fontWeight: 800,
+                            cursor: isUsedByOther ? "not-allowed" : "pointer", fontFamily: T.font,
+                            opacity: isUsedByOther ? 0.55 : 1, padding: 0,
+                          }}>{it.l}</button>
+                        );
+                      })}
+                    </div>
+                    <span style={{
+                      flex: 1, textAlign: "right",
+                      fontSize: big ? "clamp(20px,2.6vw,38px)" : 18,
+                      fontWeight: 800, letterSpacing: -0.3, lineHeight: 1.2,
+                    }}>{opt}</span>
+                  </div>
+                );
+              })}
+              {/* Hint when complete */}
+              {fmkAllAssigned && (
+                <div style={{
+                  textAlign: "center", fontSize: big ? "clamp(12px,1.4vw,18px)" : 11.5, fontWeight: 700,
+                  color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, marginTop: 2,
+                }}>✓ סימנת — אפשר להמשיך</div>
+              )}
             </div>
           ) : (
             <div style={{
@@ -3148,15 +3264,13 @@ function CardGame({ T: parentT, game, onBack }) {
           )}
           {isNhie && (
             <div style={{
-              fontSize: big ? "clamp(13px,1.5vw,20px)" : 12, fontWeight: 600,
-              color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.4,
-            }}>מי שכן — לוגמת</div>
-          )}
-          {isFmk && (
-            <div style={{
-              fontSize: big ? "clamp(13px,1.5vw,20px)" : 11.5, fontWeight: 600,
-              color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.5, textTransform: "uppercase",
-            }}>סבב סביב השולחן — מי, את מי, ולמה?</div>
+              position: "absolute", top: big ? 18 : 14, left: big ? 24 : 14,
+              width: big ? 52 : 36, height: big ? 52 : 36, borderRadius: "50%",
+              background: big ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Icon name="close" size={big ? 28 : 20} color={big ? "#fff" : T.onAccent} w={2.4}/>
+            </div>
           )}
           {/* Groom answer reveal + bride scoring — only for groomq when answers exist */}
           {isGroomq && groomAnswerForPrompt && (
@@ -3186,7 +3300,7 @@ function CardGame({ T: parentT, game, onBack }) {
                     borderRadius: 999, textAlign: "center",
                     fontSize: big ? "clamp(13px,1.4vw,18px)" : 13, fontWeight: 800,
                   }}>
-                    {groomMarks[i] === "right" ? "✓ הכלה צדקה — הבנות שותות" : "✗ פספסה — הכלה שותה"}
+                    {groomMarks[i] === "right" ? "✓ נקודה לכלה" : "✗ פספסה — לגימה לכלה"}
                   </div>
                 ) : (
                   <div style={{ display: "flex", gap: big ? 12 : 8 }}>
