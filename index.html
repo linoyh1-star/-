@@ -2121,6 +2121,8 @@ const GAMES = [
     tagline: "ארבע תשובות, רק אחת נכונה." },
   { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",          type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
     tagline: "מי שכן — שותה. פשוט וקטלני." },
+  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת", type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true,
+    tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
 ];
 
 const TIMER_DECKS = {
@@ -2148,6 +2150,24 @@ const CARD_DECKS = {
   groomq: { label: "שאלה לחתן ולכלה", headline: "שאלון עם החתן",
     rules: ["החתן ענה מראש על השאלות.", "הכלה מנחשת מה הוא ענה — על כל פספוס, לגימה.", "החברות שופטות אם זו התאמה."],
     prompts: ["מי אמר 'אני אוהב/ת' קודם?", "איפה הייתה הדייט הראשון שלכם?", "מה התכונה שהכי שבתה אותו בכלה?", "מי מבשל/ת טוב יותר?", "מה הכינוי שהוא נותן לה?", "מי לוקח/ת יותר זמן להתכונן ביציאה?", "מה הריב הכי מצחיק שהיה לכם?", "איך הוא הציע נישואין?", "מי שולט/ת בשלט הטלוויזיה?", "מה החלום המשותף הכי גדול שלכם?"],
+  },
+  fmk: { label: "F · M · K", headline: "Fuck Marry Kill",
+    rules: [
+      "כל כרטיס מציג 3 אופציות.",
+      "כל משתתפת אומרת בקול: עם מי היא שוכבת, מתחתנת ומחסלת לנצח.",
+      "אין כאן 'תשובה נכונה' — האנרגיה והספונטניות מנצחות.",
+      "אם הקבוצה רוצה — מצביעות ובוחרות גרסה משותפת לסיבוב.",
+    ],
+    prompts: [
+      ["אדוארד קאלן", "ג'ייקוב בלאק", "כריסטיאן גריי"],
+      ["מורה לספורט", "פסיכולוג", "טייס אל־על"],
+      ["ראיין גוסלינג", "ראיין ריינולדס", "ראיין סקוט"],
+      ["שכן הורס", "מתאמן מהג'ים", "החבר של אח שלך"],
+      ["שף מסעדה", "מוזיקאי", "אדריכל"],
+      ["מנכ\"ל הייטק", "אומן רחוב", "מטייל עולם"],
+      ["טום קרוז", "ברד פיט", "הריסון פורד"],
+      ["קעקועים בכל הגוף", "חליפה ושעון יוקרה", "ג'ינס ויוגה"],
+    ],
   },
   nhie: { label: "מעולם לא...", headline: "Never Have I Ever",
     rules: ["מקריאות משפט 'מעולם לא...' בקול.", "מי שכן עשתה את זה — לוקחת לגימה.", "הכי אמיצה / הכי שתויה מנצחת. בכיף."],
@@ -2618,6 +2638,8 @@ function CardGame({ T: parentT, game, onBack }) {
   const atStart = i === 0, atEnd = i === total - 1;
   const isNhie = game.id === "nhie";
   const isGroomq = game.id === "groomq";
+  const isFmk = game.id === "fmk";
+  const isMultiOption = Array.isArray(prompt);
 
   // Groom answer lookup — only meaningful for groomq game
   const groomAnswerForPrompt = (() => {
@@ -2698,7 +2720,11 @@ function CardGame({ T: parentT, game, onBack }) {
 
   if (phase === "intro")
     return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")}
-      startLabel={isNhie ? "מוזגות ומתחילות" : (isGroomq && !groomData?.a?.length ? "מתחילות גם בלי תשובות" : "מתחילות שאלון")}
+      startLabel={
+        isFmk ? "מתחילות סבב" :
+        isNhie ? "מוזגות ומתחילות" :
+        (isGroomq && !groomData?.a?.length ? "מתחילות גם בלי תשובות" : "מתחילות שאלון")
+      }
       extras={groomExtras}/>;
 
   const body = (big) => (
@@ -2736,16 +2762,47 @@ function CardGame({ T: parentT, game, onBack }) {
             borderRadius: 999,
             fontSize: big ? "clamp(13px,1.6vw,20px)" : 11, fontWeight: 700, letterSpacing: 0.3,
           }}>{deck.label}</div>
-          <div style={{
-            fontSize: big ? (prompt.length > 40 ? "clamp(32px,5vw,68px)" : "clamp(40px,6vw,84px)") : (prompt.length > 40 ? 22 : 25),
-            fontWeight: 800, lineHeight: 1.25,
-            color: big ? T.onAccent : T.ink, textAlign: "center", textWrap: "balance", letterSpacing: -0.5,
-          }}>{prompt}</div>
+          {isMultiOption ? (
+            <div style={{ width: "100%", display: "flex", flexDirection: "column",
+              gap: big ? "clamp(10px,1.5vw,18px)" : 9 }}>
+              {prompt.map((opt, idx) => (
+                <div key={idx} style={{
+                  padding: big ? "clamp(14px,2vw,26px) clamp(16px,2.4vw,32px)" : "13px 16px",
+                  background: big ? "rgba(255,255,255,0.95)" : "#FFFFFF",
+                  color: "#1A1A1A",
+                  borderRadius: big ? 16 : 12,
+                  fontSize: big ? "clamp(22px,3.2vw,46px)" : 20, fontWeight: 800,
+                  textAlign: "center", letterSpacing: -0.3, lineHeight: 1.2,
+                  boxShadow: big ? "0 6px 18px -8px rgba(0,0,0,0.3)" : T.shadowSm,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: big ? 12 : 8,
+                }}>
+                  <span style={{
+                    fontSize: big ? "clamp(12px,1.4vw,20px)" : 11, fontWeight: 800,
+                    background: [PB.orange.main, PB.pink.main, "#1A1A1A"][idx % 3], color: "#fff",
+                    padding: big ? "3px 10px" : "2px 8px", borderRadius: 999, letterSpacing: 0.5,
+                  }}>{["F", "M", "K"][idx % 3]}</span>
+                  <span style={{ flex: 1 }}>{opt}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              fontSize: big ? (prompt.length > 40 ? "clamp(32px,5vw,68px)" : "clamp(40px,6vw,84px)") : (prompt.length > 40 ? 22 : 25),
+              fontWeight: 800, lineHeight: 1.25,
+              color: big ? T.onAccent : T.ink, textAlign: "center", textWrap: "balance", letterSpacing: -0.5,
+            }}>{prompt}</div>
+          )}
           {isNhie && (
             <div style={{
               fontSize: big ? "clamp(13px,1.5vw,20px)" : 12, fontWeight: 600,
               color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.4,
             }}>מי שכן — לוגמת</div>
+          )}
+          {isFmk && (
+            <div style={{
+              fontSize: big ? "clamp(13px,1.5vw,20px)" : 11.5, fontWeight: 600,
+              color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.5, textTransform: "uppercase",
+            }}>סבב סביב השולחן — מי, את מי, ולמה?</div>
           )}
           {/* Groom answer reveal — only for groomq when answers exist */}
           {isGroomq && groomAnswerForPrompt && (
