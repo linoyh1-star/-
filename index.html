@@ -2111,11 +2111,11 @@ const GAMES = [
     tagline: "המשחק שיאתגר את הקשב, הריכוז והסבלנות שלכן." },
   { id: "charades",  t: "בלי לומר מילה",    s: "פנטומימה על תמונות",     type: "timer", pop: "pink",   time: "2 סבבים", players: "זוג",  difficulty: 2,
     tagline: "משחק פנטומימה שכל ניחוש יהפוך למדבקה בווטסאפ." },
-  { id: "groomq",    t: "שאלון עם החתן",    s: "כמה הם מכירים אותך?",    type: "card",  pop: "orange", time: "פתוח",  players: "כולן", difficulty: 1,
+  { id: "groomq",    t: "שאלון עם החתן",    s: "כמה הם מכירים אותך?",    type: "card",  pop: "orange", time: "פתוח",  players: "כולן", difficulty: 1, drinking: true,
     tagline: "החתן נשאל מבעוד מועד — בוא נראה אם הוא מכיר אותך טוב." },
   { id: "bridequiz", t: "חידון על הכלה",    s: "מי מכירה הכי טוב?",      type: "quiz",  pop: "pink",   time: "10 שניות לשאלה", players: "כולן", difficulty: 2,
     tagline: "מי מכירה אותה הכי טוב? אולי אפילו יותר טוב ממה שהיא מכירה את עצמה." },
-  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",             type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
+  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",             type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true, drinking: true,
     tagline: "מה אף פעם לא… עשית? המשחק שיגרום לך לשתות כהוגן." },
   { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true, icon: "ring",
     tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
@@ -2334,9 +2334,10 @@ function ScreenGamesHub({ T, onNav, onBack }) {
                   background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
                 }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={24} color={p.deep} w={1.35}/></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
                     {g.hot && <span style={{ fontSize: 9.5, padding: "2px 7px", background: PB.orange.main, color: "#fff", borderRadius: 999, fontWeight: 700 }}>פופולרי</span>}
+                    {g.drinking && <span style={{ fontSize: 9.5, padding: "2px 7px", background: "#1A1A1A", color: "#fff", borderRadius: 999, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}>🥃 משחק שתייה</span>}
                   </div>
                   <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
                   <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
