@@ -2111,45 +2111,105 @@ function ScreenBudget({ T, onBack }) {
    GAMES
    ────────────────────────────────────────────────────────────── */
 const GAMES = [
-  { id: "lipread",   t: "מפה לאוזן",        s: "קריאת שפתיים בזוג",   type: "timer", pop: "orange", time: "2 דקות", players: "זוג",  difficulty: 2,
-    tagline: "אחת עם אוזניות, השנייה מעבירה מילים רק בשפתיים." },
-  { id: "charades",  t: "פנטומימה",         s: "להעביר בלי מילים",    type: "timer", pop: "pink",   time: "2 דקות", players: "זוג",  difficulty: 2,
-    tagline: "מציגות תמונה — בלי לדבר, רק בתנועות." },
-  { id: "groomq",    t: "שאלון עם החתן",   s: "כמה הם באמת מכירים?", type: "card",  pop: "orange", time: "פתוח",  players: "כולן", difficulty: 1,
-    tagline: "השוו את התשובות של החתן והכלה." },
-  { id: "bridequiz", t: "חידון על הכלה",   s: "מי מכירה הכי טוב?",   type: "quiz",  pop: "pink",   time: "10 דקות", players: "כולן", difficulty: 2,
-    tagline: "ארבע תשובות, רק אחת נכונה." },
-  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",          type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
-    tagline: "מי שכן — שותה. פשוט וקטלני." },
-  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת", type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true,
+  { id: "lipread",   t: "מפה לאוזן",        s: "קריאת שפתיים בזוג",     type: "timer", pop: "orange", time: "2 סבבים", players: "זוג",  difficulty: 2,
+    tagline: "המשחק שיאתגר את הקשב, הריכוז והסבלנות שלכן." },
+  { id: "charades",  t: "בלי לומר מילה",    s: "פנטומימה על תמונות",     type: "timer", pop: "pink",   time: "2 סבבים", players: "זוג",  difficulty: 2,
+    tagline: "משחק פנטומימה שכל ניחוש יהפוך למדבקה בווטסאפ." },
+  { id: "groomq",    t: "שאלון עם החתן",    s: "כמה הם מכירים אותך?",    type: "card",  pop: "orange", time: "פתוח",  players: "כולן", difficulty: 1,
+    tagline: "החתן נשאל מבעוד מועד — בוא נראה אם הוא מכיר אותך טוב." },
+  { id: "bridequiz", t: "חידון על הכלה",    s: "מי מכירה הכי טוב?",      type: "quiz",  pop: "pink",   time: "10 שניות לשאלה", players: "כולן", difficulty: 2,
+    tagline: "מי מכירה אותה הכי טוב? אולי אפילו יותר טוב ממה שהיא מכירה את עצמה." },
+  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",             type: "card",  pop: "ink",    time: "פתוח",  players: "כולן", difficulty: 2, hot: true,
+    tagline: "מה אף פעם לא… עשית? המשחק שיגרום לך לשתות כהוגן." },
+  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",   time: "פתוח",  players: "כולן", difficulty: 1, hot: true,
     tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
 ];
 
 const TIMER_DECKS = {
-  lipread: { label: "מילה להעביר", headline: "קריאת שפתיים",
+  lipread: { label: "מילה להעביר", headline: "מפה לאוזן",
     rules: [
-      "שחקנית א' שמה אוזניות עם מוזיקה חזקה — לא שומעת כלום.",
-      "שחקנית ב' רואה את המילה על המסך ומבטאת אותה בשפתיים בלבד.",
-      "א' צריכה לנחש. ניחשתן? המשיכו למילה הבאה.",
-      "יש לכן 2 דקות. כמה מילים תספיקו?",
+      "זוג נגד זוג — אפשר יותר משני זוגות.",
+      "שחקנית א' שמה אוזניות עם מוזיקה רועשת במיוחד.",
+      "שחקנית ב' רואה את המילה ומבטאת אותה בשפתיים בלבד.",
+      "מותר להעביר בקול רם (לא מדי). אסור פנטומימה או מחוות שירמזו על המילה.",
+      "2 דקות לכל סבב, 2 סבבים סך הכל. בנק המילים מתחדש בין סבב לסבב.",
     ],
-    prompts: ["ירח דבש", "שמלת כלה", "ריקוד ראשון", "הצעת נישואין", "שושבינה", "חופה", "טבעת אירוסין", "זר כלה", "ליל כלולות", "עוגת חתונה", "מזל טוב", "נשיקה ראשונה", "חתן מאושר", "כלה לחוצה", "רחבת ריקודים", "צלם החתונה", "ביישנית", "פרפרים בבטן", "אהבת אמת", "ירח דבש"],
+    rounds: 2, secondsPerRound: 120,
+    prompts: [
+      "שיפוצניק", "פתגם", "פיצפוץ", "פיצה מקפיצה", "נטפליקס",
+      "צמר פלדה", "סטטיק ובנאל", "גידי גוב", "ג'ינג'י ממהר", "דסטניז צ'יילדס",
+      "ארון קיר", "אמבטיית קצף", "טיילור סוויפט", "פלפל שיפקה", "לימון כבוש",
+      "ספינת פיראטים", "פרפור חדרים", "פריפריה", "טפטפת", "פפאיה",
+      "צנצנת ריבה", "פפרוני", "קפוצ'ון", "קרפצ'יו", "בלרינה",
+      "סביח", "רותי ברודו", "אספרסו כפול", "ספגטי בולונז", "פסיפס",
+      "מסיבת פיג'מות", "פקק תנועה", "פילטר", "תמי 4", "צ'יזבורגר",
+      "פרנץ' טוסט", "ניילון נצמד", "אפנדציט", "טינדר", "פפרצי",
+      "בריידזילה", "פסטה פסטו", "קולה קרה", "בירוקרטיה", "אדרנלין",
+      "מרק עדשים", "בבושקה", "דיאטת פחמימות", "שרית חדד", "רדיואקטיבי",
+      "אולטרסאונד", "חומוס בשר", "סושי מטוגן", "ג'חנון", "מכון שיזוף",
+      "מופלטה", "מעצבת פנים", "חמוצים במלח", "אורז בסמטי", "פלאפל",
+    ],
   },
-  charades: { label: "להציג בפנטומימה", headline: "פנטומימה",
+  charades: { label: "להציג בפנטומימה", headline: "בלי לומר מילה",
+    images: true,
     rules: [
-      "שחקנית אחת רואה את התמונה על המסך.",
-      "היא מציגה אותה בתנועות בלבד — אסור לדבר ואסור להצביע על חפצים.",
-      "החברות מנחשות. ניחשו? המשיכו.",
-      "2 דקות על השעון. קדימה.",
+      "זוג נגד זוג — אפשר יותר משני זוגות.",
+      "שחקנית א' עומדת עם הגב למסך.",
+      "שחקנית ב' רואה את התמונה ומציגה בפנטומימה בלבד.",
+      "מותר: להגזים, להשתטות. אסור: לדבר, גם לא אפקטים קוליים.",
+      "2 דקות לכל סבב, 2 סבבים. בנק התמונות מתחדש בין סבב לסבב.",
     ],
-    prompts: ["כלה רוקדת סלסה", "שתיית שמפניה", "סלפי קבוצתי", "סופרוומן", "להחליף חיתול", "חתולה מפונקת", "לשחות בים", "זמרת על במה", "לבשל ארוחה", "טיסה לחו\"ל", "כלה לחוצה לפני חופה", "ריקוד בלט", "לצלם תמונה", "מלכת יופי", "נהגת מירוצים", "יוגה בבוקר"],
+    rounds: 2, secondsPerRound: 120,
+    prompts: [
+      { he: "סושי", en: "sushi" }, { he: "פלאפל", en: "falafel" },
+      { he: "עוגת שוקולד", en: "chocolate cake" }, { he: "ארטישוק", en: "artichoke" },
+      { he: "מקרון צרפתי", en: "macaron" }, { he: "שווארמה", en: "shawarma" },
+      { he: "קרם ברולה", en: "creme brulee" }, { he: "סביח", en: "sabich pita" },
+      { he: "ג'חנון", en: "jachnun" }, { he: "ענבים", en: "grapes" },
+      { he: "פסטה", en: "pasta" }, { he: "סלט קיסר", en: "caesar salad" },
+      { he: "פיצה", en: "pizza" }, { he: "מטריה", en: "umbrella" },
+      { he: "גיטרה", en: "guitar" }, { he: "מכונת כביסה", en: "washing machine" },
+      { he: "תמי 4", en: "water dispenser" }, { he: "סודה סטרים", en: "sodastream" },
+      { he: "טלסקופ", en: "telescope" }, { he: "מזוודה", en: "suitcase" },
+      { he: "מדוזה", en: "jellyfish" }, { he: "סופרמן", en: "superman" },
+      { he: "מכונת קפה", en: "coffee machine" }, { he: "שק שינה", en: "sleeping bag" },
+      { he: "מאוורר", en: "fan" }, { he: "שימפנזה", en: "chimpanzee" },
+      { he: "בלנדר", en: "blender" }, { he: "ברק בשמיים", en: "lightning sky" },
+      { he: "קשת בענן", en: "rainbow" }, { he: "הר געש מתפרץ", en: "volcano eruption" },
+      { he: "מדרגות נעות", en: "escalator" }, { he: "זברה", en: "zebra" },
+      { he: "גמל", en: "camel" }, { he: "מקק", en: "cockroach" },
+      { he: "ביבי נתניהו", en: "politician suit" }, { he: "דנה אינטרנשיונל", en: "drag queen" },
+      { he: "מדורה", en: "bonfire" }, { he: "אוהל", en: "tent camping" },
+      { he: "טלטביז", en: "teletubbies" }, { he: "מגבונים לחים", en: "wet wipes" },
+      { he: "ספיידרמן", en: "spiderman" }, { he: "בננה", en: "banana" },
+      { he: "מסטיק בזוקה", en: "bubblegum" }, { he: "פינים של באולינג", en: "bowling pins" },
+      { he: "דולפין", en: "dolphin" }, { he: "מצנם", en: "toaster" },
+      { he: "שדכן", en: "matchmaker" }, { he: "מגדל אייפל", en: "eiffel tower" },
+      { he: "אבו נפחא", en: "pufferfish" }, { he: "אסלה", en: "toilet bowl" },
+    ],
   },
 };
 
 const CARD_DECKS = {
   groomq: { label: "שאלה לחתן ולכלה", headline: "שאלון עם החתן",
-    rules: ["החתן ענה מראש על השאלות.", "הכלה מנחשת מה הוא ענה — על כל פספוס, לגימה.", "החברות שופטות אם זו התאמה."],
-    prompts: ["מי אמר 'אני אוהב/ת' קודם?", "איפה הייתה הדייט הראשון שלכם?", "מה התכונה שהכי שבתה אותו בכלה?", "מי מבשל/ת טוב יותר?", "מה הכינוי שהוא נותן לה?", "מי לוקח/ת יותר זמן להתכונן ביציאה?", "מה הריב הכי מצחיק שהיה לכם?", "איך הוא הציע נישואין?", "מי שולט/ת בשלט הטלוויזיה?", "מה החלום המשותף הכי גדול שלכם?"],
+    rules: [
+      "החתן ענה מראש על השאלות (דרך הקישור ששלחת לו).",
+      "אם הכלה תענה נכון (כלומר זהה לתשובת החתן) — שאר הבנות שותות צ'ייסר.",
+      "אם החתן 'טעה' / סוטה מהציפיות — הכלה שותה צ'ייסר.",
+      "בוא נראה מה תצא מכאן שיכורה…",
+    ],
+    prompts: [
+      "מה עשיתם בדייט הראשון שלכם?",
+      "איזו תכונה אתה הכי אוהב בה?",
+      "מה היא לא אוהבת לאכול?",
+      "מה היא בחיים לא תעשה?",
+      "מה היא חשבה עליך בדייט הראשון?",
+      "איזה הרגל שלך היא הכי שונאת?",
+      "מי הסלבריטי קראש שלה?",
+      "מה הדייט האידיאלי שלה?",
+      "איזה רגע מצחיק או מביך היה לכם?",
+      "כמה אתם הולכים לבזבז בירח הדבש שלכם?",
+    ],
   },
   fmk: { label: "F · M · K", headline: "Fuck Marry Kill",
     rules: [
@@ -2169,22 +2229,82 @@ const CARD_DECKS = {
       ["קעקועים בכל הגוף", "חליפה ושעון יוקרה", "ג'ינס ויוגה"],
     ],
   },
-  nhie: { label: "מעולם לא...", headline: "Never Have I Ever",
-    rules: ["מקריאות משפט 'מעולם לא...' בקול.", "מי שכן עשתה את זה — לוקחת לגימה.", "הכי אמיצה / הכי שתויה מנצחת. בכיף."],
-    prompts: ["מעולם לא נשיקתי זר/ה במסיבה", "מעולם לא שלחתי הודעה לאקס באמצע הלילה", "מעולם לא ברחתי באמצע דייט", "מעולם לא שיקרתי לגבי הגיל שלי", "מעולם לא נרדמתי במסיבה שלי", "מעולם לא התאהבתי ממבט ראשון", "מעולם לא רקדתי על השולחן", "מעולם לא עשיתי קעקוע ספונטני", "מעולם לא צחקתי ברגע הכי לא מתאים", "מעולם לא חזרתי לאקס"],
+  nhie: { label: "אף פעם לא...", headline: "Never Have I Ever",
+    shuffle: true,
+    rules: [
+      "בכל פעם תופיע שאלה 'אף פעם לא...'",
+      "מי שהאמירה נכונה לגביה — תרים אצבע ותצבור נקודה.",
+      "מי שצברה 5 נקודות — שותה צ'ייסר.",
+    ],
+    prompts: [
+      "אף פעם לא שלחתי הודעה לאקס בלילה",
+      "אף פעם לא עשיתי לק ג'ל",
+      "אף פעם לא עשיתי מילואים",
+      "אף פעם לא גוגלתי מישהו לפני דייט",
+      "אף פעם לא שיקרתי על הגיל שלי",
+      "אף פעם לא מחקתי הודעה אחרי שליחה",
+      "אף פעם לא קראתי הודעות של בן זוג בלי רשות",
+      "אף פעם לא התחרטתי על קעקוע",
+      "אף פעם לא שלחתי סקרינשוט של שיחה לחברה",
+      "אף פעם לא בכיתי בסוף של סרט רומנטי",
+      "אף פעם לא שיניתי תוכניות בגלל הורוסקופ",
+      "אף פעם לא בדקתי מי ראה את הסטורי שלי",
+      "אף פעם לא צילמתי אוכל לפני שאכלתי",
+      "אף פעם לא נתתי מספר טלפון מזויף",
+      "אף פעם לא אכלתי לבד במסעדה",
+      "אף פעם לא שלחתי הודעה לאדם הלא נכון",
+      "אף פעם לא זייפתי מחלה כדי לא ללכת לעבודה",
+      "אף פעם לא הזמנתי בגדים באונליין",
+      "אף פעם לא קניתי ספר שלא קראתי",
+      "אף פעם לא עשיתי לייזר בגוף",
+      "אף פעם לא יצאתי לדייט מאפליקציה",
+      "אף פעם לא שילמתי בדייט ראשון",
+      "אף פעם לא יצאתי לבליינד דייט",
+      "אף פעם לא שיקרתי בקורות חיים",
+      "אף פעם לא אכלתי אוכל שנפל על הרצפה",
+      "אף פעם לא עשיתי יוגה",
+      "אף פעם לא הייתי בים המלח",
+      "אף פעם לא ראיתי סדרה שלמה ביום אחד",
+      "אף פעם לא שכחתי איפה חניתי",
+      "אף פעם לא נרדמתי באמצע סרט בקולנוע",
+    ],
   },
 };
 
 const QUIZ_DECKS = {
   bridequiz: { headline: "חידון על הכלה",
-    rules: ["כל שאלה — 4 תשובות, אחת נכונה.", "כל החברות מנחשות. מי שצדקה הכי הרבה — מנצחת.", "אפשר להקרין על מסך גדול כמו בחידון אמיתי."],
+    rules: [
+      "כל שאלה — 10 שניות לחשוב ולכתוב תשובה.",
+      "בתום הזמן הכלה עונה — ורק אז ייחשפו התשובות המצחיקות של הבנות.",
+      "מי שהכי קרוב למה שהכלה אמרה — מנצחת.",
+      "אפשר להקרין על מסך גדול בנוסף לטלפון של כל אחת.",
+    ],
+    secondsPerQ: 10,
     questions: [
-      { q: "מה הצבע האהוב על מאיה?", a: ["ורוד", "שחור", "תכלת", "סגול"], correct: 0 },
-      { q: "איפה מאיה הכי אוהבת לבלות?", a: ["ים", "הרים", "קניון", "בית קפה"], correct: 0 },
-      { q: "מה המאכל שמאיה הכי אוהבת?", a: ["סושי", "פיצה", "חומוס", "פסטה"], correct: 1 },
-      { q: "כמה אחים יש למאיה?", a: ["1", "2", "3", "4"], correct: 2 },
-      { q: "מה החיה האהובה על מאיה?", a: ["כלבה", "חתולה", "סוסה", "ארנבת"], correct: 1 },
-      { q: "מה היעד שמאיה הכי רוצה לטוס אליו?", a: ["יפן", "איטליה", "תאילנד", "ניו יורק"], correct: 0 },
+      "במה היא עובדת?",
+      "למה היא אלרגית?",
+      "מה היא הייתה לוקחת לאי בודד?",
+      "איזה טסט היא עברה?",
+      "מה התכונה הכי חזקה שלה?",
+      "אם היה לה כוח על — מה זה היה?",
+      "על מה היא הייתה נכנסת לכלא?",
+      "אם היה לה ערוץ יוטיוב — על מה זה היה?",
+      "איזה אימוג'י הכי מתאים לה?",
+      "אם היא הייתה זוכה ב-25,000 ₪ — מה הדבר הכי יקר שהיא הייתה קונה?",
+    ],
+    // Mock "girls answers" used when there's no real multi-player backend yet.
+    // Each entry maps to the question at the same index.
+    mockAnswers: [
+      [{ n: "ליהי", a: "מתכנתת" }, { n: "שירה", a: "מורה לקראט" }, { n: "תמר", a: "דוקטור לפילוסופיה" }],
+      [{ n: "ליהי", a: "אגוזי לוז" }, { n: "שירה", a: "ביישנות" }, { n: "תמר", a: "אהבה" }],
+      [{ n: "ליהי", a: "ספר טוב" }, { n: "שירה", a: "ה-iPhone שלה" }, { n: "תמר", a: "חברתה הכי טובה (אני)" }],
+      [{ n: "ליהי", a: "טסט נהיגה (חמש פעמים)" }, { n: "שירה", a: "פסיכומטרי" }, { n: "תמר", a: "טסט DNA" }],
+      [{ n: "ליהי", a: "עקשנות" }, { n: "שירה", a: "אכפתיות" }, { n: "תמר", a: "אופטימיות" }],
+      [{ n: "ליהי", a: "טלפתיה" }, { n: "שירה", a: "להיות בלתי נראית" }, { n: "תמר", a: "לטוס" }],
+      [{ n: "ליהי", a: "הברחת חמאה למדינה זרה" }, { n: "שירה", a: "אהבה מטורפת" }, { n: "תמר", a: "גניבת חתולים" }],
+      [{ n: "ליהי", a: "מתכונים של אמא שלה" }, { n: "שירה", a: "ASMR" }, { n: "תמר", a: "Vlog יומיומי" }],
+      [{ n: "ליהי", a: "👑" }, { n: "שירה", a: "🌸" }, { n: "תמר", a: "🦋" }],
+      [{ n: "ליהי", a: "טיסה ליפן" }, { n: "שירה", a: "תיק יד יוקרתי" }, { n: "תמר", a: "השלמת לימודי תואר שני" }],
     ],
   },
 };
@@ -2355,54 +2475,121 @@ function ProjectionShell({ children, headline, onClose, T }) {
 function TimerGame({ T: parentT, game, onBack }) {
   const T = { ...parentT, accent: PB[game.pop].main, onAccent: PB[game.pop].on, accentSoft: PB[game.pop].soft, accentDeep: PB[game.pop].deep };
   const deck = TIMER_DECKS[game.id];
+  const totalRounds = deck.rounds || 2;
+  const secsPerRound = deck.secondsPerRound || 120;
+  const isImages = !!deck.images;
+
   const [phase, setPhase] = React.useState("intro");
-  const [timeLeft, setTimeLeft] = React.useState(120);
+  const [round, setRound] = React.useState(1);
+  const [timeLeft, setTimeLeft] = React.useState(secsPerRound);
   const [idx, setIdx] = React.useState(0);
   const [got, setGot] = React.useState(0);
   const [skipped, setSkipped] = React.useState(0);
+  const [roundScores, setRoundScores] = React.useState([]);
+  const [usedIdx, setUsedIdx] = React.useState([]);
   const [projecting, setProjecting] = React.useState(false);
   const order = React.useRef([]);
 
-  const startPlay = () => {
-    order.current = [...deck.prompts].sort(() => Math.random() - 0.5);
-    setTimeLeft(120); setIdx(0); setGot(0); setSkipped(0);
+  const startRound = (roundNum, fresh = false) => {
+    const used = fresh ? [] : usedIdx;
+    const all = deck.prompts.map((_, i) => i);
+    let available = all.filter(i => !used.includes(i));
+    if (available.length === 0) available = all;
+    order.current = available.sort(() => Math.random() - 0.5);
+    setRound(roundNum); setTimeLeft(secsPerRound);
+    setIdx(0); setGot(0); setSkipped(0);
+    if (fresh) { setUsedIdx([]); setRoundScores([]); }
     setPhase("play");
   };
 
   React.useEffect(() => {
     if (phase !== "play") return;
-    if (timeLeft <= 0) { setPhase("done"); return; }
+    if (timeLeft <= 0) {
+      const usedThisRound = order.current.slice(0, idx);
+      setUsedIdx(prev => [...prev, ...usedThisRound]);
+      setRoundScores(prev => [...prev, { got, skipped }]);
+      setPhase(round < totalRounds ? "roundEnd" : "done");
+      return;
+    }
     const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [phase, timeLeft]);
 
-  const prompt = order.current[idx % (order.current.length || 1)];
+  const currentI = order.current[idx % (order.current.length || 1)];
+  const prompt = deck.prompts[currentI];
+  const isImagePrompt = isImages && prompt && typeof prompt === "object";
   const mins = Math.floor(timeLeft / 60);
   const secs = String(timeLeft % 60).padStart(2, "0");
-  const danger = timeLeft <= 15;
+  const danger = timeLeft <= 20;
   const correct = () => { setGot(g => g + 1); setIdx(i => i + 1); };
   const skip = () => { setSkipped(s => s + 1); setIdx(i => i + 1); };
 
   if (phase === "intro")
-    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack} onStart={startPlay} startLabel="התחילו טיימר"/>;
+    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
+      onStart={() => startRound(1, true)} startLabel={`התחילו סבב 1 / ${totalRounds}`}/>;
 
-  if (phase === "done") {
+  if (phase === "roundEnd") {
     return (
       <>
         <StatusBar T={T}/>
         <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
           <TopBar T={T} onBack={onBack} title={game.t}/>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-            <h1 style={{ fontSize: 30, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.5 }}>נגמר הזמן</h1>
-            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 22px" }}>כל הכבוד, זוג אלופות.</p>
+            <Eyebrow T={T}>סבב {round} מתוך {totalRounds}</Eyebrow>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "10px 0 6px", letterSpacing: -0.5 }}>נגמר הסבב</h1>
+            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 20px" }}>זמן לזוג השני להחליף.</p>
             <Card T={T} padding={22} style={{ width: "100%", textAlign: "center" }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: T.inkSoft, letterSpacing: 0.3, textTransform: "uppercase" }}>צברתן</div>
-              <div className="num" style={{ fontSize: 64, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1, marginTop: 8 }}>{got}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 6 }}>ניחושים נכונים</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: T.muted, marginTop: 6 }}>דילגתן על {skipped}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.inkSoft, letterSpacing: 0.3, textTransform: "uppercase" }}>צברתן</div>
+              <div className="num" style={{ fontSize: 60, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1, marginTop: 8 }}>{got}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 6 }}>ניחושים נכונים בסבב הזה</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>דילוגים: {skipped}</div>
             </Card>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, marginTop: 18, lineHeight: 1.5, maxWidth: 280 }}>
+              בנק המילים מתחדש — לא חוזרות על מה שהיה.
+            </p>
           </div>
-          <Btn T={T} onClick={startPlay}>סיבוב נוסף</Btn>
+          <Btn T={T} onClick={() => startRound(round + 1)}>התחילו סבב {round + 1}</Btn>
+          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>סיימו משחק</button>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  if (phase === "done") {
+    const r1 = roundScores[0] || { got: 0, skipped: 0 };
+    const r2 = roundScores[1] || { got: 0, skipped: 0 };
+    const winner = r1.got > r2.got ? 1 : r2.got > r1.got ? 2 : 0;
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.5 }}>סיכום המשחק</h1>
+            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 22px" }}>השוואה בין הסבבים</p>
+            <div style={{ display: "flex", gap: 10, width: "100%" }}>
+              {[r1, r2].map((r, i) => {
+                const isWin = winner === i + 1;
+                return (
+                  <Card key={i} T={T} padding={20} style={{ flex: 1, textAlign: "center",
+                    background: isWin ? T.accentSoft : T.surface,
+                    border: isWin ? `1.5px solid ${T.accent}` : T.border }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.8, textTransform: "uppercase" }}>סבב {i + 1}</div>
+                    <div className="num" style={{ fontSize: 44, fontWeight: 800, color: T.accent, lineHeight: 1, marginTop: 8 }}>{r.got}</div>
+                    <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 4 }}>דילוגים: {r.skipped}</div>
+                    {isWin && <div style={{ marginTop: 8, padding: "3px 10px", display: "inline-block",
+                      background: T.accent, color: T.onAccent, borderRadius: 999, fontSize: 10.5, fontWeight: 800 }}>מנצח</div>}
+                  </Card>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 22, padding: "12px 20px", background: T.surfaceAlt, borderRadius: T.radius,
+              fontSize: 15, fontWeight: 800, color: T.ink }}>
+              {winner === 0 ? "תיקו 🤝" : `הזוג של סבב ${winner} ניצח 🎉`}
+            </div>
+          </div>
+          <Btn T={T} onClick={() => startRound(1, true)}>שחקו עוד</Btn>
           <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>לרשימת המשחקים</button>
         </div>
         <HomeBar/>
@@ -2412,44 +2599,83 @@ function TimerGame({ T: parentT, game, onBack }) {
 
   const playBody = (big) => (
     <>
-      <div style={{
-        margin: "0 auto",
-        background: danger ? T.accent : T.surfaceInk,
-        color: "#fff", border: `1px solid ${danger ? T.accent : T.surfaceInk}`,
-        borderRadius: 999, padding: big ? "10px 36px" : "10px 26px",
-        fontSize: big ? "clamp(36px,6vw,72px)" : 32, fontWeight: 800,
-        letterSpacing: 1.5,
-        animation: danger ? "pulse 0.7s ease-in-out infinite" : "none",
-        display: "inline-block",
-      }} className="num">{mins}:{secs}</div>
-
-      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: big ? 18 : 12 }}>
-        <span style={{
-          fontSize: big ? "clamp(12px,1.6vw,18px)" : 12, fontWeight: 700,
-          background: big ? "rgba(255,255,255,0.12)" : T.surfaceAlt, color: big ? "#fff" : T.inkSoft,
+      {/* Top row: timer + round badge + score badge */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: big ? 12 : 8, flexWrap: "wrap" }}>
+        <div style={{
+          background: danger ? T.accent : T.surfaceInk,
+          color: "#fff", border: `1px solid ${danger ? T.accent : T.surfaceInk}`,
+          borderRadius: 999, padding: big ? "10px 32px" : "10px 22px",
+          fontSize: big ? "clamp(34px,5.5vw,68px)" : 30, fontWeight: 800,
+          letterSpacing: 1.5,
+          animation: danger ? "pulse 0.7s ease-in-out infinite" : "none",
+        }} className="num">{mins}:{secs}</div>
+        <div style={{
+          background: big ? "rgba(255,255,255,0.12)" : T.surfaceAlt,
+          color: big ? "#fff" : T.ink,
           border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
-          borderRadius: 999, padding: big ? "6px 16px" : "5px 12px", letterSpacing: 0.3,
-        }}>{deck.label} · נחושו {got}</span>
+          borderRadius: 999, padding: big ? "8px 16px" : "7px 12px",
+          fontSize: big ? "clamp(13px,1.4vw,18px)" : 12, fontWeight: 800, letterSpacing: 0.4,
+        }}>סבב {round}/{totalRounds}</div>
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "16px 0", minHeight: 0 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: big ? 14 : 10 }}>
+        <span style={{
+          fontSize: big ? "clamp(13px,1.6vw,18px)" : 12, fontWeight: 700,
+          background: T.ok, color: "#fff",
+          borderRadius: 999, padding: big ? "6px 16px" : "5px 12px",
+          display: "inline-flex", alignItems: "center", gap: 6,
+        }}>✓ {got} נכון</span>
+        <span style={{
+          fontSize: big ? "clamp(13px,1.6vw,18px)" : 12, fontWeight: 700,
+          background: big ? "rgba(255,255,255,0.10)" : T.surfaceAlt, color: big ? "#fff" : T.inkSoft,
+          border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
+          borderRadius: 999, padding: big ? "6px 14px" : "5px 11px",
+        }}>{deck.label}</span>
+      </div>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(14px,3vh,30px) 0" : "12px 0", minHeight: 0 }}>
         <div key={idx} style={{
-          width: big ? "min(90%,860px)" : "100%",
+          width: big ? "min(90%,720px)" : "100%",
           background: big ? T.accent : T.surface,
           border: big ? "none" : T.border,
           borderRadius: big ? 32 : 22,
           boxShadow: big ? "0 24px 60px -10px rgba(0,0,0,0.5)" : T.shadow,
-          padding: big ? "clamp(28px,5vw,64px)" : "40px 24px",
+          padding: isImagePrompt ? 0 : (big ? "clamp(24px,4vw,52px)" : "32px 22px"),
+          overflow: "hidden",
           textAlign: "center",
           animation: "cardIn 280ms cubic-bezier(.18,.89,.43,1.19)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          minHeight: big ? "auto" : 200,
+          display: "flex", flexDirection: "column", alignItems: "stretch", justifyContent: "center",
+          minHeight: big ? "auto" : 220,
         }}>
-          <div style={{
-            fontSize: big ? "clamp(40px,7vw,96px)" : 32,
-            fontWeight: 800, lineHeight: 1.15,
-            color: big ? T.onAccent : T.ink, textWrap: "balance", letterSpacing: -0.6,
-          }}>{prompt}</div>
+          {isImagePrompt ? (
+            <>
+              <div style={{ position: "relative", width: "100%",
+                height: big ? "min(58vh,520px)" : 230,
+                background: T.surfaceAlt, overflow: "hidden",
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img
+                  src={`https://source.unsplash.com/featured/800x800/?${encodeURIComponent(prompt.en)}`}
+                  alt={prompt.he}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+              </div>
+              <div style={{
+                padding: big ? "clamp(14px,2vw,24px)" : "13px 16px",
+                fontSize: big ? "clamp(22px,3vw,42px)" : 20,
+                fontWeight: 800,
+                color: big ? T.onAccent : T.ink,
+                background: big ? "rgba(0,0,0,0.18)" : T.surfaceAlt,
+                textAlign: "center", letterSpacing: -0.3,
+              }}>{prompt.he}</div>
+            </>
+          ) : (
+            <div style={{
+              fontSize: big ? "clamp(38px,6vw,84px)" : 30,
+              fontWeight: 800, lineHeight: 1.15,
+              color: big ? T.onAccent : T.ink, textWrap: "balance", letterSpacing: -0.6,
+            }}>{prompt}</div>
+          )}
         </div>
       </div>
 
@@ -2462,7 +2688,7 @@ function TimerGame({ T: parentT, game, onBack }) {
           border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
           borderRadius: T.radius, fontSize: big ? "clamp(16px,2vw,24px)" : 15, fontWeight: 700,
           boxShadow: big ? "none" : T.shadowSm, cursor: "pointer", fontFamily: T.font,
-        }}>דלג</button>
+        }}>עבור</button>
         <button onClick={correct} style={{
           flex: big ? "none" : 2,
           padding: big ? "clamp(14px,1.8vw,20px) clamp(36px,4vw,60px)" : "15px",
@@ -2470,7 +2696,7 @@ function TimerGame({ T: parentT, game, onBack }) {
           border: "none", borderRadius: T.radius,
           fontSize: big ? "clamp(16px,2vw,24px)" : 15, fontWeight: 700,
           boxShadow: big ? "none" : T.shadowSm, cursor: "pointer", fontFamily: T.font,
-        }}>ניחשו ✓</button>
+        }}>נכון!</button>
       </div>
     </>
   );
@@ -2495,39 +2721,70 @@ function TimerGame({ T: parentT, game, onBack }) {
 function QuizGame({ T: parentT, game, onBack }) {
   const T = { ...parentT, accent: PB[game.pop].main, onAccent: PB[game.pop].on, accentSoft: PB[game.pop].soft, accentDeep: PB[game.pop].deep };
   const deck = QUIZ_DECKS[game.id];
-  const [phase, setPhase] = React.useState("intro");
+  const questions = deck.questions || [];
+  const total = questions.length;
+  const timerSec = deck.secondsPerQ || 10;
+
+  const [phase, setPhase] = React.useState("intro"); // intro | play | timeUp | revealed | done
   const [qi, setQi] = React.useState(0);
-  const [picked, setPicked] = React.useState(null);
-  const [score, setScore] = React.useState(0);
+  const [timeLeft, setTimeLeft] = React.useState(timerSec);
   const [projecting, setProjecting] = React.useState(false);
 
-  const q = deck.questions[qi];
-  // brand palette only: pink · black · orange · deep rose
-  const tileColors = ["#EAA0BA", "#1A1A1A", "#E8512A", "#C75E82"];
-  const tileFg     = ["#1A1A1A", "#fff", "#fff", "#fff"];
-  const tileShapes = ["▲", "◆", "●", "■"];
+  React.useEffect(() => {
+    if (phase !== "play") return;
+    if (timeLeft <= 0) { setPhase("timeUp"); return; }
+    const t = setTimeout(() => setTimeLeft(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [phase, timeLeft]);
 
-  const pick = i => { if (picked !== null) return; setPicked(i); if (i === q.correct) setScore(s => s + 1); };
-  const next = () => { if (qi + 1 >= deck.questions.length) { setPhase("done"); return; } setQi(qi + 1); setPicked(null); };
-  const restart = () => { setQi(0); setPicked(null); setScore(0); setPhase("intro"); };
+  const startQ = (idx) => { setQi(idx); setTimeLeft(timerSec); setPhase("play"); };
+  const nextQ = () => { if (qi + 1 >= total) { setPhase("done"); return; } startQ(qi + 1); };
+  const restart = () => { setQi(0); setPhase("intro"); };
 
-  if (phase === "intro")
-    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")} startLabel="מתחילות חידון"/>;
+  const question = questions[qi];
+  const mockAnswers = deck.mockAnswers?.[qi] || [];
+  const danger = timeLeft <= 3 && phase === "play";
+
+  if (phase === "intro") {
+    const introExtras = (
+      <Card T={T} padding={"13px 14px"} style={{ marginTop: 14, background: T.surfaceAlt, border: `1px dashed ${T.lineStrong}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 11, background: T.accent, color: T.onAccent,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="qr" size={20} color={T.onAccent} w={1.6}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: T.ink }}>הצטרפות הבנות לחידון</div>
+            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 1 }}>
+              סורקות QR מהמכשיר, רואות את השאלה ועונות.
+            </div>
+          </div>
+          <button onClick={() => alert("פתיחת סריקה (דמו)")} style={{
+            padding: "8px 12px", background: T.accent, color: T.onAccent,
+            border: "none", borderRadius: T.radius,
+            fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+          }}>QR</button>
+        </div>
+      </Card>
+    );
+    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
+      onStart={() => startQ(0)} startLabel="מתחילות חידון" extras={introExtras}/>;
+  }
 
   if (phase === "done") {
-    const pct = Math.round((score / deck.questions.length) * 100);
     return (
       <>
         <StatusBar T={T}/>
         <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
           <TopBar T={T} onBack={onBack} title={game.t}/>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.4 }}>
-              {pct >= 70 ? "מכירה אותה מצוין" : pct >= 40 ? "לא רע בכלל" : "צריך להכיר יותר"}
-            </h1>
-            <Card T={T} padding={22} style={{ width: "100%", marginTop: 14, textAlign: "center" }}>
-              <div className="num" style={{ fontSize: 60, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1 }}>{score}/{deck.questions.length}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 6 }}>תשובות נכונות</div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 10px", letterSpacing: -0.4 }}>סיימנו את החידון!</h1>
+            <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 22px", maxWidth: 280, lineHeight: 1.55 }}>
+              מקווות שגיליתן עליה משהו חדש 😉
+            </p>
+            <Card T={T} padding={22} style={{ width: "100%", textAlign: "center" }}>
+              <div className="num" style={{ fontSize: 56, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1 }}>{total}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 6 }}>שאלות הושלמו</div>
             </Card>
           </div>
           <Btn T={T} onClick={restart}>עוד פעם</Btn>
@@ -2540,67 +2797,126 @@ function QuizGame({ T: parentT, game, onBack }) {
 
   const quizBody = (big) => (
     <>
-      <div style={{ textAlign: "center", flexShrink: 0 }}>
+      {/* Top: question number + timer */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: big ? 12 : 9, flexShrink: 0 }}>
         <span className="num" style={{
-          display: "inline-block", padding: big ? "6px 20px" : "5px 14px",
+          padding: big ? "5px 16px" : "4px 12px",
           background: big ? "rgba(255,255,255,0.12)" : T.surfaceAlt,
           color: big ? "#fff" : T.inkSoft,
           border: big ? "1px solid rgba(255,255,255,0.18)" : T.border,
-          borderRadius: 999, fontSize: big ? "clamp(14px,1.8vw,22px)" : 12, fontWeight: 700, letterSpacing: 0.4,
-        }}>שאלה {qi + 1} / {deck.questions.length}</span>
+          borderRadius: 999, fontSize: big ? "clamp(13px,1.5vw,18px)" : 11.5, fontWeight: 800,
+        }}>שאלה {qi + 1} / {total}</span>
+        <div className="num" style={{
+          padding: big ? "8px 26px" : "7px 18px",
+          background: danger ? T.accent : T.surfaceInk, color: "#fff", border: "none",
+          borderRadius: 999, fontSize: big ? "clamp(24px,3.5vw,46px)" : 22, fontWeight: 800,
+          animation: danger ? "pulse 0.5s ease-in-out infinite" : "none", letterSpacing: 1,
+        }}>00:{String(Math.max(timeLeft, 0)).padStart(2, "0")}</div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "18px 0", flexShrink: 0 }}>
+      {/* Question (plain large text, no card) */}
+      <div style={{
+        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+        padding: big ? "clamp(24px,4vh,60px) clamp(24px,4vw,80px)" : "30px 16px",
+        minHeight: 0,
+      }}>
+        <h1 style={{
+          fontSize: big ? "clamp(40px,6vw,90px)" : 27,
+          fontWeight: 800, lineHeight: 1.2,
+          color: big ? "#fff" : T.ink,
+          textAlign: "center", textWrap: "balance", letterSpacing: -0.4, margin: 0,
+        }}>{question}</h1>
+      </div>
+
+      {/* Time-up overlay */}
+      {phase === "timeUp" && (
         <div style={{
-          width: big ? "min(92%,1000px)" : "100%",
-          background: big ? "rgba(255,255,255,0.97)" : T.surface,
-          border: big ? "none" : T.border,
-          borderRadius: big ? 28 : 22, boxShadow: big ? "0 20px 50px -10px rgba(0,0,0,0.4)" : T.shadow,
-          padding: big ? "clamp(24px,4vw,52px)" : "28px 20px", textAlign: "center",
+          position: "absolute", inset: 0,
+          background: "rgba(20,18,16,0.82)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          zIndex: 30, padding: big ? "clamp(40px,8vw,80px)" : "60px 30px",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          textAlign: "center", gap: big ? 30 : 22, animation: "screenIn 300ms ease-out",
         }}>
-          <div style={{ fontSize: big ? "clamp(30px,5vw,64px)" : 22, fontWeight: 800, lineHeight: 1.2, color: T.ink, textWrap: "balance", letterSpacing: -0.4 }}>{q.q}</div>
+          <div style={{
+            fontSize: big ? "clamp(13px,1.8vw,24px)" : 11.5, fontWeight: 800,
+            color: "rgba(255,255,255,0.55)", letterSpacing: 2.5, textTransform: "uppercase",
+          }}>תם הזמן</div>
+          <div style={{
+            fontSize: big ? "clamp(34px,5vw,72px)" : 26, fontWeight: 800,
+            color: "#fff", lineHeight: 1.25, letterSpacing: -0.4, maxWidth: big ? "70%" : "100%",
+          }}>כלתינו, זה הרגע שלך לענות!</div>
+          <button onClick={() => setPhase("revealed")} style={{
+            marginTop: big ? 4 : 0,
+            padding: big ? "clamp(14px,1.8vw,22px) clamp(36px,4vw,60px)" : "14px 26px",
+            background: T.accent, color: T.onAccent,
+            border: "none", borderRadius: T.radius,
+            fontSize: big ? "clamp(16px,2vw,26px)" : 15, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+          }}>חשוף את התשובות</button>
         </div>
-      </div>
+      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: big ? 14 : 9, flexShrink: 0 }}>
-        {q.a.map((ans, i) => {
-          const isCorrect = picked !== null && i === q.correct;
-          const isWrong = picked === i && i !== q.correct;
-          const dim = picked !== null && i !== q.correct && picked !== i;
-          return (
-            <button key={i} onClick={() => pick(i)} disabled={picked !== null} style={{
-              background: tileColors[i], color: tileFg[i],
-              border: "none",
-              borderRadius: big ? 18 : 14,
-              boxShadow: big ? "0 6px 0 rgba(0,0,0,0.18)" : T.shadowSm,
-              padding: big ? "clamp(18px,2.5vw,32px)" : "16px 13px",
-              fontSize: big ? "clamp(18px,2.4vw,34px)" : 14.5, fontWeight: 700,
-              fontFamily: T.font, cursor: picked !== null ? "default" : "pointer",
-              display: "flex", alignItems: "center", gap: big ? 14 : 8,
-              opacity: dim ? 0.35 : 1,
-              transform: isCorrect ? "scale(1.03)" : "none",
-              transition: "opacity 200ms, transform 200ms",
-              position: "relative", textAlign: "right",
-            }}>
-              <span style={{ fontSize: big ? "clamp(20px,2.4vw,34px)" : 17, flexShrink: 0, opacity: 0.7 }}>{tileShapes[i]}</span>
-              <span style={{ flex: 1 }}>{ans}</span>
-              {isCorrect && <span style={{ fontSize: big ? 30 : 18 }}>✓</span>}
-              {isWrong && <span style={{ fontSize: big ? 30 : 18 }}>✗</span>}
-            </button>
-          );
-        })}
-      </div>
+      {/* Revealed list overlay */}
+      {phase === "revealed" && (
+        <div style={{
+          position: "absolute", inset: 0,
+          background: big ? "rgba(20,18,16,0.95)" : T.bg,
+          padding: big ? "clamp(24px,4vw,60px)" : "48px 22px 28px",
+          display: "flex", flexDirection: "column",
+          animation: "screenIn 300ms ease-out", zIndex: 30,
+        }}>
+          <div style={{ flexShrink: 0, marginBottom: big ? 18 : 14 }}>
+            <div style={{ fontSize: big ? "clamp(11px,1.4vw,18px)" : 10.5, fontWeight: 800,
+              color: big ? "rgba(255,255,255,0.65)" : T.inkSoft, letterSpacing: 1.6, textTransform: "uppercase" }}>
+              שאלה {qi + 1} · התשובות נחשפו
+            </div>
+            <div style={{ fontSize: big ? "clamp(22px,2.8vw,40px)" : 18, fontWeight: 800,
+              color: big ? "#fff" : T.ink, marginTop: 6, letterSpacing: -0.3, lineHeight: 1.2 }}>{question}</div>
+          </div>
 
-      {picked !== null && (
-        <button onClick={next} style={{
-          marginTop: big ? 20 : 12,
-          alignSelf: big ? "center" : "stretch",
-          padding: big ? "clamp(14px,1.8vw,20px) clamp(40px,5vw,72px)" : "14px",
-          background: T.accent, color: T.onAccent,
-          border: "none", borderRadius: T.radius,
-          fontSize: big ? "clamp(16px,2vw,26px)" : 15, fontWeight: 700,
-          boxShadow: big ? "none" : T.shadowSm, cursor: "pointer", fontFamily: T.font,
-        }}>{qi + 1 >= deck.questions.length ? "לתוצאות" : "השאלה הבאה"}</button>
+          <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: big ? 10 : 8 }}>
+            {mockAnswers.length === 0 ? (
+              <div style={{ padding: 20, color: big ? "rgba(255,255,255,0.7)" : T.inkSoft,
+                textAlign: "center", fontSize: 13, fontWeight: 500 }}>
+                במצב אמיתי יופיעו פה כל הבנות שסרקו QR והתשובות שלהן.
+              </div>
+            ) : (
+              mockAnswers.map((ans, idx) => {
+                const cycle = [PB.orange, PB.pink, PB.ink];
+                const p = cycle[idx % 3];
+                return (
+                  <div key={idx} style={{
+                    display: "flex", alignItems: "center", gap: big ? 14 : 11,
+                    background: big ? "rgba(255,255,255,0.08)" : T.surface,
+                    border: big ? "1px solid rgba(255,255,255,0.15)" : T.border,
+                    borderRadius: big ? 14 : 12, padding: big ? "12px 16px" : "10px 12px",
+                  }}>
+                    <div style={{
+                      width: big ? 38 : 32, height: big ? 38 : 32, borderRadius: 999, flexShrink: 0,
+                      background: p.main, color: p.on,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: big ? 14 : 12, fontWeight: 800,
+                    }}>{ans.n.charAt(0)}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: big ? "clamp(12px,1.4vw,18px)" : 11.5, fontWeight: 800,
+                        color: big ? "rgba(255,255,255,0.7)" : T.inkSoft }}>{ans.n}</div>
+                      <div style={{ fontSize: big ? "clamp(15px,1.8vw,24px)" : 14, fontWeight: 700,
+                        color: big ? "#fff" : T.ink, marginTop: 1, lineHeight: 1.3 }}>{ans.a}</div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <button onClick={nextQ} style={{
+            marginTop: big ? 18 : 14, flexShrink: 0,
+            padding: big ? "clamp(14px,1.8vw,22px) clamp(36px,4vw,60px)" : "14px",
+            background: T.accent, color: T.onAccent,
+            border: "none", borderRadius: T.radius,
+            fontSize: big ? "clamp(16px,2vw,26px)" : 15, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+          }}>{qi + 1 >= total ? "סיימנו" : "השאלה הבאה"}</button>
+        </div>
       )}
     </>
   );
@@ -2610,7 +2926,7 @@ function QuizGame({ T: parentT, game, onBack }) {
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, padding: "48px 22px 20px", display: "flex", flexDirection: "column" }}>
         <GameTopBar T={T} onBack={onBack} onProject={() => setProjecting(true)} title={game.t}/>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>{quizBody(false)}</div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>{quizBody(false)}</div>
       </div>
       <HomeBar/>
       {projecting && (
@@ -2630,6 +2946,8 @@ function CardGame({ T: parentT, game, onBack }) {
   const [projecting, setProjecting] = React.useState(false);
   const [revealed, setRevealed] = React.useState({});
   const [groomData, setGroomData] = React.useState(loadGroomAnswers);
+  const [groomMarks, setGroomMarks] = React.useState({});
+  const [groomSummary, setGroomSummary] = React.useState(false);
 
   const total = deck.prompts.length;
   const prompt = deck.prompts[i];
@@ -2727,6 +3045,42 @@ function CardGame({ T: parentT, game, onBack }) {
       }
       extras={groomExtras}/>;
 
+  if (isGroomq && groomSummary) {
+    const right = Object.values(groomMarks).filter(m => m === "right").length;
+    const wrong = Object.values(groomMarks).filter(m => m === "wrong").length;
+    const pct = total ? Math.round((right / total) * 100) : 0;
+    const msg = pct >= 70 ? "אתם מכירים אחד את השני!" : pct >= 40 ? "לא רע, יש על מה לעבוד 😉" : "צריך לדבר יותר…";
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <Eyebrow T={T}>סיכום השאלון</Eyebrow>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: "10px 0 18px", letterSpacing: -0.4, lineHeight: 1.15 }}>{msg}</h1>
+            <Card T={T} padding={22} style={{ width: "100%", textAlign: "center" }}>
+              <div className="num" style={{ fontSize: 56, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1 }}>{right}/{total}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginTop: 6 }}>צדקה ({pct}%)</div>
+            </Card>
+            <div style={{ display: "flex", gap: 10, marginTop: 14, width: "100%" }}>
+              <div style={{ flex: 1, padding: "10px 12px", background: T.ok, color: "#fff", borderRadius: T.radius, textAlign: "center" }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.9 }}>צדקה</div>
+                <div className="num" style={{ fontSize: 22, fontWeight: 800 }}>{right}</div>
+              </div>
+              <div style={{ flex: 1, padding: "10px 12px", background: PB.pink.main, color: PB.pink.on, borderRadius: T.radius, textAlign: "center" }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85 }}>פספסה</div>
+                <div className="num" style={{ fontSize: 22, fontWeight: 800 }}>{wrong}</div>
+              </div>
+            </div>
+          </div>
+          <Btn T={T} onClick={() => { setI(0); setRevealed({}); setGroomMarks({}); setGroomSummary(false); }}>שחקו עוד</Btn>
+          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>לרשימת המשחקים</button>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
   const body = (big) => (
     <>
       <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap", flexShrink: 0, marginBottom: big ? 0 : 6 }}>
@@ -2804,32 +3158,71 @@ function CardGame({ T: parentT, game, onBack }) {
               color: big ? "rgba(255,255,255,0.85)" : T.inkSoft, letterSpacing: 0.5, textTransform: "uppercase",
             }}>סבב סביב השולחן — מי, את מי, ולמה?</div>
           )}
-          {/* Groom answer reveal — only for groomq when answers exist */}
+          {/* Groom answer reveal + bride scoring — only for groomq when answers exist */}
           {isGroomq && groomAnswerForPrompt && (
             revealed[i] ? (
-              <div style={{
-                width: "100%",
-                marginTop: big ? 8 : 4,
-                padding: big ? "clamp(16px,2vw,28px)" : "12px 14px",
-                background: big ? "rgba(255,255,255,0.95)" : PB.orange.soft,
-                color: big ? PB.orange.deep : PB.orange.deep,
-                border: big ? "none" : `1px solid ${PB.orange.main}55`,
-                borderRadius: big ? 18 : 12,
-                animation: "cardIn 280ms ease-out",
-              }}>
-                <div style={{ fontSize: big ? "clamp(11px,1.2vw,16px)" : 10.5, fontWeight: 800,
-                  letterSpacing: 1.2, textTransform: "uppercase", opacity: 0.75 }}>תשובת החתן</div>
-                <div style={{ fontSize: big ? "clamp(22px,3vw,42px)" : 16, fontWeight: 700,
-                  lineHeight: 1.35, marginTop: big ? 6 : 4, color: big ? "#1A1A1A" : PB.orange.deep }}>
-                  {groomAnswerForPrompt}
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: big ? 12 : 8 }}>
+                <div style={{
+                  width: "100%",
+                  padding: big ? "clamp(16px,2vw,28px)" : "12px 14px",
+                  background: big ? "rgba(255,255,255,0.95)" : PB.orange.soft,
+                  color: big ? PB.orange.deep : PB.orange.deep,
+                  border: big ? "none" : `1px solid ${PB.orange.main}55`,
+                  borderRadius: big ? 18 : 12,
+                  animation: "cardIn 280ms ease-out",
+                }}>
+                  <div style={{ fontSize: big ? "clamp(11px,1.2vw,16px)" : 10.5, fontWeight: 800,
+                    letterSpacing: 1.2, textTransform: "uppercase", opacity: 0.75 }}>תשובת החתן</div>
+                  <div style={{ fontSize: big ? "clamp(22px,3vw,42px)" : 16, fontWeight: 700,
+                    lineHeight: 1.35, marginTop: big ? 6 : 4, color: big ? "#1A1A1A" : PB.orange.deep }}>
+                    {groomAnswerForPrompt}
+                  </div>
                 </div>
+                {groomMarks[i] ? (
+                  <div style={{
+                    padding: big ? "10px 16px" : "8px 14px",
+                    background: groomMarks[i] === "right" ? T.ok : PB.pink.main,
+                    color: groomMarks[i] === "right" ? "#fff" : PB.pink.on,
+                    borderRadius: 999, textAlign: "center",
+                    fontSize: big ? "clamp(13px,1.4vw,18px)" : 13, fontWeight: 800,
+                  }}>
+                    {groomMarks[i] === "right" ? "✓ הכלה צדקה — הבנות שותות" : "✗ פספסה — הכלה שותה"}
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: big ? 12 : 8 }}>
+                    <button onClick={() => {
+                      const next = { ...groomMarks, [i]: "wrong" };
+                      setGroomMarks(next);
+                      if (i + 1 >= total) setGroomSummary(true);
+                    }} style={{
+                      flex: 1,
+                      padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
+                      background: big ? "rgba(255,255,255,0.18)" : PB.pink.main,
+                      color: big ? "#fff" : PB.pink.on,
+                      border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
+                      borderRadius: T.radius,
+                      fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                    }}>✗ פספסה</button>
+                    <button onClick={() => {
+                      const next = { ...groomMarks, [i]: "right" };
+                      setGroomMarks(next);
+                      if (i + 1 >= total) setGroomSummary(true);
+                    }} style={{
+                      flex: 1,
+                      padding: big ? "clamp(12px,1.4vw,18px)" : "11px 14px",
+                      background: T.ok, color: "#fff",
+                      border: "none", borderRadius: T.radius,
+                      fontSize: big ? "clamp(13px,1.4vw,18px)" : 13.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                    }}>✓ צדקה!</button>
+                  </div>
+                )}
               </div>
             ) : (
               <button onClick={() => setRevealed({ ...revealed, [i]: true })} style={{
                 marginTop: big ? 8 : 4,
                 padding: big ? "clamp(12px,1.4vw,20px) clamp(24px,3vw,40px)" : "10px 20px",
                 background: big ? "rgba(255,255,255,0.18)" : PB.orange.main,
-                color: big ? "#fff" : "#fff",
+                color: "#fff",
                 border: big ? "1.5px solid rgba(255,255,255,0.4)" : "none",
                 borderRadius: 999,
                 fontSize: big ? "clamp(13px,1.5vw,20px)" : 13, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
