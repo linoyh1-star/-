@@ -520,18 +520,75 @@ function ScreenWelcome({ T, onNext }) {
 /* ──────────────────────────────────────────────────────────────
    SMS PHONE VERIFICATION (after email code)
    ────────────────────────────────────────────────────────────── */
-const VALID_SMS_CODE = "654321";
+// Normalize Israeli phone input to E.164 (+972...) — returns null if invalid
+const normalizePhoneIL = (input) => {
+  const d = (input || "").replace(/[^\d]/g, "");
+  if (!d) return null;
+  if (d.startsWith("972")) return "+" + d;
+  if (d.startsWith("0")) return "+972" + d.substring(1);
+  if (d.length === 9 && d.startsWith("5")) return "+972" + d;
+  return null;
+};
 
 function ScreenSmsVerify({ T, onNext, onBack }) {
+  const [phase, setPhase] = React.useState("phone"); // phone | code
+  const [phone, setPhone] = React.useState("");
   const [code, setCode] = React.useState(["", "", "", "", "", ""]);
-  const [seconds, setSeconds] = React.useState(45);
+  const [confirmation, setConfirmation] = React.useState(null);
+  const [sending, setSending] = React.useState(false);
+  const [verifying, setVerifying] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [seconds, setSeconds] = React.useState(0);
   const inputsRef = React.useRef([]);
-  React.useEffect(() => { inputsRef.current[0]?.focus(); }, []);
+
+  const normalized = normalizePhoneIL(phone);
+  const phoneValid = normalized !== null;
+
+  React.useEffect(() => {
+    if (phase === "code") inputsRef.current[0]?.focus();
+  }, [phase]);
   React.useEffect(() => {
     if (seconds <= 0) return;
     const t = setTimeout(() => setSeconds(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [seconds]);
+
+  const sendCode = async () => {
+    if (!phoneValid || sending) return;
+    setSending(true); setError("");
+    try {
+      if (!window.FB) throw new Error("חיבור Firebase לא הצליח. נסי לרענן.");
+      const result = await fbSendSMS(normalized);
+      setConfirmation(result);
+      setPhase("code"); setSeconds(45);
+      setCode(["", "", "", "", "", ""]);
+    } catch (e) {
+      console.error("[SMS send]", e);
+      const msg = e?.code === "auth/invalid-phone-number" ? "מספר לא תקין" :
+        e?.code === "auth/too-many-requests" ? "יותר מדי ניסיונות, נסי בעוד כמה דקות" :
+        e?.code === "auth/captcha-check-failed" ? "אימות נכשל, רענני ונסי שוב" :
+        e?.message || "שליחת SMS נכשלה";
+      setError(msg);
+      try { window._recaptcha?.clear(); } catch (_) {}
+      _recaptcha = null;
+    } finally { setSending(false); }
+  };
+
+  const verifyCode = async () => {
+    const codeStr = code.join("");
+    if (codeStr.length !== 6 || verifying || !confirmation) return;
+    setVerifying(true); setError("");
+    try {
+      await confirmation.confirm(codeStr);
+      onNext();
+    } catch (e) {
+      console.error("[SMS verify]", e);
+      const msg = e?.code === "auth/invalid-verification-code" ? "הקוד לא נכון, נסי שוב" :
+        e?.code === "auth/code-expired" ? "הקוד פג תוקף, בקשי קוד חדש" :
+        e?.message || "אימות נכשל";
+      setError(msg);
+    } finally { setVerifying(false); }
+  };
 
   const setDigit = (i, v) => {
     const clean = (v || "").replace(/[^0-9]/g, "");
@@ -554,75 +611,112 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
     else if (e.key === "ArrowRight" && i > 0) inputsRef.current[i - 1]?.focus();
   };
   const filled = code.every(c => c.length === 1);
-  const isValid = code.join("") === VALID_SMS_CODE;
-  const isWrong = filled && !isValid;
 
   return (
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, padding: "48px 24px 28px", display: "flex", flexDirection: "column" }}>
-        <TopBar T={T} onBack={onBack}/>
+        <TopBar T={T} onBack={phase === "code" ? () => setPhase("phone") : onBack}/>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <Eyebrow T={T}>אימות בטחוני</Eyebrow>
           <h1 style={{ fontSize: 30, fontWeight: 800, lineHeight: 1.15, margin: "12px 0 0", letterSpacing: -0.5 }}>
-            אימות מספר<br/>הנייד שלכם.ן
+            {phase === "phone" ? <>אימות מספר<br/>הנייד שלכם.ן</> : <>הזיני את הקוד<br/>שקיבלת ב-SMS</>}
           </h1>
           <p style={{ fontSize: 15, lineHeight: 1.65, color: T.inkSoft, margin: "16px 0 0", maxWidth: 300, fontWeight: 500 }}>
-            שלחנו קוד בן 6 ספרות למספר שמסרת ברכישה. הזיני אותו כדי להמשיך.<br/>
-            <span style={{ fontSize: 12, color: T.muted }}>(הקוד מבטיח שהאפליקציה לא מועברת למישהי אחרת.)</span>
+            {phase === "phone" ? (
+              <>הזיני את מספר הנייד שלך, נשלח אלייך קוד אימות ב-SMS.<br/>
+                <span style={{ fontSize: 12, color: T.muted }}>(הקוד מבטיח שהאפליקציה לא מועברת למישהי אחרת.)</span>
+              </>
+            ) : (
+              <>שלחנו קוד 6 ספרות ל-<b style={{ color: T.ink, direction: "ltr", display: "inline-block" }}>{normalized}</b>.<br/>
+                <span style={{ fontSize: 12, color: T.muted }}>הקוד יגיע תוך מספר שניות.</span>
+              </>
+            )}
           </p>
         </div>
 
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>קוד מ-SMS</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: T.muted, fontWeight: 600 }}>
-              <Icon name="lock" size={14} color={T.muted} w={1.5}/> ***1234
-            </span>
+        {phase === "phone" ? (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 10 }}>מספר הנייד שלי</div>
+            <input
+              autoFocus
+              value={phone}
+              onChange={e => { setPhone(e.target.value); setError(""); }}
+              placeholder="050-1234567"
+              inputMode="tel"
+              autoComplete="tel"
+              style={{
+                width: "100%", height: 56, borderRadius: 13,
+                background: T.surfaceAlt,
+                boxShadow: `inset 0 0 0 ${phoneValid ? 1.5 : 1}px ${phoneValid ? T.accent : T.line}`,
+                border: "none", textAlign: "center",
+                fontSize: 22, fontWeight: 700, color: T.ink,
+                outline: "none", padding: 0, direction: "ltr",
+                fontVariantNumeric: "tabular-nums",
+              }}/>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: error ? T.accent : T.inkSoft, fontWeight: 500, minHeight: 18 }}>
+              {error ? error : phoneValid ? `יישלח ל: ${normalized}` : "פורמט: 0501234567 או 050-123-4567"}
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8, direction: "ltr" }}>
-            {code.map((ch, i) => {
-              const active = !isWrong && (ch || (i === code.findIndex(c => !c)));
-              return (
-                <input key={i}
-                  ref={el => { inputsRef.current[i] = el; }}
-                  value={ch}
-                  onChange={e => setDigit(i, e.target.value)}
-                  onKeyDown={e => onKey(i, e)}
-                  onFocus={e => e.target.select()}
-                  inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*"
-                  style={{
-                    flex: 1, width: 0, height: 56, borderRadius: 13,
-                    background: isWrong ? "#FDEDE9" : T.surfaceAlt,
-                    boxShadow: isWrong ? `inset 0 0 0 1.5px ${T.accent}` :
-                              active ? `inset 0 0 0 1.5px ${T.accent}` :
-                              `inset 0 0 0 1px ${T.line}`,
-                    border: "none", textAlign: "center",
-                    fontSize: 24, fontWeight: 700, color: T.ink,
-                    outline: "none", padding: 0, direction: "ltr",
-                    fontVariantNumeric: "tabular-nums",
-                  }}/>
-              );
-            })}
+        ) : (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>קוד מ-SMS</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: T.muted, fontWeight: 600 }}>
+                <Icon name="lock" size={14} color={T.muted} w={1.5}/> 6 ספרות
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: 8, direction: "ltr" }}>
+              {code.map((ch, i) => {
+                const active = !error && (ch || (i === code.findIndex(c => !c)));
+                return (
+                  <input key={i}
+                    ref={el => { inputsRef.current[i] = el; }}
+                    value={ch}
+                    onChange={e => setDigit(i, e.target.value)}
+                    onKeyDown={e => onKey(i, e)}
+                    onFocus={e => e.target.select()}
+                    inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*"
+                    style={{
+                      flex: 1, width: 0, height: 56, borderRadius: 13,
+                      background: error ? "#FDEDE9" : T.surfaceAlt,
+                      boxShadow: error ? `inset 0 0 0 1.5px ${T.accent}` :
+                                active ? `inset 0 0 0 1.5px ${T.accent}` :
+                                `inset 0 0 0 1px ${T.line}`,
+                      border: "none", textAlign: "center",
+                      fontSize: 24, fontWeight: 700, color: T.ink,
+                      outline: "none", padding: 0, direction: "ltr",
+                      fontVariantNumeric: "tabular-nums",
+                    }}/>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 12, fontSize: 12.5, color: error ? T.accent : T.inkSoft, fontWeight: 500, minHeight: 18 }}>
+              {error || "מקבלות את הקוד? הזיני אותו פה."}
+            </div>
           </div>
-          <div style={{ marginTop: 12, fontSize: 12.5, color: isWrong ? T.accent : T.inkSoft, fontWeight: 500 }}>
-            {isWrong ? "אופס, הקוד לא נכון. נסי שוב." : (
-              <>רמז (לדמו): <span style={{ color: T.accent, fontWeight: 700 }}>654321</span></>
+        )}
+
+        {phase === "phone" ? (
+          <Btn T={T} onClick={sendCode} disabled={!phoneValid || sending}>
+            {sending ? "שולחת SMS..." : "שלחי לי קוד SMS"}
+          </Btn>
+        ) : (
+          <Btn T={T} onClick={verifyCode} disabled={!filled || verifying}>
+            {verifying ? "מאמתת..." : filled ? "אישור והמשך" : "ממתינות לקוד..."}
+          </Btn>
+        )}
+
+        {phase === "code" && (
+          <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
+            {seconds > 0 ? (
+              <>לא קיבלת? אפשר לשלוח שוב בעוד <b className="num" style={{ color: T.ink }}>{seconds}</b> שניות</>
+            ) : (
+              <span onClick={sendCode} style={{ color: T.accent, fontWeight: 700, cursor: "pointer", borderBottom: `1.5px solid ${T.accentSoft}` }}>שלחי לי קוד חדש</span>
             )}
           </div>
-        </div>
-
-        <Btn T={T} onClick={onNext} disabled={!isValid}>
-          {isValid ? "אישור והמשך" : isWrong ? "קוד שגוי" : "ממתינות לקוד..."}
-        </Btn>
-        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
-          {seconds > 0 ? (
-            <>לא קיבלת? אפשר לשלוח שוב בעוד <b className="num" style={{ color: T.ink }}>{seconds}</b> שניות</>
-          ) : (
-            <span onClick={() => setSeconds(45)} style={{ color: T.accent, fontWeight: 700, cursor: "pointer", borderBottom: `1.5px solid ${T.accentSoft}` }}>שלחי לי קוד חדש</span>
-          )}
-        </div>
+        )}
       </div>
       <HomeBar/>
     </>
