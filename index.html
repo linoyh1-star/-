@@ -2334,8 +2334,8 @@ function ScreenGamesHub({ T, onNav, onBack }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
           {GAMES.map((g, gi) => {
-            const tile = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange];
-            const p = tile[gi];
+            const tile = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
+            const p = tile[gi % tile.length];
             return (
               <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
                 display: "flex", alignItems: "center", gap: 13,
