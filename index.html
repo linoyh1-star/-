@@ -2995,15 +2995,10 @@ function QuizGame({ T: parentT, game, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, padding: "48px 22px 20px", display: "flex", flexDirection: "column" }}>
-        <GameTopBar T={T} onBack={onBack} onProject={() => setProjecting(true)} title={game.t}/>
+        <GameTopBar T={T} onBack={onBack} title={game.t}/>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>{quizBody(false)}</div>
       </div>
       <HomeBar/>
-      {projecting && (
-        <ProjectionShell T={T} headline={deck.headline} onClose={() => setProjecting(false)}>
-          {quizBody(true)}
-        </ProjectionShell>
-      )}
     </>
   );
 }
