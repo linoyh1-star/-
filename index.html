@@ -145,6 +145,24 @@ const fbLoadUserData = async (uid) => {
   } catch (e) { console.error("[FS] load failed:", e); return null; }
 };
 
+// Pending users (pre-auth) — written by Make.com when customer pays
+const fbLoadPendingUser = async (token) => {
+  if (!FB || !token) return null;
+  try {
+    const doc = await FB.db.collection("pending_users").doc(token).get();
+    if (!doc.exists) return null;
+    const data = doc.data();
+    if (data.used) return { ...data, alreadyUsed: true };
+    return data;
+  } catch (e) { console.error("[FS] load pending failed:", e); return null; }
+};
+const fbMarkPendingUsed = async (token) => {
+  if (!FB || !token) return;
+  try {
+    await FB.db.collection("pending_users").doc(token).update({ used: true, usedAt: Date.now() });
+  } catch (e) { console.error("[FS] mark used failed:", e); }
+};
+
 /* ──────────────────────────────────────────────────────────────
    THEME — variant B "Love · Laugh · Get Lucky"
    White base + accent that shifts per screen (orange / pink / ink)
@@ -412,7 +430,7 @@ function TopBar({ T, onBack, title, step, right, dark = false }) {
    ────────────────────────────────────────────────────────────── */
 const VALID_CODE = "123456";
 
-function ScreenWelcome({ T, onNext }) {
+function ScreenWelcome({ T, onNext, pendingUser, pendingLoading }) {
   const [code, setCode] = React.useState(["", "", "", "", "", ""]);
   const inputsRef = React.useRef([]);
   React.useEffect(() => { inputsRef.current[0]?.focus(); }, []);
@@ -438,8 +456,11 @@ function ScreenWelcome({ T, onNext }) {
     else if (e.key === "ArrowRight" && i > 0) inputsRef.current[i - 1]?.focus();
   };
   const filled = code.every(c => c.length === 1);
-  const isValid = code.join("") === VALID_CODE;
+  // If pendingUser exists, compare to her unique code; otherwise fall back to demo code
+  const expectedCode = pendingUser?.code || VALID_CODE;
+  const isValid = code.join("") === expectedCode;
   const isWrong = filled && !isValid;
+  const greeting = pendingUser?.fullName ? `היי ${pendingUser.fullName.split(" ")[0]}!` : null;
 
   return (
     <>
@@ -456,12 +477,12 @@ function ScreenWelcome({ T, onNext }) {
 
         {/* Hero */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-          <Eyebrow T={T}>ברוכים הבאים!</Eyebrow>
+          <Eyebrow T={T}>{greeting ? "ברוכה הבאה!" : "ברוכים הבאים!"}</Eyebrow>
           <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.15, margin: "12px 0 0", letterSpacing: -0.6 }}>
-            איזה כיף<br/>שהצטרפתם.ן
+            {greeting ? <>{greeting}<br/>הזיני את הקוד</> : <>איזה כיף<br/>שהצטרפתם.ן</>}
           </h1>
           <p style={{ fontSize: 15, lineHeight: 1.65, color: T.inkSoft, margin: "16px 0 0", maxWidth: 300, fontWeight: 500 }}>
-            לפני כל הכיף, הזינו את הקוד שנשלח לכם.ן למייל ממש כאן למטה.
+            {pendingUser ? <>שלחנו לך במייל קוד 6 ספרות. הזיני אותו כאן כדי להמשיך.</> : <>לפני כל הכיף, הזינו את הקוד שנשלח לכם.ן למייל ממש כאן למטה.</>}
           </p>
         </div>
 
@@ -499,7 +520,7 @@ function ScreenWelcome({ T, onNext }) {
             })}
           </div>
           <div style={{ marginTop: 12, fontSize: 12.5, color: isWrong ? T.accent : T.inkSoft, fontWeight: 500 }}>
-            {isWrong ? "אופס, הקוד לא נכון. נסי שוב." : (
+            {isWrong ? "אופס, הקוד לא נכון. נסי שוב." : pendingLoading ? "טוענת את הפרטים שלך..." : pendingUser ? "הקוד נשלח אלייך למייל ששוייך לתשלום." : (
               <>רמז (לדמו): <span style={{ color: T.accent, fontWeight: 700 }}>123456</span></>
             )}
           </div>
@@ -508,9 +529,11 @@ function ScreenWelcome({ T, onNext }) {
         <Btn T={T} onClick={onNext} disabled={!isValid}>
           {isValid ? "יאללה, נכנסות" : isWrong ? "קוד שגוי" : "ממלאות קוד..."}
         </Btn>
-        <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
-          עוד לא רכשת? <span style={{ color: T.accent, fontWeight: 700, borderBottom: `1.5px solid ${T.accentSoft}` }}>בואי נסדר את זה</span>
-        </div>
+        {!pendingUser && (
+          <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>
+            עוד לא רכשת? <span style={{ color: T.accent, fontWeight: 700, borderBottom: `1.5px solid ${T.accentSoft}` }}>בואי נסדר את זה</span>
+          </div>
+        )}
       </div>
       <HomeBar/>
     </>
@@ -530,9 +553,12 @@ const normalizePhoneIL = (input) => {
   return null;
 };
 
-function ScreenSmsVerify({ T, onNext, onBack }) {
+function ScreenSmsVerify({ T, onNext, onBack, pendingUser }) {
+  // If pendingUser has a phone from the paid transaction, lock it (no manual entry)
+  const lockedPhone = pendingUser?.phone ? normalizePhoneIL(pendingUser.phone) : null;
+  const hasLockedPhone = !!lockedPhone;
   const [phase, setPhase] = React.useState("phone"); // phone | code
-  const [phone, setPhone] = React.useState("");
+  const [phone, setPhone] = React.useState(hasLockedPhone ? pendingUser.phone : "");
   const [code, setCode] = React.useState(["", "", "", "", "", ""]);
   const [confirmation, setConfirmation] = React.useState(null);
   const [sending, setSending] = React.useState(false);
@@ -541,7 +567,7 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
   const [seconds, setSeconds] = React.useState(0);
   const inputsRef = React.useRef([]);
 
-  const normalized = normalizePhoneIL(phone);
+  const normalized = hasLockedPhone ? lockedPhone : normalizePhoneIL(phone);
   const phoneValid = normalized !== null;
 
   React.useEffect(() => {
@@ -580,6 +606,10 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
     setVerifying(true); setError("");
     try {
       await confirmation.confirm(codeStr);
+      // Mark the one-time link as used so it can't be replayed
+      if (pendingUser?.token) {
+        try { await fbMarkPendingUsed(pendingUser.token); } catch (_) {}
+      }
       onNext();
     } catch (e) {
       console.error("[SMS verify]", e);
@@ -616,7 +646,7 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, padding: "48px 24px 28px", display: "flex", flexDirection: "column" }}>
-        <TopBar T={T} onBack={phase === "code" ? () => setPhase("phone") : onBack}/>
+        <TopBar T={T} onBack={phase === "code" ? () => setPhase("phone") : (hasLockedPhone ? null : onBack)}/>
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <Eyebrow T={T}>אימות בטחוני</Eyebrow>
@@ -625,9 +655,15 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
           </h1>
           <p style={{ fontSize: 15, lineHeight: 1.65, color: T.inkSoft, margin: "16px 0 0", maxWidth: 300, fontWeight: 500 }}>
             {phase === "phone" ? (
-              <>הזיני את מספר הנייד שלך, נשלח אלייך קוד אימות ב-SMS.<br/>
-                <span style={{ fontSize: 12, color: T.muted }}>(הקוד מבטיח שהאפליקציה לא מועברת למישהי אחרת.)</span>
-              </>
+              hasLockedPhone ? (
+                <>נשלח אלייך קוד אימות לנייד שאיתו שילמת.<br/>
+                  <span style={{ fontSize: 12, color: T.muted }}>(ככה הפרטים לא עוברים בקלות למישהי אחרת.)</span>
+                </>
+              ) : (
+                <>הזיני את מספר הנייד שלך, נשלח אלייך קוד אימות ב-SMS.<br/>
+                  <span style={{ fontSize: 12, color: T.muted }}>(הקוד מבטיח שהאפליקציה לא מועברת למישהי אחרת.)</span>
+                </>
+              )
             ) : (
               <>שלחנו קוד 6 ספרות ל-<b style={{ color: T.ink, direction: "ltr", display: "inline-block" }}>{normalized}</b>.<br/>
                 <span style={{ fontSize: 12, color: T.muted }}>הקוד יגיע תוך מספר שניות.</span>
@@ -638,22 +674,31 @@ function ScreenSmsVerify({ T, onNext, onBack }) {
 
         {phase === "phone" ? (
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 10 }}>מספר הנייד שלי</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>מספר הנייד שלי</span>
+              {hasLockedPhone && (
+                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: T.muted, fontWeight: 600 }}>
+                  <Icon name="lock" size={13} color={T.muted} w={1.5}/> נעול לפי התשלום
+                </span>
+              )}
+            </div>
             <input
-              autoFocus
-              value={phone}
-              onChange={e => { setPhone(e.target.value); setError(""); }}
+              autoFocus={!hasLockedPhone}
+              readOnly={hasLockedPhone}
+              value={hasLockedPhone ? lockedPhone : phone}
+              onChange={e => { if (!hasLockedPhone) { setPhone(e.target.value); setError(""); } }}
               placeholder="050-1234567"
               inputMode="tel"
               autoComplete="tel"
               style={{
                 width: "100%", height: 56, borderRadius: 13,
-                background: T.surfaceAlt,
+                background: hasLockedPhone ? T.surface : T.surfaceAlt,
                 boxShadow: `inset 0 0 0 ${phoneValid ? 1.5 : 1}px ${phoneValid ? T.accent : T.line}`,
                 border: "none", textAlign: "center",
                 fontSize: 22, fontWeight: 700, color: T.ink,
                 outline: "none", padding: 0, direction: "ltr",
                 fontVariantNumeric: "tabular-nums",
+                cursor: hasLockedPhone ? "default" : "text",
               }}/>
             <div style={{ marginTop: 12, fontSize: 12.5, color: error ? T.accent : T.inkSoft, fontWeight: 500, minHeight: 18 }}>
               {error ? error : phoneValid ? `יישלח ל: ${normalized}` : "פורמט: 0501234567 או 050-123-4567"}
@@ -3588,6 +3633,8 @@ function App() {
   const [gameId, setGameId] = React.useState("lipread");
   const [groomData, setGroomData] = React.useState(null);
   const [toast, setToast] = React.useState(null);
+  const [pendingUser, setPendingUser] = React.useState(null); // data loaded from Firestore via ?t= token
+  const [pendingLoading, setPendingLoading] = React.useState(false);
 
   // hash detection — runs ONCE on mount before anything else
   React.useEffect(() => {
@@ -3608,7 +3655,25 @@ function App() {
         try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
       }
     }
-    // normal session restore (only when not in groom mode)
+
+    // Welcome email link → ?name=...&phone=...&email=... — straight to SMS verify
+    const params = new URLSearchParams(window.location.search);
+    const urlName = params.get("name");
+    const urlPhone = params.get("phone");
+    const urlEmail = params.get("email");
+    if (urlName && urlPhone) {
+      setPendingUser({ fullName: urlName, phone: urlPhone, email: urlEmail || "" });
+      // Pre-fill the display name from payment
+      const firstName = urlName.split(" ")[0];
+      if (firstName) setName(firstName);
+      // Skip the email-code welcome screen — go straight to SMS verification
+      setScreen("smsVerify");
+      // Clean URL so refresh / sharing the URL stops working as a "magic link"
+      try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+      return;
+    }
+
+    // normal session restore (only when not in groom mode / not via email link)
     try {
       const raw = localStorage.getItem("chogegot_state");
       if (raw) {
@@ -3675,8 +3740,8 @@ function App() {
   const T = skin(skinName);
 
   let content;
-  if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")}/>;
-  else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")}/>;
+  if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
+  else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")} pendingUser={pendingUser}/>;
   else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("smsVerify")} name={name} setName={setName}/>;
   else if (screen === "event") content = <ScreenEventPicker T={T} onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent}/>;
   else if (screen === "nameEvent") content = <ScreenNameEvent T={T} eventId={event} eventName={eventName} setEventName={setEventName}
