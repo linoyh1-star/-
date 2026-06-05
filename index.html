@@ -2006,53 +2006,85 @@ function ScreenChecklist({ T, onBack }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
-        <TopBar T={T} onBack={onBack} title="צ'קליסט המארגנת"/>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+        {/* Orange header with progress */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 60%, #E8512A 100%)`,
+          padding: "44px 22px 22px",
+          borderRadius: "0 0 28px 28px",
+          color: "#fff",
+          boxShadow: "0 8px 24px -12px rgba(232,81,42,0.45)",
+          position: "relative", overflow: "hidden", flexShrink: 0,
+        }}>
+          <div style={{
+            position: "absolute", top: -40, right: -40,
+            width: 160, height: 160, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+          }}/>
+          <div style={{
+            position: "absolute", bottom: -60, left: -50,
+            width: 180, height: 180, borderRadius: "50%",
+            background: "rgba(26,26,26,0.12)", pointerEvents: "none",
+          }}/>
 
-        {/* Hero — mirrors budget */}
-        <div style={{ background: T.surfaceInk, color: "#fff", borderRadius: T.radiusLg,
-          padding: "18px 18px 16px", boxShadow: T.shadow, marginTop: 12, flexShrink: 0 }}>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: 0.3 }}>סך משימות לארגון</div>
-          <div className="num" style={{ fontSize: 38, fontWeight: 800, marginTop: 2, letterSpacing: -0.5 }}>{items.length}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: PB.orange.main, color: "#fff" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.9 }}>בוצעו</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{done}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>צ'קליסט המארגנת</div>
+            <div style={{ width: 40 }}/>
+          </div>
+
+          <div style={{ marginTop: 16, position: "relative" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>סך משימות לארגון</div>
+            <div className="num" style={{ fontSize: 42, fontWeight: 800, marginTop: 2, letterSpacing: -0.6, color: "#fff", lineHeight: 1 }}>{items.length}</div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 14, position: "relative" }}>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)",
+              backdropFilter: "blur(4px)", color: "#fff" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.9, letterSpacing: 0.3 }}>בוצעו</div>
+              <div className="num" style={{ fontSize: 19, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>{done}</div>
             </div>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: PB.pink.main, color: PB.pink.on }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>נשארו</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{items.length - done}</div>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: PB.pink.main, color: PB.pink.on,
+              boxShadow: `0 4px 12px -4px ${PB.pink.main}66` }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85, letterSpacing: 0.3 }}>נשארו</div>
+              <div className="num" style={{ fontSize: 19, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>{items.length - done}</div>
             </div>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.16)" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>התקדמות</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>{pct}%</div>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: "#1A1A1A", color: "#fff" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.7, letterSpacing: 0.3 }}>התקדמות</div>
+              <div className="num" style={{ fontSize: 19, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>{pct}%</div>
             </div>
           </div>
-          <div style={{ marginTop: 12, height: 6, background: "rgba(255,255,255,0.10)", borderRadius: 999, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: PB.orange.main, borderRadius: 999, transition: "width 300ms" }}/>
+          <div style={{ marginTop: 12, height: 6, background: "rgba(0,0,0,0.18)", borderRadius: 999, overflow: "hidden", position: "relative" }}>
+            <div style={{ height: "100%", width: `${pct}%`, background: "#fff", borderRadius: 999, transition: "width 300ms" }}/>
           </div>
         </div>
 
         {/* Sections */}
-        <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
-          {CHECKLIST_SECTIONS.map(sec => {
+        <div style={{ flex: 1, overflow: "auto", padding: "20px 22px 14px", display: "flex", flexDirection: "column", gap: 18 }}>
+          {CHECKLIST_SECTIONS.map((sec, sidx) => {
             const sectionItems = items.filter(i => i.section === sec.id);
             const secDone = sectionItems.filter(i => i.done).length;
             const secPct = sectionItems.length ? Math.round((secDone / sectionItems.length) * 100) : 0;
+            const palette = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
+            const sp = palette[sidx % palette.length];
             return (
               <div key={sec.id}>
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   marginBottom: 10, padding: "0 4px",
                 }}>
-                  <div>
-                    <div style={{ fontSize: 14.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{sec.t}</div>
-                    <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginTop: 1, letterSpacing: 0.3 }}>{sec.sub}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 4, height: 26, borderRadius: 2, background: sp.main }}/>
+                    <div>
+                      <div style={{ fontSize: 14.5, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>{sec.t}</div>
+                      <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginTop: 1, letterSpacing: 0.3 }}>{sec.sub}</div>
+                    </div>
                   </div>
-                  <div className="num" style={{ fontSize: 12, fontWeight: 700, color: secPct === 100 ? T.accent : T.inkSoft }}>
+                  <div className="num" style={{ fontSize: 11.5, fontWeight: 800, color: sp.deep,
+                    background: sp.soft, padding: "3px 9px", borderRadius: 999 }}>
                     {secDone}/{sectionItems.length}
                   </div>
                 </div>
@@ -2060,23 +2092,24 @@ function ScreenChecklist({ T, onBack }) {
                   {sectionItems.map(it => (
                     <div key={it.id} style={{
                       display: "flex", alignItems: "center", gap: 11,
-                      background: it.done ? T.surfaceAlt : T.surface,
-                      border: T.border, borderRadius: 12,
+                      background: it.done ? sp.soft : T.surface,
+                      border: it.done ? `1px solid ${sp.main}33` : T.border, borderRadius: 12,
                       boxShadow: it.done ? "none" : T.shadowSm,
                       padding: "11px 13px",
+                      borderRight: it.done ? `3px solid ${sp.main}` : T.border?.borderRight || "1px solid transparent",
                     }}>
                       <button onClick={() => toggle(it.id)} style={{
                         width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-                        background: it.done ? T.accent : "transparent",
+                        background: it.done ? sp.main : "transparent",
                         border: it.done ? "none" : `1.5px solid ${T.lineStrong}`,
                         padding: 0, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>{it.done && <Icon name="check" size={13} color={T.onAccent} w={2}/>}</button>
+                      }}>{it.done && <Icon name="check" size={13} color={sp.on} w={2}/>}</button>
                       <div onClick={() => toggle(it.id)} style={{
                         flex: 1, fontSize: 13.5, fontWeight: 500,
-                        color: it.done ? T.muted : T.ink,
+                        color: it.done ? sp.deep : T.ink,
                         textDecoration: it.done ? "line-through" : "none",
-                        cursor: "pointer", lineHeight: 1.4,
+                        cursor: "pointer", lineHeight: 1.4, opacity: it.done ? 0.75 : 1,
                       }}>{it.t}</div>
                       <button onClick={() => removeItem(it.id)} title="הסרת משימה" style={{
                         width: 26, height: 26, borderRadius: 7, background: "transparent",
@@ -2093,12 +2126,14 @@ function ScreenChecklist({ T, onBack }) {
         </div>
 
         {/* Add row */}
-        <div style={{ display: "flex", gap: 6, marginTop: 10, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6, padding: "10px 22px 24px", flexShrink: 0, background: T.surface,
+          borderTop: `1px solid ${T.line}`,
+        }}>
           <select value={addingTo} onChange={e => setAddingTo(e.target.value)} style={{
             padding: "0 10px", borderRadius: 12,
-            border: T.border, background: T.surface, color: T.ink,
-            fontSize: 11.5, fontWeight: 700, fontFamily: T.font,
-            outline: "none", maxWidth: 110, boxShadow: T.shadowSm,
+            border: T.border, background: PB.orange.soft, color: PB.orange.deep,
+            fontSize: 11.5, fontWeight: 800, fontFamily: T.font,
+            outline: "none", maxWidth: 110,
           }}>
             {CHECKLIST_SECTIONS.map(s => <option key={s.id} value={s.id}>{s.t}</option>)}
           </select>
@@ -2108,15 +2143,16 @@ function ScreenChecklist({ T, onBack }) {
             placeholder="להוסיף משימה..."
             style={{
               flex: 1, padding: "12px 14px", borderRadius: 12,
-              border: T.border, background: T.surface,
+              border: T.border, background: T.surfaceAlt,
               fontSize: 13.5, fontWeight: 500, fontFamily: T.font,
-              color: T.ink, outline: "none", boxShadow: T.shadowSm, minWidth: 0,
+              color: T.ink, outline: "none", minWidth: 0,
             }}/>
           <button onClick={add} style={{
-            width: 44, flexShrink: 0, borderRadius: 12, background: T.accent, color: T.onAccent,
+            width: 44, flexShrink: 0, borderRadius: 12, background: PB.orange.main, color: PB.orange.on,
             border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
-          }}><Icon name="plus" size={18} color={T.onAccent} w={2}/></button>
+            boxShadow: `0 4px 12px -4px ${PB.orange.main}66`,
+          }}><Icon name="plus" size={18} color={PB.orange.on} w={2}/></button>
         </div>
       </div>
       <HomeBar/>
@@ -2248,35 +2284,61 @@ function ScreenBudget({ T, onBack }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 20px 24px", display: "flex", flexDirection: "column" }}>
-        <TopBar T={T} onBack={onBack} title="תקציב"/>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+        {/* Orange header with totals */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 60%, #E8512A 100%)`,
+          padding: "44px 20px 22px",
+          borderRadius: "0 0 28px 28px",
+          color: "#fff",
+          boxShadow: "0 8px 24px -12px rgba(232,81,42,0.45)",
+          position: "relative", overflow: "hidden", flexShrink: 0,
+        }}>
+          <div style={{
+            position: "absolute", top: -30, right: -30,
+            width: 130, height: 130, borderRadius: "50%",
+            background: "rgba(255,255,255,0.10)", pointerEvents: "none",
+          }}/>
+          <div style={{
+            position: "absolute", bottom: -60, left: -50,
+            width: 170, height: 170, borderRadius: "50%",
+            background: "rgba(26,26,26,0.12)", pointerEvents: "none",
+          }}/>
 
-        {/* Hero summary */}
-        <div style={{ background: T.surfaceInk, color: "#fff", borderRadius: T.radiusLg,
-          padding: "18px 18px 16px", boxShadow: T.shadow, marginTop: 12, flexShrink: 0 }}>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.6)", fontWeight: 600, letterSpacing: 0.3 }}>סך הוצאות</div>
-          <div className="num" style={{ fontSize: 38, fontWeight: 800, marginTop: 2, letterSpacing: -0.5 }}>₪{total.toLocaleString()}</div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.16)" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>חלוקה ל-{comingN}</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>₪{perPerson.toLocaleString()}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>תקציב</div>
+            <div style={{ width: 40 }}/>
+          </div>
+
+          <div style={{ marginTop: 16, position: "relative" }}>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>סך הוצאות</div>
+            <div className="num" style={{ fontSize: 42, fontWeight: 800, marginTop: 2, letterSpacing: -0.6, color: "#fff", lineHeight: 1 }}>₪{total.toLocaleString()}</div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 14, position: "relative" }}>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)",
+              backdropFilter: "blur(4px)", color: "#fff" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.92, letterSpacing: 0.3 }}>חלוקה ל-{comingN}</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>₪{perPerson.toLocaleString()}</div>
             </div>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: PB.pink.main, color: "#1A1A1A" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>נאספו</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>₪{collected.toLocaleString()}</div>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: PB.pink.main, color: PB.pink.on,
+              boxShadow: `0 4px 12px -4px ${PB.pink.main}66` }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.82, letterSpacing: 0.3 }}>נאספו</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>₪{collected.toLocaleString()}</div>
             </div>
-            <div style={{ flex: 1, borderRadius: T.radiusSm, padding: "9px 11px",
-              background: PB.orange.main, color: "#fff" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82 }}>חסר</div>
-              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 1 }}>₪{remaining.toLocaleString()}</div>
+            <div style={{ flex: 1, padding: "9px 11px", borderRadius: 12,
+              background: "#1A1A1A", color: "#fff" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.7, letterSpacing: 0.3 }}>חסר</div>
+              <div className="num" style={{ fontSize: 17, fontWeight: 800, marginTop: 2, lineHeight: 1 }}>₪{remaining.toLocaleString()}</div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", gap: 4, marginTop: 14, padding: 4,
+        <div style={{ display: "flex", gap: 4, margin: "16px 20px 0", padding: 4,
           background: T.surfaceAlt, borderRadius: T.radius, flexShrink: 0 }}>
           <TabBtn id="summary" label="סיכום"/>
           <TabBtn id="expenses" label={`הוצאות (${expenses.length})`}/>
@@ -2284,7 +2346,7 @@ function ScreenBudget({ T, onBack }) {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflow: "auto", marginTop: 14, display: "flex", flexDirection: "column", gap: 9 }}>
+        <div style={{ flex: 1, overflow: "auto", padding: "14px 20px 14px", display: "flex", flexDirection: "column", gap: 9 }}>
           {tab === "summary" && (
             <>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
@@ -2667,53 +2729,92 @@ function ScreenGamesHub({ T, onNav, onBack }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column", overflow: "auto" }}>
-        <TopBar T={T} onBack={onBack} title="משחקים"/>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Dark header bar with orange accent */}
+        <div style={{
+          background: `linear-gradient(160deg, #2A2A2A 0%, #1A1A1A 50%, #0F0F0F 100%)`,
+          padding: "44px 22px 26px",
+          borderRadius: "0 0 28px 28px",
+          color: "#fff",
+          boxShadow: "0 8px 24px -12px rgba(0,0,0,0.5)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: -40, left: -40,
+            width: 160, height: 160, borderRadius: "50%",
+            background: `${PB.orange.main}1F`, pointerEvents: "none",
+          }}/>
+          <div style={{
+            position: "absolute", bottom: -50, right: -40,
+            width: 160, height: 160, borderRadius: "50%",
+            background: `${PB.pink.main}1A`, pointerEvents: "none",
+          }}/>
 
-        <div style={{ marginTop: 16 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, margin: "0 0 6px", lineHeight: 1.15, letterSpacing: -0.4 }}>במה משחקים?</h1>
-          <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.55, fontWeight: 500 }}>
-            בחרי משחק. כל משחק אפשר <b style={{ color: T.ink, fontWeight: 700 }}>להקרין על מסך גדול</b> כמו בחידון.
-          </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.4, color: "rgba(255,255,255,0.92)" }}>משחקים</div>
+            <div style={{ width: 40 }}/>
+          </div>
+
+          <div style={{ marginTop: 16, position: "relative" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "4px 10px", borderRadius: 999,
+              background: PB.orange.main, color: "#fff",
+              fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5 }}>
+              <Icon name="sparkle" size={11} color="#fff" w={2}/> 6 משחקים מוכנים
+            </div>
+            <h1 style={{ fontSize: 30, fontWeight: 800, margin: "12px 0 6px", lineHeight: 1.1, letterSpacing: -0.5, color: "#fff" }}>
+              במה משחקים?
+            </h1>
+            <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.55, fontWeight: 500, margin: 0, maxWidth: 290 }}>
+              בחרי משחק. כל אחד אפשר <b style={{ color: PB.orange.main, fontWeight: 700 }}>להקרין למסך גדול</b>.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 10, position: "relative",
+            padding: "10px 12px", background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.14)", borderRadius: 12 }}>
+            <Icon name="tv" size={18} color={PB.orange.main} w={1.6}/>
+            <div style={{ flex: 1, fontSize: 11.5, fontWeight: 600, lineHeight: 1.45, color: "rgba(255,255,255,0.82)" }}>
+              חברו טלוויזיה — בכל משחק יש כפתור <b style={{ color: PB.orange.main }}>"הקרנה"</b>.
+            </div>
+          </div>
         </div>
 
-        <Card T={T} padding="12px 14px" dark style={{
-          marginTop: 16, display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <Icon name="tv" size={22} color="#fff" w={1.5}/>
-          <div style={{ flex: 1, fontSize: 12, fontWeight: 500, lineHeight: 1.45, color: "rgba(255,255,255,0.85)" }}>
-            חברו טלוויזיה או מקרן — בכל משחק יש כפתור <b style={{ color: PB.orange.main, fontWeight: 700 }}>"הקרנה"</b>.
-          </div>
-        </Card>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
-          {GAMES.map((g, gi) => {
-            const tile = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
-            const p = tile[gi % tile.length];
-            return (
-              <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
-                display: "flex", alignItems: "center", gap: 13,
-                background: T.surface, border: T.border, borderRadius: T.radiusLg,
-                boxShadow: T.shadowSm, padding: "13px 14px",
-                cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
-              }}>
-                <div style={{
-                  width: 50, height: 50, borderRadius: 14, flexShrink: 0,
-                  background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={24} color={p.deep} w={1.35}/></div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
-                  <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                    {g.time !== false && <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.time}</span>}
-                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.players}</span>
-                    {g.drinking && <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>משחק שתייה</span>}
+        {/* Content */}
+        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {GAMES.map((g, gi) => {
+              const tile = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
+              const p = tile[gi % tile.length];
+              return (
+                <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
+                  display: "flex", alignItems: "center", gap: 13,
+                  background: T.surface, border: T.border, borderRadius: T.radiusLg,
+                  boxShadow: T.shadowSm, padding: "13px 14px",
+                  cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
+                  borderRight: `4px solid ${p.main}`,
+                  position: "relative", overflow: "hidden",
+                }}>
+                  <div style={{
+                    width: 50, height: 50, borderRadius: 14, flexShrink: 0,
+                    background: p.main, display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: `0 4px 12px -4px ${p.main}66`,
+                  }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={24} color={p.on} w={1.5}/></div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15.5, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
+                    <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
+                    <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                      {g.time !== false && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: p.soft, color: p.deep }}>{g.time}</span>}
+                      <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.players}</span>
+                      {g.drinking && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#1A1A1A", color: "#fff" }}>משחק שתייה</span>}
+                    </div>
                   </div>
-                </div>
-                <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
-              </button>
-            );
-          })}
+                  <Icon name="chevL" size={18} color={p.main} w={1.8}/>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       <HomeBar/>
