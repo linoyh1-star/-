@@ -675,7 +675,7 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
             value={username}
             onChange={e => { setUsername(e.target.value); setError(""); }}
             onKeyDown={onKey}
-            placeholder="לדוגמה: maya7392"
+            placeholder="כפי שמופיע במייל"
             autoComplete="username"
             style={{
               width: "100%", padding: "13px 16px", borderRadius: 13,
@@ -683,7 +683,7 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
               boxShadow: `inset 0 0 0 1.5px ${error ? PB.orange.main : (username ? PB.orange.main : T.line)}`,
               border: "none", outline: "none",
               fontSize: 16, fontWeight: 700, color: T.ink,
-              direction: "ltr", textAlign: "left", fontFamily: T.font,
+              unicodeBidi: "plaintext", textAlign: "center", fontFamily: T.font,
             }}/>
 
           {/* Password */}
