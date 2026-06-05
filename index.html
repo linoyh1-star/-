@@ -1587,71 +1587,161 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 28px", display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* user row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 999,
-              background: PB.pink.soft, border: `1.5px solid ${PB.pink.main}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 700, color: PB.pink.deep, fontSize: 18,
-            }}>{(user.name || "?")[0]}</div>
-            <div>
-              <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 600 }}>היי {user.name}, מארחת</div>
-              <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: -0.3 }}>{eventName || "הרווקות של מאיה"}</div>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* ORANGE HEADER BAR — contains avatar, user info, home + help icons */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 60%, #E8512A 100%)`,
+          padding: "44px 22px 26px",
+          borderRadius: "0 0 28px 28px",
+          color: "#fff",
+          boxShadow: "0 8px 24px -12px rgba(232,81,42,0.45)",
+          position: "relative", overflow: "hidden",
+        }}>
+          {/* subtle pink dot decoration */}
+          <div style={{
+            position: "absolute", top: -30, left: -30,
+            width: 140, height: 140, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+          }}/>
+          <div style={{
+            position: "absolute", bottom: -50, right: -40,
+            width: 160, height: 160, borderRadius: "50%",
+            background: "rgba(26,26,26,0.10)", pointerEvents: "none",
+          }}/>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 46, height: 46, borderRadius: 999,
+                background: "rgba(255,255,255,0.22)",
+                border: "1.5px solid rgba(255,255,255,0.45)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontWeight: 800, color: "#fff", fontSize: 19,
+                backdropFilter: "blur(4px)",
+              }}>{(user.name || "?")[0]}</div>
+              <div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.3 }}>היי {user.name}, מארחת</div>
+                <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, color: "#fff", marginTop: 1 }}>{eventName || "הרווקות של מאיה"}</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <RoundBtn T={T} icon="help" onClick={() => onNav("helpCenter")} dark/>
+              <RoundBtn T={T} icon="home" dark/>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <RoundBtn T={T} icon="help" onClick={() => onNav("helpCenter")}/>
-            <RoundBtn T={T} icon="home"/>
+
+          {/* Quick stat chips inside the header */}
+          <div style={{ display: "flex", gap: 8, marginTop: 18, position: "relative" }}>
+            <div style={{
+              flex: 1, padding: "8px 10px",
+              background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.28)",
+              borderRadius: 12, color: "#fff",
+              backdropFilter: "blur(4px)",
+            }}>
+              <div className="num" style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, lineHeight: 1 }}>6</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.88, marginTop: 3, letterSpacing: 0.3 }}>משחקים</div>
+            </div>
+            <div style={{
+              flex: 1, padding: "8px 10px",
+              background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.28)",
+              borderRadius: 12, color: "#fff",
+              backdropFilter: "blur(4px)",
+            }}>
+              <div className="num" style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, lineHeight: 1 }}>4</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.88, marginTop: 3, letterSpacing: 0.3 }}>ארגזי כלים</div>
+            </div>
+            <div style={{
+              flex: 1, padding: "8px 10px",
+              background: "#1A1A1A",
+              borderRadius: 12, color: "#fff",
+            }}>
+              <div className="num" style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, lineHeight: 1 }}>VIP</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.7, marginTop: 3, letterSpacing: 0.3 }}>מארחת</div>
+            </div>
           </div>
         </div>
 
-        {/* host-only note */}
-        <div style={{
-          marginTop: 18, display: "flex", alignItems: "center", gap: 10,
-          padding: "11px 14px", background: T.surface, border: T.border, borderRadius: T.radius,
-        }}>
-          <Icon name="lock" size={17} color={PB.orange.main} w={1.5}/>
-          <div style={{ fontSize: 12, lineHeight: 1.45, color: T.inkSoft, fontWeight: 500 }}>
-            הכלים האלה גלויים <b style={{ color: T.ink, fontWeight: 700 }}>רק לך כמארחת</b>. המשתתפות מצטרפות בתוך משחק ספציפי כשרלוונטי.
+        {/* CONTENT */}
+        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column" }}>
+          {/* host-only note — pink-accented */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 11,
+            padding: "11px 14px",
+            background: PB.pink.soft,
+            border: `1px solid ${PB.pink.main}44`,
+            borderRadius: T.radius,
+            borderRight: `4px solid ${PB.pink.main}`,
+          }}>
+            <Icon name="lock" size={17} color={PB.pink.deep} w={1.5}/>
+            <div style={{ fontSize: 12, lineHeight: 1.45, color: PB.pink.deep, fontWeight: 600 }}>
+              הכלים האלה גלויים <b style={{ fontWeight: 800 }}>רק לך כמארחת</b>. המשתתפות מצטרפות בתוך משחק ספציפי.
+            </div>
           </div>
-        </div>
 
-        {/* toolbox */}
-        <div style={{ marginTop: 24, marginBottom: 12 }}>
-          <h2 style={{ fontWeight: 800, fontSize: 19, margin: 0, letterSpacing: -0.3 }}>ארגז הכלים שלך</h2>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {HOST_CATS.map((c, ci) => {
-            // alternating tile colors by position — exactly like Claude Design
-            const tile = [PB.orange, PB.pink, PB.orange, PB.pink];
-            const p = tile[ci];
-            return (
-              <button key={c.id} onClick={() => onNav(c.id)} style={{
-                background: T.surface, border: T.border, borderRadius: T.radiusLg,
-                padding: 15, boxShadow: T.shadowSm,
-                display: "flex", flexDirection: "column", gap: 20, minHeight: 118,
-                cursor: "pointer", fontFamily: T.font, textAlign: "right",
-              }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          {/* toolbox heading */}
+          <div style={{ marginTop: 22, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 4, height: 20, borderRadius: 2, background: PB.orange.main }}/>
+            <h2 style={{ fontWeight: 800, fontSize: 19, margin: 0, letterSpacing: -0.3 }}>ארגז הכלים שלך</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {HOST_CATS.map((c, ci) => {
+              const tile = [PB.orange, PB.pink, PB.orange, PB.pink];
+              const p = tile[ci];
+              return (
+                <button key={c.id} onClick={() => onNav(c.id)} style={{
+                  background: T.surface, border: T.border, borderRadius: T.radiusLg,
+                  padding: 15, boxShadow: T.shadowSm,
+                  display: "flex", flexDirection: "column", gap: 20, minHeight: 118,
+                  cursor: "pointer", fontFamily: T.font, textAlign: "right",
+                  position: "relative", overflow: "hidden",
+                }}>
+                  {/* color accent in bottom-right corner */}
                   <div style={{
-                    width: 40, height: 40, borderRadius: 11,
-                    background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name={c.icon} size={21} color={p.deep} w={1.35}/></div>
-                  <div style={{
-                    fontSize: 11, fontWeight: 700, color: T.inkSoft, background: T.surfaceAlt,
-                    padding: "4px 9px", borderRadius: 999,
-                  }}>{c.badge}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{c.t}</div>
-                  <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{c.s}</div>
-                </div>
-              </button>
-            );
-          })}
+                    position: "absolute", bottom: -28, left: -28,
+                    width: 76, height: 76, borderRadius: "50%",
+                    background: p.soft, opacity: 0.6, pointerEvents: "none",
+                  }}/>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 11,
+                      background: p.main, display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: `0 4px 12px -4px ${p.main}66`,
+                    }}><Icon name={c.icon} size={21} color={p.on} w={1.5}/></div>
+                    <div style={{
+                      fontSize: 10.5, fontWeight: 800, color: p.deep, background: p.soft,
+                      padding: "4px 9px", borderRadius: 999, letterSpacing: 0.2,
+                    }}>{c.badge}</div>
+                  </div>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>{c.t}</div>
+                    <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{c.s}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bottom branded tip — black bar with orange accent */}
+          <div style={{
+            marginTop: 18, padding: "12px 14px",
+            background: "#1A1A1A", color: "#fff",
+            borderRadius: T.radius,
+            display: "flex", alignItems: "center", gap: 11,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10,
+              background: PB.orange.main,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}><Icon name="sparkle" size={17} color="#fff" w={1.6}/></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", letterSpacing: 0.2 }}>טיפ ליום האירוע</div>
+              <div style={{ fontSize: 11.5, fontWeight: 500, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>
+                סדרי את הצ׳קליסט שבוע מראש — כל הבנות יודו לך.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <HomeBar/>
@@ -1716,63 +1806,103 @@ function ScreenHelpCenter({ T, onBack }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 28px", display: "flex", flexDirection: "column" }}>
-        <TopBar T={T} onBack={onBack} title="מרכז עזרה"/>
-        <div style={{ marginTop: 18 }}>
-          <Eyebrow T={T}>אנחנו פה</Eyebrow>
-          <h1 style={{ fontSize: 28, fontWeight: 800, margin: "10px 0 6px", lineHeight: 1.15, letterSpacing: -0.4 }}>
-            נתקלת בבעיה?
-          </h1>
-          <p style={{ fontSize: 14.5, color: T.inkSoft, lineHeight: 1.6, fontWeight: 500 }}>
-            פנו אלינו בווטסאפ ונחזור אליכם בהקדם. ניתן גם לבקש סוכן AI שיעזור בזמן אמת.
-          </p>
-        </div>
-
-        <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 10 }}>
-          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
-            display: "flex", alignItems: "center", gap: 12,
-            background: T.surface, border: T.border, borderRadius: T.radiusLg,
-            padding: "14px 16px", boxShadow: T.shadowSm, textDecoration: "none",
-          }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: "#25D366", display: "flex", alignItems: "center", justifyContent: "center",
-            }}><Icon name="send" size={22} color="#fff" w={1.6}/></div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>ווטסאפ — תמיכה</div>
-              <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>פתחי שיחה איתנו עכשיו</div>
-            </div>
-            <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
-          </a>
-
-          <button onClick={() => alert("סוכן AI יושק בקרוב 🤖")} style={{
-            display: "flex", alignItems: "center", gap: 12,
-            background: T.surface, border: T.border, borderRadius: T.radiusLg,
-            padding: "14px 16px", boxShadow: T.shadowSm,
-            cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
-          }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: PB.orange.soft, display: "flex", alignItems: "center", justifyContent: "center",
-            }}><Icon name="sparkle" size={22} color={PB.orange.deep} w={1.6}/></div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>סוכן AI</div>
-              <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>בדיקה אוטומטית בלי המתנה</div>
-            </div>
-            <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
-          </button>
-        </div>
-
-        <div style={{ flex: 1 }}/>
-
-        <Card T={T} padding="14px 16px" style={{ background: T.surfaceAlt, border: `1px dashed ${T.lineStrong}` }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: T.ink, marginBottom: 4 }}>שאלות נפוצות</div>
-          <div style={{ fontSize: 12, lineHeight: 1.6, color: T.inkSoft, fontWeight: 500 }}>
-            • איך מצרפים חברות למשחק? — בתוך כל משחק רלוונטי יש כפתור "שלחי לינק להצטרפות".<br/>
-            • איך משדרים למסך גדול? — בכל משחק יש כפתור "הקרנה" שמאפשר הקרנה לטלוויזיה.<br/>
-            • לא הגיע SMS? — בדקי שיש קליטה ושהמספר נכון.
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Pink-to-orange header bar */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAA0BA 50%, ${PB.orange.main} 130%)`,
+          padding: "44px 22px 28px",
+          borderRadius: "0 0 28px 28px",
+          color: "#1A1A1A",
+          boxShadow: `0 8px 24px -12px ${PB.pink.main}66`,
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: -40, right: -40,
+            width: 160, height: 160, borderRadius: "50%",
+            background: "rgba(255,255,255,0.18)", pointerEvents: "none",
+          }}/>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>מרכז עזרה</div>
+            <div style={{ width: 40 }}/>
           </div>
-        </Card>
+
+          <div style={{ marginTop: 16, position: "relative" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "4px 10px", borderRadius: 999,
+              background: "rgba(26,26,26,0.85)", color: "#fff",
+              fontSize: 10.5, fontWeight: 800, letterSpacing: 0.5 }}>
+              <Icon name="sparkle" size={11} color="#fff" w={2}/> אנחנו פה בשבילך
+            </div>
+            <h1 style={{ fontSize: 30, fontWeight: 800, margin: "12px 0 6px", lineHeight: 1.1, letterSpacing: -0.5, color: "#1A1A1A" }}>
+              נתקלת בבעיה?
+            </h1>
+            <p style={{ fontSize: 14, color: "rgba(26,26,26,0.78)", lineHeight: 1.55, fontWeight: 600, margin: 0, maxWidth: 280 }}>
+              פני אלינו בווטסאפ ונחזור אלייך מהר. גם סוכן AI יעזור בזמן אמת.
+            </p>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: T.surface, border: T.border, borderRadius: T.radiusLg,
+              padding: "14px 16px", boxShadow: T.shadowSm, textDecoration: "none",
+              borderRight: "4px solid #25D366",
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: "#25D366", display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 12px -4px #25D36666",
+              }}><Icon name="send" size={22} color="#fff" w={1.6}/></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>ווטסאפ — תמיכה</div>
+                <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>פתחי שיחה איתנו עכשיו</div>
+              </div>
+              <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
+            </a>
+
+            <button onClick={() => alert("סוכן AI יושק בקרוב 🤖")} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: T.surface, border: T.border, borderRadius: T.radiusLg,
+              padding: "14px 16px", boxShadow: T.shadowSm,
+              cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
+              borderRight: `4px solid ${PB.orange.main}`,
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: PB.orange.main, display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: `0 4px 12px -4px ${PB.orange.main}66`,
+              }}><Icon name="sparkle" size={22} color="#fff" w={1.6}/></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>סוכן AI</div>
+                <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>בדיקה אוטומטית בלי המתנה</div>
+              </div>
+              <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
+            </button>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 18 }}/>
+
+          {/* FAQ — dark bar with orange accent */}
+          <div style={{
+            padding: "14px 16px",
+            background: "#1A1A1A", color: "#fff",
+            borderRadius: T.radius,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 4, height: 16, background: PB.orange.main, borderRadius: 2 }}/>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", letterSpacing: 0.3 }}>שאלות נפוצות</div>
+            </div>
+            <div style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>
+              • <b style={{ color: "#fff" }}>איך מצרפים חברות למשחק?</b> בתוך כל משחק יש כפתור "שלחי לינק להצטרפות".<br/>
+              • <b style={{ color: "#fff" }}>איך משדרים למסך גדול?</b> בכל משחק יש כפתור "הקרנה".<br/>
+              • <b style={{ color: "#fff" }}>לא הגיע SMS?</b> בדקי שיש קליטה ושהמספר נכון.
+            </div>
+          </div>
+        </div>
       </div>
       <HomeBar/>
     </>
