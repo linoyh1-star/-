@@ -3983,6 +3983,10 @@ function App() {
       setScreen("smsVerify");
       // Clean URL so refresh / sharing the URL stops working as a "magic link"
       try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+      // Force a clean session for this new payment link: clear local state and sign out any
+      // prior Firebase auth so the SMS verify gate actually runs for the right phone.
+      try { localStorage.removeItem("chogegot_state"); } catch (e) {}
+      try { fbSignOut(); } catch (e) {}
       return;
     }
 
@@ -3991,7 +3995,10 @@ function App() {
       const raw = localStorage.getItem("chogegot_state");
       if (raw) {
         const s = JSON.parse(raw);
-        if (s.screen) setScreen(s.screen);
+        // Don't restore gating screens — they need fresh URL params (smsVerify) or are the
+        // default anyway (welcome). Otherwise a refresh during onboarding would drop the user
+        // back on the SMS screen without the locked phone from pendingUser.
+        if (s.screen && s.screen !== "welcome" && s.screen !== "smsVerify") setScreen(s.screen);
         if (s.name) setName(s.name);
         if (s.event) setEvent(s.event);
         if (s.eventName) setEventName(s.eventName);
@@ -4030,10 +4037,14 @@ function App() {
 
   // Persist to localStorage (always) + Firestore (when authenticated, debounced)
   React.useEffect(() => {
-    try { localStorage.setItem("chogegot_state", JSON.stringify({ screen, name, event, eventName, gameId })); } catch (e) {}
+    // Don't persist gating screens to localStorage — those should only be reached via fresh
+    // URL params (smsVerify) or as the default landing (welcome). Persisting them would let a
+    // refresh land back on SMS verify without the locked-phone pendingUser context.
+    const persistableScreen = (screen === "welcome" || screen === "smsVerify") ? null : screen;
+    try { localStorage.setItem("chogegot_state", JSON.stringify({ screen: persistableScreen, name, event, eventName, gameId })); } catch (e) {}
     if (!uid) return;
     const t = setTimeout(() => {
-      fbSaveUserData(uid, { screen, name, event, eventName, gameId, phone: fbCurrentUser()?.phoneNumber || null, lastSeen: Date.now() });
+      fbSaveUserData(uid, { screen: persistableScreen, name, event, eventName, gameId, phone: fbCurrentUser()?.phoneNumber || null, lastSeen: Date.now() });
     }, 1500); // debounce 1.5s
     return () => clearTimeout(t);
   }, [screen, name, event, eventName, gameId, uid]);
