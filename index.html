@@ -97,8 +97,66 @@ const loadGroomAnswers = () => {
 const clearGroomAnswers = () => { try { localStorage.removeItem(GROOM_STORAGE_KEY); } catch (e) {} };
 
 /* ──────────────────────────────────────────────────────────────
+   AUTH (username + password via Make.com Data Store)
+
+   Cheap alternative to Firebase Phone Auth: Make.com generates
+   credentials at payment time, stores them in a Make Data Store, and
+   the app authenticates by POSTing here. First-device-wins enforcement
+   lives on Make's side (when a deviceId is already bound to a record,
+   subsequent logins from a different deviceId are rejected).
+   ────────────────────────────────────────────────────────────── */
+// TODO: replace with the real Make.com webhook URL once the login scenario is built
+const MAKE_LOGIN_URL = "https://hook.eu1.make.com/PLACEHOLDER_LOGIN_URL";
+const DEVICE_ID_KEY = "chogegot_device_id";
+const AUTH_SESSION_KEY = "chogegot_auth_session";
+
+const getOrCreateDeviceId = () => {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      // Random 16-char ID — stable per browser/device until localStorage is cleared
+      id = "dev_" + Array.from(crypto.getRandomValues(new Uint8Array(8)))
+        .map(b => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch (e) { return "dev_fallback"; }
+};
+
+const loadAuthSession = () => {
+  try {
+    const raw = localStorage.getItem(AUTH_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+};
+const saveAuthSession = (data) => {
+  try { localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(data)); } catch (e) {}
+};
+const clearAuthSession = () => {
+  try { localStorage.removeItem(AUTH_SESSION_KEY); } catch (e) {}
+};
+
+// Make.com expected response shape:
+//   success: { ok: true, fullName, phone, email, token }
+//   wrong creds: { ok: false, error: "bad_credentials" }
+//   different device already bound: { ok: false, error: "device_locked" }
+const makeLoginRequest = async (username, password) => {
+  const deviceId = getOrCreateDeviceId();
+  const res = await fetch(MAKE_LOGIN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: username.trim(), password: password.trim(), deviceId }),
+  });
+  // Make.com webhook responses come back as JSON when "Custom webhook response" is used
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch (e) { data = { ok: false, error: "bad_response", raw: text }; }
+  return { ...data, deviceId };
+};
+
+/* ──────────────────────────────────────────────────────────────
    FIREBASE HELPERS — Auth (phone) + Firestore (user data)
    The `firebase` global is set up in <head> before React mounts.
+   Kept around so we can switch back to phone auth later if desired.
    ────────────────────────────────────────────────────────────── */
 const FB = window.FB; // { auth, db } — null if init failed
 
@@ -207,7 +265,7 @@ const skin = (name) => ({ ...T_BASE, ...SKINS[name], _skin: name });
 
 // per-screen skin assignment
 const SCREEN_SKIN = {
-  welcome: "orange", smsVerify: "orange", username: "orange",
+  welcome: "orange", smsVerify: "orange", login: "orange", username: "orange",
   event: "pink", nameEvent: "pink", slideshow: "pink",
   bachHome: "ink", qrjoin: "ink", comingSoon: "ink",
   checklist: "orange", playlist: "ink", budget: "orange",
@@ -520,7 +578,171 @@ function ScreenWelcome({ T, onNext, pendingUser, pendingLoading }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   LOGIN — username + password (replaces the SMS/code gate)
+   ────────────────────────────────────────────────────────────── */
+function ScreenLogin({ T, onSuccess, prefillUsername }) {
+  const [username, setUsername] = React.useState(prefillUsername || "");
+  const [password, setPassword] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const userRef = React.useRef(null);
+  const passRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (prefillUsername) passRef.current?.focus();
+    else userRef.current?.focus();
+  }, [prefillUsername]);
+
+  const canSubmit = username.trim().length >= 3 && password.trim().length >= 4;
+
+  const submit = async () => {
+    if (!canSubmit || busy) return;
+    setBusy(true); setError("");
+    try {
+      const res = await makeLoginRequest(username, password);
+      if (res.ok) {
+        saveAuthSession({
+          username: username.trim(),
+          token: res.token || null,
+          deviceId: res.deviceId,
+          fullName: res.fullName || "",
+          phone: res.phone || "",
+          email: res.email || "",
+          loggedInAt: Date.now(),
+        });
+        onSuccess(res);
+      } else {
+        const msg = res.error === "bad_credentials" ? "שם המשתמש או הסיסמה שגויים" :
+          res.error === "device_locked" ? "המשתמש כבר מחובר ממכשיר אחר. פני אלינו לאיפוס." :
+          res.error === "bad_response" ? "תקלה זמנית, נסי שוב" :
+          "התחברות נכשלה — בדקי שהפרטים מהמייל הוקלדו נכון";
+        setError(msg);
+      }
+    } catch (e) {
+      console.error("[Login]", e);
+      setError("לא הצלחנו להתחבר לשרת. בדקי חיבור לאינטרנט ונסי שוב.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onKey = (e) => { if (e.key === "Enter") submit(); };
+
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Slim orange header */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+          padding: "44px 22px 18px",
+          borderRadius: "0 0 22px 22px",
+          color: "#fff",
+          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
+          position: "relative", overflow: "hidden",
+        }}>
+          <div style={{
+            position: "absolute", top: -30, right: -40,
+            width: 110, height: 110, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+          }}/>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.22)",
+              border: "1.5px solid rgba(255,255,255,0.45)",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="sparkle" size={17} color="#fff" w={1.7}/>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, color: "#fff" }}>חוגגות</div>
+          </div>
+          <div style={{ position: "relative", marginTop: 14 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
+              ברוכ.ה הבא.ה
+            </h1>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
+              הזיני את שם המשתמש והסיסמה שקיבלת במייל לאחר התשלום.
+            </p>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: "22px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+          {/* Username */}
+          <label style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
+            שם משתמש
+          </label>
+          <input
+            ref={userRef}
+            value={username}
+            onChange={e => { setUsername(e.target.value); setError(""); }}
+            onKeyDown={onKey}
+            placeholder="לדוגמה: maya7392"
+            autoComplete="username"
+            style={{
+              width: "100%", padding: "13px 16px", borderRadius: 13,
+              background: T.surfaceAlt,
+              boxShadow: `inset 0 0 0 1.5px ${error ? PB.orange.main : (username ? PB.orange.main : T.line)}`,
+              border: "none", outline: "none",
+              fontSize: 16, fontWeight: 700, color: T.ink,
+              direction: "ltr", textAlign: "left", fontFamily: T.font,
+            }}/>
+
+          {/* Password */}
+          <label style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginTop: 16, marginBottom: 8 }}>
+            סיסמה
+          </label>
+          <input
+            ref={passRef}
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(""); }}
+            onKeyDown={onKey}
+            placeholder="הסיסמה מהמייל"
+            type="password"
+            autoComplete="current-password"
+            style={{
+              width: "100%", padding: "13px 16px", borderRadius: 13,
+              background: T.surfaceAlt,
+              boxShadow: `inset 0 0 0 1.5px ${error ? PB.orange.main : (password ? PB.orange.main : T.line)}`,
+              border: "none", outline: "none",
+              fontSize: 16, fontWeight: 700, color: T.ink,
+              direction: "ltr", textAlign: "left", fontFamily: T.font,
+            }}/>
+
+          {/* Error */}
+          {error && (
+            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10,
+              background: "#FDEDE9", border: `1px solid ${PB.orange.main}55`,
+              fontSize: 12.5, fontWeight: 700, color: PB.orange.deep }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ flex: 1, minHeight: 18 }}/>
+
+          {/* Submit */}
+          <Btn T={T} onClick={submit} disabled={!canSubmit || busy}>
+            {busy ? "מתחברת..." : "כניסה לחוגגות"}
+          </Btn>
+
+          {/* Help note */}
+          <div style={{ marginTop: 14, padding: "11px 14px",
+            background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`,
+            borderRadius: 12, borderRight: `4px solid ${PB.orange.main}`,
+            display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <Icon name="lock" size={16} color={PB.orange.deep} w={1.6}/>
+            <div style={{ fontSize: 11.5, lineHeight: 1.5, color: PB.orange.deep, fontWeight: 600 }}>
+              הפרטים אישיים — אל תעבירי אותם לאף אחת. כניסה ממכשיר אחר תינעל אוטומטית.
+            </div>
+          </div>
+        </div>
+      </div>
+      <HomeBar/>
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
    SMS PHONE VERIFICATION (after email code)
+   Kept around as a fallback path; the live flow uses ScreenLogin now.
    ────────────────────────────────────────────────────────────── */
 // Normalize Israeli phone input to E.164 (+972...) — returns null if invalid
 const normalizePhoneIL = (input) => {
@@ -3939,17 +4161,22 @@ function CardGame({ T: parentT, game, onBack }) {
    APP SHELL — routing + per-screen skin
    ────────────────────────────────────────────────────────────── */
 function App() {
-  const [screen, setScreen] = React.useState("welcome");
+  // Default landing is the login screen now; the demo "welcome" code screen is still
+  // reachable via ?demo=1 for showcasing without paying.
+  const [screen, setScreen] = React.useState("login");
   const [name, setName] = React.useState("");
   const [event, setEvent] = React.useState(null);
   const [eventName, setEventName] = React.useState("");
   const [gameId, setGameId] = React.useState("lipread");
   const [groomData, setGroomData] = React.useState(null);
   const [toast, setToast] = React.useState(null);
-  const [pendingUser, setPendingUser] = React.useState(null); // data loaded from Firestore via ?t= token
+  // pendingUser still used by the legacy SMS path; new login flow populates authSession instead.
+  const [pendingUser, setPendingUser] = React.useState(null);
   const [pendingLoading, setPendingLoading] = React.useState(false);
+  const [authSession, setAuthSession] = React.useState(loadAuthSession);
+  const [prefillUsername, setPrefillUsername] = React.useState("");
 
-  // hash detection — runs ONCE on mount before anything else
+  // hash + URL detection — runs ONCE on mount before anything else
   React.useEffect(() => {
     const hash = window.location.hash.slice(1);
     if (hash.startsWith("groom=")) {
@@ -3969,42 +4196,49 @@ function App() {
       }
     }
 
-    // Welcome email link → ?name=...&phone=...&email=... — straight to SMS verify
     const params = new URLSearchParams(window.location.search);
-    const urlName = params.get("name");
-    const urlPhone = params.get("phone");
-    const urlEmail = params.get("email");
-    if (urlName && urlPhone) {
-      setPendingUser({ fullName: urlName, phone: urlPhone, email: urlEmail || "" });
-      // Pre-fill the display name from payment
-      const firstName = urlName.split(" ")[0];
-      if (firstName) setName(firstName);
-      // Skip the email-code welcome screen — go straight to SMS verification
-      setScreen("smsVerify");
-      // Clean URL so refresh / sharing the URL stops working as a "magic link"
+
+    // Demo mode — old code/welcome screen for showcasing without payment
+    if (params.get("demo") === "1") {
+      setScreen("welcome");
       try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
-      // Force a clean session for this new payment link: clear local state and sign out any
-      // prior Firebase auth so the SMS verify gate actually runs for the right phone.
-      try { localStorage.removeItem("chogegot_state"); } catch (e) {}
-      try { fbSignOut(); } catch (e) {}
       return;
     }
 
-    // normal session restore (only when not in groom mode / not via email link)
-    try {
-      const raw = localStorage.getItem("chogegot_state");
-      if (raw) {
-        const s = JSON.parse(raw);
-        // Don't restore gating screens — they need fresh URL params (smsVerify) or are the
-        // default anyway (welcome). Otherwise a refresh during onboarding would drop the user
-        // back on the SMS screen without the locked phone from pendingUser.
-        if (s.screen && s.screen !== "welcome" && s.screen !== "smsVerify") setScreen(s.screen);
-        if (s.name) setName(s.name);
-        if (s.event) setEvent(s.event);
-        if (s.eventName) setEventName(s.eventName);
-        if (s.gameId) setGameId(s.gameId);
+    // ?u=username — prefill the login form (still requires typing the password from email)
+    const urlUser = params.get("u");
+    if (urlUser) {
+      setPrefillUsername(urlUser);
+      try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+    }
+
+    // If we already have a valid auth session in localStorage, restore the user's screen
+    const existingAuth = loadAuthSession();
+    if (existingAuth) {
+      if (existingAuth.fullName) {
+        const firstName = existingAuth.fullName.split(" ")[0];
+        if (firstName && !name) setName(firstName);
       }
-    } catch (e) {}
+      // try to restore the last in-app screen too
+      try {
+        const raw = localStorage.getItem("chogegot_state");
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.screen && s.screen !== "welcome" && s.screen !== "smsVerify" && s.screen !== "login") setScreen(s.screen);
+          else setScreen("username"); // signed in but never finished onboarding
+          if (s.name) setName(s.name);
+          if (s.event) setEvent(s.event);
+          if (s.eventName) setEventName(s.eventName);
+          if (s.gameId) setGameId(s.gameId);
+        } else {
+          setScreen("username");
+        }
+      } catch (e) { setScreen("username"); }
+      return;
+    }
+
+    // No auth yet — stay on the default login screen.
+    // We do NOT pre-load other localStorage fields here so a new buyer starts clean.
   }, []);
 
   // auto-dismiss toast
@@ -4037,10 +4271,9 @@ function App() {
 
   // Persist to localStorage (always) + Firestore (when authenticated, debounced)
   React.useEffect(() => {
-    // Don't persist gating screens to localStorage — those should only be reached via fresh
-    // URL params (smsVerify) or as the default landing (welcome). Persisting them would let a
-    // refresh land back on SMS verify without the locked-phone pendingUser context.
-    const persistableScreen = (screen === "welcome" || screen === "smsVerify") ? null : screen;
+    // Gating screens (login / welcome / smsVerify) shouldn't be restored on refresh — those
+    // are entry doors that need a fresh auth/URL context, not the screen the user was on.
+    const persistableScreen = (screen === "welcome" || screen === "smsVerify" || screen === "login") ? null : screen;
     try { localStorage.setItem("chogegot_state", JSON.stringify({ screen: persistableScreen, name, event, eventName, gameId })); } catch (e) {}
     if (!uid) return;
     const t = setTimeout(() => {
@@ -4054,7 +4287,9 @@ function App() {
     setScreen(to);
   };
   const reset = async () => {
-    setScreen("welcome"); setName(""); setEvent(null); setEventName("");
+    setScreen("login"); setName(""); setEvent(null); setEventName("");
+    setAuthSession(null); setPendingUser(null);
+    clearAuthSession();
     localStorage.removeItem("chogegot_state");
     try { await fbSignOut(); } catch (e) {}
   };
@@ -4064,9 +4299,17 @@ function App() {
   const T = skin(skinName);
 
   let content;
-  if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
+  if (screen === "login") content = <ScreenLogin T={T} prefillUsername={prefillUsername} onSuccess={(res) => {
+    setAuthSession(loadAuthSession());
+    if (res?.fullName) {
+      const first = res.fullName.split(" ")[0];
+      if (first) setName(first);
+    }
+    setScreen("username");
+  }}/>;
+  else if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
   else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")} pendingUser={pendingUser}/>;
-  else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("smsVerify")} name={name} setName={setName}/>;
+  else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("login")} name={name} setName={setName}/>;
   else if (screen === "event") content = <ScreenEventPicker T={T} onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent}/>;
   else if (screen === "nameEvent") content = <ScreenNameEvent T={T} eventId={event} eventName={eventName} setEventName={setEventName}
     onNext={() => setScreen(event === "bach" ? "slideshow" : "comingSoon")} onBack={() => setScreen("event")}/>;
