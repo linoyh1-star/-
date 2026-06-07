@@ -4305,7 +4305,7 @@ function App() {
           if (cloud.name) setName(cloud.name);
           if (cloud.event) setEvent(cloud.event);
           if (cloud.eventName) setEventName(cloud.eventName);
-          if (cloud.screen && cloud.screen !== "welcome" && cloud.screen !== "smsVerify") setScreen(cloud.screen);
+          if (cloud.screen && cloud.screen !== "welcome" && cloud.screen !== "smsVerify" && cloud.screen !== "login") setScreen(cloud.screen);
           if (cloud.gameId) setGameId(cloud.gameId);
         }
       }
@@ -4351,7 +4351,9 @@ function App() {
     }
     setScreen("username");
   }}/>;
-  else if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("smsVerify")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
+  // Demo mode: welcome screen used to chain into SMS verify, which now requires Firebase
+  // Blaze. We bypass it and send the demo straight to the username step instead.
+  else if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("username")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
   else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")} pendingUser={pendingUser}/>;
   else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("login")} name={name} setName={setName}/>;
   else if (screen === "event") content = <ScreenEventPicker T={T} onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent}/>;
