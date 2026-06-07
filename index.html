@@ -1049,7 +1049,12 @@ const EVENT_OPTS = [
     placeholder: "ערב של נועה ויואב", samples: ["דייט נייט", "נועה ויואב", "ערב בלי טלפונים"] },
 ];
 
+// Only "bach" is live right now — the other event types appear faded with a lock
+// so the buyer sees what's coming. Move an id out of LOCKED_EVENTS when its product launches.
+const LOCKED_EVENTS = new Set(["bday", "team", "date"]);
+
 function ScreenEventPicker({ T, onNext, onBack, selected, setSelected }) {
+  const [lockedNotice, setLockedNotice] = React.useState("");
   return (
     <>
       <StatusBar T={T}/>
@@ -1062,47 +1067,86 @@ function ScreenEventPicker({ T, onNext, onBack, selected, setSelected }) {
             מה<br/>החגיגה?
           </h1>
           <p style={{ fontSize: 14.5, lineHeight: 1.55, color: T.inkSoft, marginTop: 10, fontWeight: 500 }}>
-            כל בחירה פותחת עולם משחקים אחר.
+            כרגע <b style={{ color: T.ink }}>מסיבת הרווקות</b> פעילה. שאר המוצרים בקרוב 💛
           </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
           {EVENT_OPTS.map(e => {
             const sel = selected === e.id;
+            const locked = LOCKED_EVENTS.has(e.id);
+            const handleClick = () => {
+              if (locked) {
+                setLockedNotice(e.t);
+                setTimeout(() => setLockedNotice(""), 2400);
+                return;
+              }
+              setSelected(e.id);
+            };
             return (
-              <button key={e.id} onClick={() => setSelected(e.id)} style={{
+              <button key={e.id} onClick={handleClick} style={{
                 display: "flex", alignItems: "center", gap: 15, padding: "15px 16px",
                 background: T.surface, borderRadius: T.radiusLg,
                 border: sel ? `1.5px solid ${T.accent}` : T.border,
                 boxShadow: sel ? T.shadow : T.shadowSm,
                 cursor: "pointer", fontFamily: T.font, textAlign: "right",
                 color: T.ink,
-                transition: "border-color 150ms, box-shadow 150ms",
+                opacity: locked ? 0.45 : 1,
+                transition: "border-color 150ms, box-shadow 150ms, opacity 150ms",
+                position: "relative",
               }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13, flexShrink: 0,
                   background: sel ? T.accent : T.accentSoft,
                   display: "flex", alignItems: "center", justifyContent: "center",
+                  filter: locked ? "grayscale(1)" : "none",
                 }}>
                   <Icon name={e.icon} size={23} color={sel ? T.onAccent : T.accent} w={1.35}/>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{e.t}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ fontSize: 16.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{e.t}</div>
+                    {locked && (
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                        background: T.surfaceAlt, color: T.muted, letterSpacing: 0.3 }}>בקרוב</span>
+                    )}
+                  </div>
                   <div style={{ fontSize: 13, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{e.s}</div>
                 </div>
-                <div style={{
-                  width: 24, height: 24, borderRadius: 999, flexShrink: 0,
-                  border: sel ? "none" : `1.5px solid ${T.lineStrong}`,
-                  background: sel ? T.accent : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>{sel && <Icon name="check" size={14} color={T.onAccent} w={1.8}/>}</div>
+                {locked ? (
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 999, flexShrink: 0,
+                    background: T.surfaceAlt, color: T.muted,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}><Icon name="lock" size={13} color={T.muted} w={1.7}/></div>
+                ) : (
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 999, flexShrink: 0,
+                    border: sel ? "none" : `1.5px solid ${T.lineStrong}`,
+                    background: sel ? T.accent : "transparent",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>{sel && <Icon name="check" size={14} color={T.onAccent} w={1.8}/>}</div>
+                )}
               </button>
             );
           })}
         </div>
 
+        {/* Small inline notice when a locked event is tapped */}
+        {lockedNotice && (
+          <div style={{
+            marginTop: 14, padding: "10px 14px",
+            background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`,
+            borderRadius: 12, borderRight: `4px solid ${PB.orange.main}`,
+            fontSize: 12.5, fontWeight: 700, color: PB.orange.deep,
+            animation: "screenIn 220ms ease-out",
+          }}>
+            "{lockedNotice}" בקרוב — כרגע פתוחה רק מסיבת הרווקות 💛
+          </div>
+        )}
+
         <div style={{ flex: 1 }}/>
-        <Btn T={T} variant="ink" onClick={onNext} disabled={!selected}>
+        <Btn T={T} variant="ink" onClick={onNext} disabled={!selected || LOCKED_EVENTS.has(selected)}>
           {selected ? "ממשיכות" : "בחרי אירוע"}
         </Btn>
       </div>
