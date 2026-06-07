@@ -2229,39 +2229,39 @@ function ScreenChecklist({ T, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-        {/* Orange header with progress — slim */}
+        {/* Pink header with progress — slim */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
           padding: "36px 22px 14px",
           borderRadius: "0 0 22px 22px",
-          color: "#fff",
-          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
+          color: "#1A1A1A",
+          boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
             position: "absolute", top: -30, right: -40,
             width: 110, height: 110, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+            background: "rgba(255,255,255,0.18)", pointerEvents: "none",
           }}/>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
             <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>צ'קליסט המארגנת</div>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>צ'קליסט המארגנת</div>
             <div style={{ width: 40 }}/>
           </div>
 
           <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>משימות לארגון</div>
-              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: "#fff", lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{items.length}</span></div>
+              <div style={{ fontSize: 11.5, color: "rgba(26,26,26,0.78)", fontWeight: 700, letterSpacing: 0.4 }}>משימות לארגון</div>
+              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: "#1A1A1A", lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{items.length}</span></div>
             </div>
             <div style={{ padding: "5px 12px", borderRadius: 999,
-              background: "rgba(0,0,0,0.25)", color: "#fff",
+              background: "#1A1A1A", color: "#fff",
               fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }} className="num">{pct}%</div>
           </div>
 
           <div style={{ marginTop: 10, height: 5, background: "rgba(0,0,0,0.18)", borderRadius: 999, overflow: "hidden", position: "relative" }}>
-            <div style={{ height: "100%", width: `${pct}%`, background: "#fff", borderRadius: 999, transition: "width 300ms" }}/>
+            <div style={{ height: "100%", width: `${pct}%`, background: "#1A1A1A", borderRadius: 999, transition: "width 300ms" }}/>
           </div>
         </div>
 
@@ -2271,7 +2271,8 @@ function ScreenChecklist({ T, onBack }) {
             const sectionItems = items.filter(i => i.section === sec.id);
             const secDone = sectionItems.filter(i => i.done).length;
             const secPct = sectionItems.length ? Math.round((secDone / sectionItems.length) * 100) : 0;
-            const palette = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
+            // Rotate through orange, pink, black for visual variety across timeline sections.
+            const palette = [PB.orange, PB.pink, PB.ink, PB.orange, PB.pink, PB.ink];
             const sp = palette[sidx % palette.length];
             return (
               <div key={sec.id}>
@@ -2374,19 +2375,24 @@ function ScreenPlaylist({ T, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-        {/* Slim orange header */}
+        {/* Dark "club" header with pink accent */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+          background: `linear-gradient(160deg, #2A2A2A 0%, #1A1A1A 60%, #0F0F0F 100%)`,
           padding: "36px 22px 14px",
           borderRadius: "0 0 22px 22px",
           color: "#fff",
-          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
+          boxShadow: "0 6px 18px -10px rgba(0,0,0,0.5)",
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
             position: "absolute", top: -30, right: -40,
             width: 110, height: 110, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+            background: `${PB.pink.main}26`, pointerEvents: "none",
+          }}/>
+          <div style={{
+            position: "absolute", bottom: -40, left: -30,
+            width: 120, height: 120, borderRadius: "50%",
+            background: `${PB.orange.main}1F`, pointerEvents: "none",
           }}/>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
             <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
@@ -2398,7 +2404,7 @@ function ScreenPlaylist({ T, onBack }) {
             <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
               הפלייליסט של חוגגות
             </h1>
-            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
               מבחר שירים מוכן מראש לכל החגיגה — לחיצה אחת ופותח בספוטיפיי.
             </p>
           </div>
@@ -2965,32 +2971,32 @@ function ScreenGamesHub({ T, onNav, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* Slim orange header */}
+        {/* Slim pink header */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
           padding: "36px 22px 14px",
           borderRadius: "0 0 22px 22px",
-          color: "#fff",
-          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
+          color: "#1A1A1A",
+          boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
             position: "absolute", top: -30, right: -40,
             width: 110, height: 110, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
+            background: "rgba(255,255,255,0.18)", pointerEvents: "none",
           }}/>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
             <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>משחקים</div>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>משחקים</div>
             <div style={{ width: 40 }}/>
           </div>
 
           <div style={{ marginTop: 12, position: "relative" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#1A1A1A" }}>
               במה משחקים?
             </h1>
-            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
+            <p style={{ fontSize: 12.5, color: "rgba(26,26,26,0.78)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
               כל משחק אפשר להקרין על מסך גדול דרך כפתור "הקרנה".
             </p>
           </div>
