@@ -105,8 +105,9 @@ const clearGroomAnswers = () => { try { localStorage.removeItem(GROOM_STORAGE_KE
    lives on Make's side (when a deviceId is already bound to a record,
    subsequent logins from a different deviceId are rejected).
    ────────────────────────────────────────────────────────────── */
-// TODO: replace with the real Make.com webhook URL once the login scenario is built
-const MAKE_LOGIN_URL = "https://hook.eu1.make.com/PLACEHOLDER_LOGIN_URL";
+// Make.com login validation scenario — receives {username, password, deviceId},
+// looks the user up in the chogegot_users Data Store, returns success/error JSON.
+const MAKE_LOGIN_URL = "https://hook.eu1.make.com/coi9bjj6dxny0g7j6edppcm7i2bpedjy";
 const DEVICE_ID_KEY = "chogegot_device_id";
 const AUTH_SESSION_KEY = "chogegot_auth_session";
 
@@ -608,6 +609,7 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
           fullName: res.fullName || "",
           phone: res.phone || "",
           email: res.email || "",
+          eventType: res.eventType || "bach",
           loggedInAt: Date.now(),
         });
         onSuccess(res);
@@ -4355,13 +4357,17 @@ function App() {
       const first = res.fullName.split(" ")[0];
       if (first) setName(first);
     }
+    // Auto-bind the event type bought, so the buyer can't switch to another product.
+    if (res?.eventType) setEvent(res.eventType);
     setScreen("username");
   }}/>;
   // Demo mode: welcome screen used to chain into SMS verify, which now requires Firebase
   // Blaze. We bypass it and send the demo straight to the username step instead.
   else if (screen === "welcome") content = <ScreenWelcome T={T} onNext={() => setScreen("username")} pendingUser={pendingUser} pendingLoading={pendingLoading}/>;
   else if (screen === "smsVerify") content = <ScreenSmsVerify T={T} onNext={() => setScreen("username")} onBack={() => setScreen("welcome")} pendingUser={pendingUser}/>;
-  else if (screen === "username") content = <ScreenUsername T={T} onNext={() => setScreen("event")} onBack={() => setScreen("login")} name={name} setName={setName}/>;
+  else if (screen === "username") content = <ScreenUsername T={T}
+    onNext={() => setScreen(event ? "nameEvent" : "event")}
+    onBack={() => setScreen("login")} name={name} setName={setName}/>;
   else if (screen === "event") content = <ScreenEventPicker T={T} onNext={() => setScreen("nameEvent")} onBack={() => setScreen("username")} selected={event} setSelected={setEvent}/>;
   else if (screen === "nameEvent") content = <ScreenNameEvent T={T} eventId={event} eventName={eventName} setEventName={setEventName}
     onNext={() => setScreen(event === "bach" ? "slideshow" : "comingSoon")} onBack={() => setScreen("event")}/>;
