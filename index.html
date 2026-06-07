@@ -148,8 +148,10 @@ const makeLoginRequest = async (username, password) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username: username.trim(), password: password.trim(), deviceId }),
   });
-  // Make.com webhook responses come back as JSON when "Custom webhook response" is used
-  const text = await res.text();
+  const text = (await res.text() || "").trim();
+  // Empty body with a 200 means none of the router branches matched in Make — almost always
+  // because the username doesn't exist in the Data Store. Treat that as bad credentials.
+  if (!text) return { ok: false, error: "bad_credentials", deviceId };
   let data; try { data = JSON.parse(text); } catch (e) { data = { ok: false, error: "bad_response", raw: text }; }
   return { ...data, deviceId };
 };
