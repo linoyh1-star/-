@@ -1269,7 +1269,8 @@ function ScreenGroomMode({ T, data, onSent }) {
       en: data.en || "",
       gid: data.gid || "groomq",
     });
-    const msg = `היי ${data.bn || ""}, ענייתי על הכל. הנה התשובות שלי 💍\n${link}`;
+    // The return link goes back to the organizer, not the bride — keep the message neutral.
+    const msg = `מילאתי! הנה התשובות שלי 💍\n${link}`;
     setSent(true);
     openWhatsApp(msg);
   };
@@ -2168,7 +2169,7 @@ function ScreenQRJoin({ T, onBack }) {
 }
 
 function ScreenHelpCenter({ T, onBack }) {
-  const supportPhone = "972509419988"; // TODO: replace with real support number
+  const supportPhone = "972509419988"; // Linoy's support WhatsApp
   const waLink = `https://wa.me/${supportPhone}?text=${encodeURIComponent("היי, נתקלתי בבעיה בחוגגות ואשמח לעזרה 🙏")}`;
   return (
     <>
@@ -3929,8 +3930,8 @@ function CardGame({ T: parentT, game, onBack }) {
       en: window.localStorage.getItem("chogegot_state") ? (JSON.parse(localStorage.getItem("chogegot_state"))?.eventName || "") : "",
       gid: "groomq",
     });
-    const bride = JSON.parse(localStorage.getItem("chogegot_state") || "{}")?.name || "הכלה";
-    const msg = `היי 💍 אני מארגנת מסיבת רווקות באפליקציית "חוגגות" ויש בה שאלון מצחיק עליך. תוכל למלא? קח דקה ותענה לכל אחת בקצרה:\n\n${link}\n\nתודה! - ${bride}`;
+    // Keep the message bride-agnostic — the organizer is the sender, not the bride herself.
+    const msg = `היי! מצורף פה לינק לשאלון על הכלה שלך! בוא ניראה כמה אתה מכיר אותה 💍\n\n${link}`;
     openWhatsApp(msg);
   };
 
