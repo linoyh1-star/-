@@ -3,6 +3,9 @@
 > פלטפורמת משחקים לאירועים חברתיים בעברית RTL (רווקות, יומולדת, גיבוש, דייט).
 > Single-file React app ב-`index.html` (Babel-standalone). מתארח ב-GitHub Pages: `https://linoyh1-star.github.io/-/`
 
+## ⚠️ כללים קבועים לעבודה
+1. **כל שינוי עיצובי במסך אמיתי באפליקציה → לעדכן את ה-Mockup התואם בסלייד שואו**, ללא צורך בהוראה מפורשת. Mockups: `MockupHome`, `MockupChecklist`, `MockupBudget`, `MockupPlaylist`, `MockupGames`, `MockupJoin` ב-index.html.
+
 ## בעלת המוצר
 - לינוי ניסים
 - ווטסאפ תמיכה: `0509419988` / `+972509419988`

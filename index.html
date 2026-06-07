@@ -1417,78 +1417,92 @@ function MiniTopBar({ T, title, dark }) {
 function MockupHome({ T }) {
   const cats = [
     { t: "צ'קליסט", s: "ארגון המסיבה", badge: "5/30", icon: "list", p: PB.orange },
-    { t: "פלייליסט", s: "מחובר לספוטיפיי", badge: "קישור", icon: "music", p: PB.pink },
+    { t: "פלייליסט", s: "מחובר לספוטיפיי", badge: "פעיל", icon: "music", p: PB.pink },
     { t: "תקציב", s: "מי חייבת כמה", badge: "₪6,650", icon: "wallet", p: PB.orange },
     { t: "משחקים", s: "להקרנה לכולן", badge: "6", icon: "sparkle", p: PB.pink },
   ];
   return (
     <PhoneMockup T={T}>
-      {/* user row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 0 8px" }}>
-        <div style={{ width: 24, height: 24, borderRadius: 999, background: PB.pink.soft,
-          border: `1px solid ${PB.pink.main}`, color: PB.pink.deep,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, fontWeight: 800 }}>מ</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 7, color: "#6B6764", fontWeight: 600 }}>היי מאיה, מארחת</div>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.1 }}>הרווקות של מאיה</div>
-        </div>
-        <div style={{ width: 20, height: 20, borderRadius: 6, border: T.border,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="home" size={10} color="#1A1A1A" w={1.5}/>
-        </div>
-      </div>
-      {/* dark invite card */}
-      <div style={{ background: "#161616", borderRadius: 11, padding: 8, marginTop: 4, position: "relative" }}>
-        <div style={{ position: "absolute", top: -5, right: 9, padding: "1px 5px", background: "#fff", color: "#161616",
-          fontSize: 6, fontWeight: 800, borderRadius: 3 }}>צירוף משתתפות</div>
-        <div style={{ display: "flex", gap: 7, marginTop: 2 }}>
-          <div style={{ background: "#fff", padding: 2.5, borderRadius: 5 }}>
-            <MiniQR size={38} color="#161616" radius={3}/>
+      {/* Orange gradient header */}
+      <div style={{
+        background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+        margin: "-6px -6px 7px", padding: "7px 8px 8px", borderRadius: "0 0 10px 10px",
+        color: "#fff", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: "rgba(255,255,255,0.12)", pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
+          <div style={{ width: 18, height: 18, borderRadius: 999,
+            background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.45)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 8, fontWeight: 800, color: "#fff" }}>מ</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 6, color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>היי מאיה, מארחת</div>
+            <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: -0.1, color: "#fff" }}>הרווקות של מאיה</div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 6.5, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>סורקות ומצטרפות</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginTop: 1, letterSpacing: 0.8 }}>MAYA·77</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3 }}>
-              <span style={{ width: 4, height: 4, borderRadius: 999, background: PB.orange.main }}/>
-              <span style={{ fontSize: 7, color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>4 כבר מחוברות</span>
+          <div style={{ display: "flex", gap: 3 }}>
+            <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="help" size={8} color="#fff" w={1.5}/>
+            </div>
+            <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.18)",
+              border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="home" size={8} color="#fff" w={1.5}/>
             </div>
           </div>
         </div>
-        <div style={{ marginTop: 7, height: 20, background: PB.orange.main, borderRadius: 7,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-          fontSize: 8, fontWeight: 800, color: "#fff" }}>
-          <Icon name="camera" size={9} color="#fff" w={1.5}/> פתחי סריקה לצירוף
+      </div>
+
+      {/* host-only note — pink-accented */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 6px",
+        background: PB.pink.soft, border: `1px solid ${PB.pink.main}44`, borderRadius: 6,
+        borderRight: `2px solid ${PB.pink.main}` }}>
+        <Icon name="lock" size={8} color={PB.pink.deep} w={1.5}/>
+        <div style={{ fontSize: 6, color: PB.pink.deep, fontWeight: 600, lineHeight: 1.3 }}>
+          הכלים האלה גלויים <b>רק לך כמארחת</b>
         </div>
       </div>
-      {/* host-only banner */}
-      <div style={{ marginTop: 7, padding: "5px 8px", border: `1px dashed ${T.lineStrong}`, borderRadius: 7,
-        display: "flex", alignItems: "center", gap: 5 }}>
-        <Icon name="lock" size={9} color={PB.orange.main} w={1.5}/>
-        <div style={{ fontSize: 6.5, color: "#6B6764", fontWeight: 500, lineHeight: 1.35 }}>
-          הכלים האלה גלויים <b style={{ color: "#1A1A1A" }}>רק לך כמארחת</b>
-        </div>
+
+      {/* toolbox heading with orange stripe */}
+      <div style={{ marginTop: 7, marginBottom: 4, display: "flex", alignItems: "center", gap: 3 }}>
+        <div style={{ width: 2, height: 9, borderRadius: 1, background: PB.orange.main }}/>
+        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.1 }}>ארגז הכלים שלך</div>
       </div>
+
       {/* toolbox grid */}
-      <div style={{ fontSize: 10, fontWeight: 800, marginTop: 8, marginBottom: 5, letterSpacing: -0.2 }}>ארגז הכלים שלך</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, flex: 1 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, flex: 1 }}>
         {cats.map((c, i) => (
-          <div key={i} style={{ background: "#fff", border: T.border, borderRadius: 8, padding: 6,
-            display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ width: 18, height: 18, borderRadius: 5, background: c.p.soft,
-                display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={c.icon} size={10} color={c.p.deep} w={1.5}/>
+          <div key={i} style={{ background: "#fff", border: T.border, borderRadius: 7, padding: 5,
+            display: "flex", flexDirection: "column", justifyContent: "space-between",
+            position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", bottom: -14, left: -14, width: 32, height: 32,
+              borderRadius: "50%", background: c.p.soft, opacity: 0.6, pointerEvents: "none" }}/>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
+              <div style={{ width: 16, height: 16, borderRadius: 4.5,
+                background: c.p.main, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name={c.icon} size={9} color={c.p.on} w={1.6}/>
               </div>
-              <div style={{ fontSize: 6.5, fontWeight: 800, color: "#6B6764",
-                background: T.surfaceAlt, padding: "1px 5px", borderRadius: 999 }}>{c.badge}</div>
+              <div style={{ fontSize: 6, fontWeight: 800, color: c.p.deep,
+                background: c.p.soft, padding: "1px 4px", borderRadius: 999 }}>{c.badge}</div>
             </div>
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.1 }}>{c.t}</div>
-              <div style={{ fontSize: 6.5, color: "#6B6764", fontWeight: 600 }}>{c.s}</div>
+            <div style={{ position: "relative" }}>
+              <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: -0.1 }}>{c.t}</div>
+              <div style={{ fontSize: 6, color: "#6B6764", fontWeight: 600 }}>{c.s}</div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* black tip bar */}
+      <div style={{ marginTop: 5, padding: "4px 6px", background: "#1A1A1A", color: "#fff",
+        borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ width: 14, height: 14, borderRadius: 4, background: PB.orange.main,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="sparkle" size={8} color="#fff" w={1.6}/>
+        </div>
+        <div style={{ flex: 1, fontSize: 6, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.3 }}>
+          <b style={{ color: "#fff" }}>טיפ:</b> סדרי את הצ'קליסט שבוע מראש
+        </div>
       </div>
     </PhoneMockup>
   );
@@ -1505,53 +1519,65 @@ function MockupChecklist({ T }) {
   ];
   return (
     <PhoneMockup T={T}>
-      <MiniTopBar T={T} title="צ'קליסט המארגנת"/>
-      {/* dark hero */}
-      <div style={{ background: "#161616", borderRadius: 10, padding: 8 }}>
-        <div style={{ fontSize: 6.5, color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>סך משימות לארגון</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 1 }}>30</div>
-        <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
-          <div style={{ flex: 1, background: PB.orange.main, padding: "4px 5px", borderRadius: 5 }}>
-            <div style={{ fontSize: 6.5, color: "#fff", opacity: 0.9, fontWeight: 600 }}>בוצעו</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>5</div>
-          </div>
-          <div style={{ flex: 1, background: PB.pink.main, padding: "4px 5px", borderRadius: 5 }}>
-            <div style={{ fontSize: 6.5, color: PB.pink.on, opacity: 0.85, fontWeight: 600 }}>נשארו</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: PB.pink.on }}>25</div>
-          </div>
-          <div style={{ flex: 1, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)", padding: "4px 5px", borderRadius: 5 }}>
-            <div style={{ fontSize: 6.5, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>התקדמות</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#fff" }}>17%</div>
-          </div>
+      {/* Pink gradient header */}
+      <div style={{
+        background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+        margin: "-6px -6px 7px", padding: "7px 8px 7px", borderRadius: "0 0 10px 10px",
+        color: "#1A1A1A", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: "rgba(255,255,255,0.2)", pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+          <Icon name="chevR" size={9} color="#1A1A1A" w={1.6}/>
+          <div style={{ fontSize: 7, fontWeight: 800, color: "#1A1A1A" }}>צ'קליסט המארגנת</div>
+          <div style={{ width: 10 }}/>
         </div>
-        <div style={{ marginTop: 5, height: 3, background: "rgba(255,255,255,0.10)", borderRadius: 999 }}>
-          <div style={{ width: "17%", height: "100%", background: PB.orange.main, borderRadius: 999 }}/>
-        </div>
-      </div>
-      {/* section header */}
-      <div style={{ marginTop: 9, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.1 }}>4–6 חודשים לפני</div>
-          <div style={{ fontSize: 6.5, color: "#A7A39F", fontWeight: 600 }}>מה עושות?</div>
-        </div>
-        <div style={{ fontSize: 7, fontWeight: 700, color: "#6B6764" }}>2/6</div>
-      </div>
-      {/* items */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 5 }}>
-        {items.map((it, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5,
-            background: it.done ? T.surfaceAlt : "#fff", border: T.border, borderRadius: 6, padding: "5px 7px" }}>
-            <div style={{ width: 11, height: 11, borderRadius: 3, flexShrink: 0,
-              background: it.done ? PB.orange.main : "transparent",
-              border: it.done ? "none" : "1.2px solid #DBD6D1",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {it.done && <Icon name="check" size={8} color="#fff" w={2}/>}
+        <div style={{ marginTop: 4, display: "flex", alignItems: "flex-end", justifyContent: "space-between", position: "relative" }}>
+          <div>
+            <div style={{ fontSize: 5.5, fontWeight: 700, color: "rgba(26,26,26,0.78)", letterSpacing: 0.3 }}>משימות לארגון</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#1A1A1A", lineHeight: 1, marginTop: 1 }}>
+              5<span style={{ opacity: 0.55, fontSize: 10 }}>/30</span>
             </div>
-            <div style={{ flex: 1, fontSize: 7.5, fontWeight: 500,
-              color: it.done ? "#A7A39F" : "#1A1A1A",
+          </div>
+          <div style={{ padding: "2px 6px", borderRadius: 999, background: "#1A1A1A", color: "#fff",
+            fontSize: 7, fontWeight: 800 }}>17%</div>
+        </div>
+        <div style={{ marginTop: 4, height: 2.5, background: "rgba(0,0,0,0.18)", borderRadius: 999, overflow: "hidden", position: "relative" }}>
+          <div style={{ width: "17%", height: "100%", background: "#1A1A1A", borderRadius: 999 }}/>
+        </div>
+      </div>
+
+      {/* section header — orange chip */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "4px 6px", background: PB.orange.soft, borderRadius: 6,
+        borderRight: `2px solid ${PB.orange.main}` }}>
+        <div>
+          <div style={{ fontSize: 8, fontWeight: 800, color: PB.orange.deep, letterSpacing: -0.1 }}>4–6 חודשים לפני</div>
+          <div style={{ fontSize: 5.5, color: PB.orange.deep, fontWeight: 600, opacity: 0.75 }}>מה עושות?</div>
+        </div>
+        <div style={{ fontSize: 6, fontWeight: 800, color: PB.orange.on, background: PB.orange.main,
+          padding: "1.5px 5px", borderRadius: 999 }}>2/6</div>
+      </div>
+
+      {/* items */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: 4 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 4,
+            background: it.done ? PB.orange.soft : "#fff",
+            border: it.done ? `1px solid ${PB.orange.main}33` : T.border, borderRadius: 5, padding: "4px 6px",
+            borderRight: it.done ? `2px solid ${PB.orange.main}` : T.border?.borderRight || undefined }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2.5, flexShrink: 0,
+              background: it.done ? PB.orange.main : "transparent",
+              border: it.done ? "none" : "1px solid #DBD6D1",
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {it.done && <Icon name="check" size={7} color="#fff" w={2}/>}
+            </div>
+            <div style={{ flex: 1, fontSize: 7, fontWeight: 500,
+              color: it.done ? PB.orange.deep : "#1A1A1A",
               textDecoration: it.done ? "line-through" : "none",
+              opacity: it.done ? 0.8 : 1,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.t}</div>
-            <div style={{ fontSize: 9, color: "#A7A39F", fontWeight: 600 }}>×</div>
+            <div style={{ fontSize: 8, color: "#A7A39F", fontWeight: 600 }}>×</div>
           </div>
         ))}
       </div>
@@ -1563,36 +1589,56 @@ function MockupChecklist({ T }) {
 function MockupBudget({ T }) {
   return (
     <PhoneMockup T={T}>
-      <MiniTopBar T={T} title="תקציב"/>
-      {/* dark hero */}
-      <div style={{ background: "#161616", borderRadius: 10, padding: 9 }}>
-        <MiniBar w={36} h={3} bg="rgba(255,255,255,0.5)"/>
-        <div style={{ fontSize: 19, fontWeight: 800, color: "#fff", marginTop: 2 }}>₪6,650</div>
-        <div style={{ display: "flex", gap: 4, marginTop: 7 }}>
-          {[
-            { l: "ל-12", v: "₪554", bg: "rgba(255,255,255,0.10)", fg: "#fff" },
-            { l: "נאספו", v: "₪2,770", bg: PB.pink.main, fg: PB.pink.on },
-            { l: "חסר", v: "₪3,880", bg: PB.orange.main, fg: "#fff" },
-          ].map((s, i) => (
-            <div key={i} style={{ flex: 1, background: s.bg, padding: "4px 5px", borderRadius: 5,
-              border: s.bg.includes("rgba") ? "1px solid rgba(255,255,255,0.15)" : "none" }}>
-              <div style={{ fontSize: 6.5, opacity: 0.9, color: s.fg }}>{s.l}</div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: s.fg }}>{s.v}</div>
-            </div>
-          ))}
+      {/* Orange gradient header */}
+      <div style={{
+        background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+        margin: "-6px -6px 7px", padding: "7px 8px 7px", borderRadius: "0 0 10px 10px",
+        color: "#fff", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: "rgba(255,255,255,0.12)", pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+          <Icon name="chevR" size={9} color="#fff" w={1.6}/>
+          <div style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>תקציב</div>
+          <div style={{ width: 10 }}/>
+        </div>
+        <div style={{ marginTop: 4, display: "flex", alignItems: "flex-end", justifyContent: "space-between", position: "relative", gap: 6 }}>
+          <div>
+            <div style={{ fontSize: 5.5, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: 0.3 }}>סך הוצאות</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", lineHeight: 1, marginTop: 1 }}>₪6,650</div>
+          </div>
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 5.5, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>חסר לאסוף</div>
+            <div style={{ fontSize: 7, fontWeight: 800, color: "#fff", background: "rgba(0,0,0,0.25)",
+              padding: "2px 6px", borderRadius: 999, display: "inline-block", marginTop: 1 }}>₪3,880</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 3, marginTop: 4, position: "relative" }}>
+          <div style={{ flex: 1, padding: "3px 5px", borderRadius: 4,
+            background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff" }}>
+            <div style={{ fontSize: 5, fontWeight: 700, opacity: 0.92 }}>חלוקה ל-12</div>
+            <div style={{ fontSize: 7.5, fontWeight: 800 }}>₪554</div>
+          </div>
+          <div style={{ flex: 1, padding: "3px 5px", borderRadius: 4,
+            background: PB.pink.main, color: PB.pink.on }}>
+            <div style={{ fontSize: 5, fontWeight: 700, opacity: 0.85 }}>נאספו</div>
+            <div style={{ fontSize: 7.5, fontWeight: 800 }}>₪2,770</div>
+          </div>
         </div>
       </div>
+
       {/* tabs */}
-      <div style={{ display: "flex", gap: 3, padding: 3, background: T.surfaceAlt, borderRadius: 8, marginTop: 8 }}>
+      <div style={{ display: "flex", gap: 2, padding: 2, background: T.surfaceAlt, borderRadius: 7 }}>
         {["סיכום", "הוצאות", "בנות"].map((t, i) => (
-          <div key={i} style={{ flex: 1, fontSize: 8.5, fontWeight: 700, padding: "4px 0", textAlign: "center",
+          <div key={i} style={{ flex: 1, fontSize: 7.5, fontWeight: 700, padding: "3px 0", textAlign: "center",
             background: i === 0 ? "#fff" : "transparent", color: i === 0 ? "#1A1A1A" : "#6B6764",
-            borderRadius: 6 }}>{t}</div>
+            borderRadius: 5 }}>{t}</div>
         ))}
       </div>
+
       {/* category bars */}
-      <div style={{ marginTop: 10, fontSize: 9.5, fontWeight: 700 }}>פירוט לפי קטגוריה</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 6 }}>
+      <div style={{ marginTop: 7, fontSize: 8.5, fontWeight: 700 }}>פירוט לפי קטגוריה</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
         {[
           { c: "לוקיישן", v: "₪2,500", pct: 38 },
           { c: "אטרקציה", v: "₪1,800", pct: 27 },
@@ -1600,10 +1646,10 @@ function MockupBudget({ T }) {
           { c: "אלכוהול", v: "₪400", pct: 6 },
         ].map((r, i) => (
           <div key={i}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 7.5, fontWeight: 600 }}>
               <span>{r.c}</span><span>{r.v}</span>
             </div>
-            <div style={{ marginTop: 2, height: 3, background: T.surfaceAlt, borderRadius: 999 }}>
+            <div style={{ marginTop: 1.5, height: 2.5, background: T.surfaceAlt, borderRadius: 999 }}>
               <div style={{ width: `${r.pct}%`, height: "100%", background: PB.orange.main, borderRadius: 999 }}/>
             </div>
           </div>
@@ -1617,41 +1663,69 @@ function MockupBudget({ T }) {
 function MockupPlaylist({ T }) {
   return (
     <PhoneMockup T={T}>
-      <MiniTopBar T={T} title="פלייליסט"/>
-      <div style={{ fontSize: 13, fontWeight: 800, marginTop: 6, letterSpacing: -0.2, lineHeight: 1.15 }}>
-        הפלייליסט של<br/>המסיבה
-      </div>
-      <div style={{ fontSize: 7.5, color: "#6B6764", fontWeight: 500, lineHeight: 1.5, marginTop: 5 }}>
-        הדביקי קישור לפלייליסט שיצרת בספוטיפיי. הוא יפתח ישירות באפליקציה כשתלחצי על הכפתור.
-      </div>
-      {/* Spotify hero card */}
-      <div style={{ background: "#1DB954", borderRadius: 11, padding: 10, marginTop: 10, color: "#fff" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 999, background: "#fff",
-            display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon name="spotify" size={22}/>
+      {/* Dark "club" gradient header with pink + orange light bleeds */}
+      <div style={{
+        background: `linear-gradient(160deg, #2A2A2A 0%, #1A1A1A 60%, #0F0F0F 100%)`,
+        margin: "-6px -6px 7px", padding: "7px 8px 7px", borderRadius: "0 0 10px 10px",
+        color: "#fff", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: `${PB.pink.main}33`, pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", bottom: -10, left: -8, width: 28, height: 28,
+          borderRadius: "50%", background: `${PB.orange.main}22`, pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+          <Icon name="chevR" size={9} color="#fff" w={1.6}/>
+          <div style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>פלייליסט</div>
+          <div style={{ width: 10 }}/>
+        </div>
+        <div style={{ marginTop: 4, position: "relative" }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "#fff", letterSpacing: -0.2, lineHeight: 1.1 }}>
+            הפלייליסט של חוגגות
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 6.5, fontWeight: 700, opacity: 0.85, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
-            <div style={{ fontSize: 10, fontWeight: 800, marginTop: 1 }}>מחכה לקישור</div>
+          <div style={{ fontSize: 5.5, color: "rgba(255,255,255,0.78)", fontWeight: 600, marginTop: 1 }}>
+            לחיצה אחת ופותח בספוטיפיי
           </div>
         </div>
       </div>
-      {/* link input */}
-      <div style={{ marginTop: 10, fontSize: 6.5, fontWeight: 700, color: "#A7A39F", letterSpacing: 0.5, textTransform: "uppercase" }}>קישור לפלייליסט</div>
-      <div style={{ marginTop: 4, padding: "7px 9px", border: T.border, borderRadius: 7,
-        background: "#fff", fontSize: 7.5, color: "#A7A39F", direction: "ltr", textAlign: "left" }}>
-        https://open.spotify.com/playlist/...
+
+      {/* Spotify big tap card */}
+      <div style={{ background: "#1DB954", borderRadius: 9, padding: 8, color: "#fff",
+        display: "flex", alignItems: "center", gap: 7,
+        boxShadow: "0 6px 14px -6px rgba(29,185,84,0.5)" }}>
+        <div style={{ width: 26, height: 26, borderRadius: 999, background: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="spotify" size={18}/>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 5.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
+          <div style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
+        </div>
+        <Icon name="play" size={12} color="#fff"/>
       </div>
-      <div style={{ fontSize: 6.5, color: "#A7A39F", fontWeight: 500, lineHeight: 1.45, marginTop: 5 }}>
-        איך מוצאים: ב-Spotify → פתחי פלייליסט → ⋯ → שיתוף → העתקת קישור.
+
+      {/* small orange info chip */}
+      <div style={{ marginTop: 5, padding: "4px 6px",
+        background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`, borderRadius: 6,
+        borderRight: `2px solid ${PB.orange.main}`,
+        display: "flex", alignItems: "center", gap: 4 }}>
+        <Icon name="music" size={9} color={PB.orange.deep} w={1.5}/>
+        <div style={{ fontSize: 5.5, lineHeight: 1.35, color: PB.orange.deep, fontWeight: 600 }}>
+          פלייליסט יחיד ומשותף לכל המסיבה
+        </div>
       </div>
+
       <div style={{ flex: 1 }}/>
-      {/* CTA */}
-      <div style={{ marginTop: 6, height: 24, background: PB.orange.main, borderRadius: 8,
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-        fontSize: 9.5, fontWeight: 800, color: "#fff" }}>
-        <Icon name="play" size={9} color="#fff"/> פתחי בספוטיפיי
+
+      {/* black branded tip */}
+      <div style={{ padding: "4px 6px", background: "#1A1A1A", color: "#fff",
+        borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ width: 14, height: 14, borderRadius: 4, background: PB.orange.main,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="sparkle" size={8} color="#fff" w={1.6}/>
+        </div>
+        <div style={{ flex: 1, fontSize: 5.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.3 }}>
+          <b style={{ color: "#fff" }}>טיפ:</b> צרי פלייליסט לקראת האירוע
+        </div>
       </div>
     </PhoneMockup>
   );
@@ -1669,21 +1743,43 @@ function MockupGames({ T }) {
   ];
   return (
     <PhoneMockup T={T}>
-      <MiniTopBar T={T} title="משחקים"/>
-      <div style={{ fontSize: 13, fontWeight: 800, marginTop: 4 }}>במה משחקים?</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
+      {/* Pink gradient header */}
+      <div style={{
+        background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+        margin: "-6px -6px 6px", padding: "7px 8px 7px", borderRadius: "0 0 10px 10px",
+        color: "#1A1A1A", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: "rgba(255,255,255,0.2)", pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+          <Icon name="chevR" size={9} color="#1A1A1A" w={1.6}/>
+          <div style={{ fontSize: 7, fontWeight: 800, color: "#1A1A1A" }}>משחקים</div>
+          <div style={{ width: 10 }}/>
+        </div>
+        <div style={{ marginTop: 4, position: "relative" }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "#1A1A1A", letterSpacing: -0.2, lineHeight: 1.1 }}>
+            במה משחקים?
+          </div>
+          <div style={{ fontSize: 5.5, color: "rgba(26,26,26,0.78)", fontWeight: 600, marginTop: 1 }}>
+            כל משחק אפשר להקרין למסך גדול
+          </div>
+        </div>
+      </div>
+
+      {/* games list — clean style (matches the new screen) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {games.map((g, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6,
-            background: "#fff", border: T.border, borderRadius: 7, padding: "5px 6px" }}>
-            <div style={{ width: 22, height: 22, borderRadius: 6, background: g.p.soft,
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5,
+            background: "#fff", border: T.border, borderRadius: 6, padding: "4px 6px" }}>
+            <div style={{ width: 20, height: 20, borderRadius: 5, background: g.p.soft,
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Icon name={g.ic} size={12} color={g.p.deep} w={1.4}/>
+              <Icon name={g.ic} size={11} color={g.p.deep} w={1.4}/>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 8.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.t}</div>
-              <div style={{ fontSize: 7, color: "#6B6764", marginTop: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.s}</div>
+              <div style={{ fontSize: 8, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.t}</div>
+              <div style={{ fontSize: 6.5, color: "#6B6764", marginTop: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{g.s}</div>
             </div>
-            <Icon name="chevL" size={9} color="#A7A39F" w={1.5}/>
+            <Icon name="chevL" size={8} color="#A7A39F" w={1.5}/>
           </div>
         ))}
       </div>
@@ -1693,45 +1789,84 @@ function MockupGames({ T }) {
 
 /* ───── Mockup 6: QR / Join ───── */
 function MockupJoin({ T }) {
-  const initials = [
-    { n: "מ", p: PB.orange }, { n: "ל", p: PB.pink },
-    { n: "ש", p: PB.orange }, { n: "ת", p: PB.pink },
-  ];
   return (
     <PhoneMockup T={T}>
-      <MiniTopBar T={T} title="צירוף משתתפות"/>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "4px 0" }}>
-        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: -0.2, textAlign: "center" }}>סרקו והצטרפו</div>
-        <div style={{ fontSize: 7.5, color: "#6B6764", fontWeight: 500, lineHeight: 1.45, textAlign: "center", marginTop: 5 }}>
-          כוונו את מצלמת הטלפון לברקוד.<br/>כל אחת מצטרפת מהמכשיר שלה.
+      {/* Pink gradient header — matches game-intro style */}
+      <div style={{
+        background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+        margin: "-6px -6px 6px", padding: "7px 8px 7px", borderRadius: "0 0 10px 10px",
+        color: "#1A1A1A", position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
+          borderRadius: "50%", background: "rgba(255,255,255,0.2)", pointerEvents: "none" }}/>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+          <Icon name="chevR" size={9} color="#1A1A1A" w={1.6}/>
+          <div style={{ fontSize: 7, fontWeight: 800, color: "#1A1A1A" }}>איך משחקים</div>
+          <div style={{ width: 10 }}/>
         </div>
-        {/* QR card */}
-        <div style={{ background: "#fff", border: T.border, borderRadius: 12, padding: 10, marginTop: 9,
-          boxShadow: "0 6px 18px -8px rgba(20,18,16,0.2)", textAlign: "center" }}>
-          <MiniQR size={108} color="#161616" radius={3}/>
-          <div style={{ marginTop: 6, fontSize: 6.5, fontWeight: 700, color: "#A7A39F", letterSpacing: 0.5, textTransform: "uppercase" }}>או הקלידו קוד</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#1A1A1A", letterSpacing: 1.3, marginTop: 1 }}>MAYA·77</div>
+      </div>
+
+      {/* game icon + title */}
+      <div style={{ textAlign: "center", marginTop: 3 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 9, background: PB.pink.soft,
+          margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="star" size={18} color={PB.pink.deep} w={1.5}/>
         </div>
-        {/* avatars + count */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 9 }}>
-          <div style={{ display: "flex" }}>
-            {initials.map((a, i) => (
-              <div key={i} style={{ width: 14, height: 14, borderRadius: 999,
-                background: a.p.soft, color: a.p.deep, border: "1px solid #fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 7, fontWeight: 800, marginInlineStart: i > 0 ? -3 : 0 }}>{a.n}</div>
-            ))}
+        <div style={{ fontSize: 10, fontWeight: 800, marginTop: 4, letterSpacing: -0.2 }}>חידון על הכלה</div>
+        <div style={{ fontSize: 6, color: "#6B6764", fontWeight: 500, marginTop: 1 }}>מי מכירה הכי טוב?</div>
+      </div>
+
+      {/* join card — matches the joinable game UI */}
+      <div style={{ marginTop: 5, padding: "5px 7px",
+        background: PB.pink.soft, border: `1px solid ${PB.pink.main}33`, borderRadius: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 18, height: 18, borderRadius: 5,
+            background: PB.pink.main, color: PB.pink.on,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="qr" size={10} color={PB.pink.on} w={1.7}/>
           </div>
-          <div style={{ fontSize: 7.5, fontWeight: 600, color: "#6B6764" }}>
-            <b style={{ color: "#1A1A1A" }}>4 חברות</b> כבר הצטרפו
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 7, fontWeight: 800, color: PB.pink.deep }}>צרפי את הבנות למשחק</div>
+            <div style={{ fontSize: 5.5, color: "#6B6764", fontWeight: 600, marginTop: 0.5 }}>
+              עונות מהטלפון שלהן בזמן אמת
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 3, marginTop: 4 }}>
+          <div style={{ flex: 1, padding: "3px 4px", borderRadius: 4,
+            background: PB.pink.main, color: PB.pink.on,
+            fontSize: 6.5, fontWeight: 800, textAlign: "center",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+            <Icon name="share" size={7} color={PB.pink.on} w={1.7}/> שלחי לינק
+          </div>
+          <div style={{ flex: 1, padding: "3px 4px", borderRadius: 4,
+            background: "transparent", color: PB.pink.deep,
+            border: `1px solid ${PB.pink.main}`,
+            fontSize: 6.5, fontWeight: 800, textAlign: "center",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+            <Icon name="qr" size={7} color={PB.pink.deep} w={1.6}/> סריקת קוד
           </div>
         </div>
       </div>
-      {/* orange share CTA */}
-      <div style={{ height: 24, background: PB.orange.main, borderRadius: 8,
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-        fontSize: 9.5, fontWeight: 800, color: "#fff" }}>
-        <Icon name="share" size={9} color="#fff" w={1.6}/> שיתוף קישור במקום
+
+      {/* rules card — visible behind the join card */}
+      <div style={{ marginTop: 4, padding: "5px 7px",
+        background: "#fff", border: T.border, borderRadius: 6 }}>
+        <div style={{ fontSize: 5.5, fontWeight: 800, color: "#A7A39F", letterSpacing: 0.4, textTransform: "uppercase" }}>חוקי המשחק</div>
+        <div style={{ marginTop: 3, fontSize: 6, color: "#6B6764", fontWeight: 500, lineHeight: 1.4 }}>
+          <div>• הכלה צופה — היא לא משחקת</div>
+          <div>• כל הבנות מקבלות שאלה בטלפון</div>
+          <div>• 20 שניות לחשוב ולכתוב</div>
+        </div>
+      </div>
+
+      <div style={{ flex: 1 }}/>
+
+      {/* Start CTA */}
+      <div style={{ height: 22, background: PB.pink.main, borderRadius: 7,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 9, fontWeight: 800, color: PB.pink.on }}>
+        מתחילות שאלון
       </div>
     </PhoneMockup>
   );
@@ -1748,8 +1883,8 @@ const BACH_SLIDES = [
     desc: "מדביקה קישור לפלייליסט שלך — והוא נפתח באירוע במכשיר של כולן." },
   { Mockup: MockupGames,     pop: "pink",   title: "6 משחקים מוכנים",
     desc: "פנטומימה, חידון על הכלה, מפה לאוזן ועוד — עם מצב הקרנה למסך גדול." },
-  { Mockup: MockupJoin,      pop: "orange", title: "צירוף החברות מיד",
-    desc: "כל אחת סורקת QR מהמכשיר שלה ומצטרפת — בלי הורדת אפליקציה." },
+  { Mockup: MockupJoin,      pop: "pink",   title: "החברות מצטרפות למשחק",
+    desc: "בכל משחק שדורש משתתפות — שולחות לינק או סורקות קוד, וכל אחת עונה מהטלפון שלה." },
 ];
 
 function ScreenSlideshow({ T, slides, onDone, eventName }) {
