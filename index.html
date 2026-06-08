@@ -225,6 +225,26 @@ const fbLoadUserData = async (uid) => {
   } catch (e) { console.error("[FS] load failed:", e); return null; }
 };
 
+// Cross-device app state — keyed by Make.com username. Saves the same shape as
+// localStorage so a user can log in from a different browser (e.g. Gmail's in-app
+// browser vs Safari) and pick up where she left off.
+const APP_STATE_COLLECTION = "app_user_states";
+const fbSaveAppState = async (username, payload) => {
+  if (!FB || !username) return;
+  try {
+    await FB.db.collection(APP_STATE_COLLECTION).doc(username).set(
+      { ...payload, lastSeen: Date.now() }, { merge: true }
+    );
+  } catch (e) { console.error("[FS] save app state failed:", e); }
+};
+const fbLoadAppState = async (username) => {
+  if (!FB || !username) return null;
+  try {
+    const doc = await FB.db.collection(APP_STATE_COLLECTION).doc(username).get();
+    return doc.exists ? doc.data() : null;
+  } catch (e) { console.error("[FS] load app state failed:", e); return null; }
+};
+
 // Pending users (pre-auth) — written by Make.com when customer pays
 const fbLoadPendingUser = async (token) => {
   if (!FB || !token) return null;
@@ -1271,12 +1291,45 @@ function MiniQR({ size = 70, color = "#161616", bg = "#fff", radius = 10 }) {
    ────────────────────────────────────────────────────────────── */
 function ScreenGroomMode({ T, data, onSent }) {
   const questions = data?.q || [];
-  const [answers, setAnswers] = React.useState(questions.map(() => ""));
+
+  // Build a stable per-questionnaire localStorage key so the groom can revisit the link
+  // days later and find his previous answers waiting for him to edit.
+  const questionnaireKey = React.useMemo(() => {
+    if (!questions.length) return null;
+    try {
+      const fingerprint = questions.join("|").slice(0, 200);
+      // Simple djb2 hash so we don't need a crypto API
+      let h = 5381;
+      for (let i = 0; i < fingerprint.length; i++) h = ((h << 5) + h + fingerprint.charCodeAt(i)) >>> 0;
+      return `chogegot_groom_draft_${h.toString(36)}`;
+    } catch (e) { return null; }
+  }, [questions]);
+
+  const initialAnswers = React.useMemo(() => {
+    if (!questionnaireKey) return questions.map(() => "");
+    try {
+      const raw = localStorage.getItem(questionnaireKey);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (Array.isArray(saved) && saved.length === questions.length) return saved;
+      }
+    } catch (e) {}
+    return questions.map(() => "");
+  }, [questionnaireKey, questions]);
+
+  const [answers, setAnswers] = React.useState(initialAnswers);
   const [sent, setSent] = React.useState(false);
+
+  // Save the draft on every keystroke so the groom can leave + come back without losing anything.
+  React.useEffect(() => {
+    if (!questionnaireKey) return;
+    try { localStorage.setItem(questionnaireKey, JSON.stringify(answers)); } catch (e) {}
+  }, [questionnaireKey, answers]);
 
   const filledCount = answers.filter(a => a.trim()).length;
   const allFilled = filledCount === questions.length && questions.length > 0;
   const pct = questions.length ? Math.round((filledCount / questions.length) * 100) : 0;
+  const hasPriorDraft = initialAnswers.some(a => a.trim());
 
   const update = (i, v) => setAnswers(answers.map((a, idx) => idx === i ? v : a));
 
@@ -1379,7 +1432,7 @@ function ScreenGroomMode({ T, data, onSent }) {
           </div>
         ) : (
           <Btn T={T} icon="send" onClick={submit} disabled={!allFilled}>
-            {allFilled ? "שלחי לכלה בוואטסאפ" : `עוד ${questions.length - filledCount} שאלות`}
+            {allFilled ? "שלח בחזרה את התשובות" : `עוד ${questions.length - filledCount} שאלות`}
           </Btn>
         )}
       </div>
@@ -2010,7 +2063,23 @@ const HOST_CATS = [
   { id: "games",     t: "משחקים",  s: "להקרנה לכולן",      icon: "sparkle", pop: "pink",   badge: "6 משחקים" },
 ];
 
+// Tips that rotate at the bottom of bach home. Add new ones here freely — the home will pick
+// a fresh one every 6 seconds.
+const BACH_TIPS = [
+  "סדרי את הצ׳קליסט שבוע מראש — כולן יודו לך.",
+  "ערכי בדיקה של הטיימרים במשחקים לפני האירוע — חבל לפספס.",
+  "צרי פלייליסט בספוטיפיי וחברי אותו כאן — הוא ייפתח באוטומט.",
+  "שלחי לחתן את השאלון 3-4 ימים מראש כדי שיספיק לענות.",
+  "תקציב משותף = פחות שיחות מביכות. הזיני הוצאות תוך כדי.",
+  "הוסיפי את כל הבנות מראש — קל יותר לעקוב מי שילמה.",
+];
+
 function ScreenBachHome({ T, onNav, user, eventName }) {
+  const [tipIdx, setTipIdx] = React.useState(() => Math.floor(Math.random() * BACH_TIPS.length));
+  React.useEffect(() => {
+    const t = setInterval(() => setTipIdx(i => (i + 1) % BACH_TIPS.length), 6000);
+    return () => clearInterval(t);
+  }, []);
   return (
     <>
       <StatusBar T={T}/>
@@ -2126,8 +2195,9 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
             }}><Icon name="sparkle" size={17} color="#fff" w={1.6}/></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "#fff", letterSpacing: 0.2 }}>טיפ ליום האירוע</div>
-              <div style={{ fontSize: 11.5, fontWeight: 500, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>
-                סדרי את הצ׳קליסט שבוע מראש — כל הבנות יודו לך.
+              <div key={tipIdx} style={{ fontSize: 11.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", marginTop: 1,
+                animation: "screenIn 320ms ease-out" }}>
+                {BACH_TIPS[tipIdx]}
               </div>
             </div>
           </div>
@@ -3151,7 +3221,7 @@ const CARD_DECKS = {
       "בסבב — כל משתתפת מסמנת בלחיצה אחת מי F, מי M ומי K.",
       "כל אות מותרת רק פעם אחת בכרטיס.",
       "אין 'תשובה נכונה' — הספונטניות והשיחה מנצחות.",
-      "ברגע שכולן סימנו, ממשיכות לכרטיס הבא.",
+      "ברגע שכולן סימנו, ממשיכות לכרטיס הבא. ניתן לדלג עם כפתור הבא.",
     ],
     prompts: [
       ["הארי פוטר", "דמבלדור", "רון וויזלי"],
@@ -3170,9 +3240,9 @@ const CARD_DECKS = {
   nhie: { label: "אף פעם לא...", headline: "Never Have I Ever",
     shuffle: true,
     rules: [
-      "בכל פעם תופיע שאלה 'אף פעם לא...'",
-      "מי שהאמירה נכונה לגביה — תרים אצבע ותצבור נקודה.",
-      "מי שצברה 5 נקודות — שותה צ'ייסר.",
+      "בכל פעם תופיע אמירה 'אף פעם לא...'",
+      "מי שאף פעם לא עשתה את זה — מרימה אצבע.",
+      "מי שהגיעה ל-5 אצבעות — מרימה צ'ייסר ומתחילה לספור מחדש.",
     ],
     prompts: [
       "אף פעם לא שלחתי הודעה לאקס בלילה",
@@ -4174,8 +4244,7 @@ function CardGame({ T: parentT, game, onBack }) {
               </div>
             </div>
           </div>
-          <Btn T={T} onClick={() => { setI(0); setRevealed({}); setGroomMarks({}); setGroomSummary(false); }}>שחקו עוד</Btn>
-          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none", fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>לרשימת המשחקים</button>
+          <Btn T={T} onClick={onBack}>לרשימת המשחקים</Btn>
         </div>
         <HomeBar/>
       </>
@@ -4198,14 +4267,14 @@ function CardGame({ T: parentT, game, onBack }) {
         ))}
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "20px 0", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", alignItems: big ? "center" : "flex-start", justifyContent: "center", padding: big ? "clamp(16px,4vh,40px) 0" : "16px 0", minHeight: 0, overflowY: "auto" }}>
         <div key={i} style={{
           width: big ? "min(90%,920px)" : "100%",
           background: big ? T.accent : T.surface,
           border: big ? "none" : T.border,
           borderRadius: big ? 32 : 22,
           boxShadow: big ? "0 24px 60px -10px rgba(0,0,0,0.5)" : T.shadow,
-          padding: big ? "clamp(32px,6vw,72px)" : "36px 24px",
+          padding: big ? "clamp(32px,6vw,72px)" : "28px 22px",
           position: "relative",
           animation: "cardIn 280ms cubic-bezier(.18,.89,.43,1.19)",
           minHeight: big ? "auto" : 240,
@@ -4359,16 +4428,7 @@ function CardGame({ T: parentT, game, onBack }) {
               color: big ? T.onAccent : T.ink, textAlign: "center", textWrap: "balance", letterSpacing: -0.5,
             }}>{prompt}</div>
           )}
-          {isNhie && (
-            <div style={{
-              position: "absolute", top: big ? 18 : 14, left: big ? 24 : 14,
-              width: big ? 52 : 36, height: big ? 52 : 36, borderRadius: "50%",
-              background: big ? "rgba(255,255,255,0.18)" : "#1A1A1A",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <Icon name="close" size={big ? 28 : 18} color="#fff" w={2.6}/>
-            </div>
-          )}
+          {/* X badge removed per feedback — the deck label already signals 'אף פעם לא' */}
           {/* Groomq: reveal answer (if loaded) + ✓/✗ marking */}
           {isGroomq && (
             <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: big ? 12 : 8 }}>
@@ -4600,18 +4660,30 @@ function App() {
     return () => off && off();
   }, []);
 
-  // Persist to localStorage (always) + Firestore (when authenticated, debounced)
+  // Persist to localStorage (always) + Firestore (cross-browser, debounced)
   React.useEffect(() => {
     // Gating screens (login / welcome / smsVerify) shouldn't be restored on refresh — those
     // are entry doors that need a fresh auth/URL context, not the screen the user was on.
     const persistableScreen = (screen === "welcome" || screen === "smsVerify" || screen === "login") ? null : screen;
     try { localStorage.setItem("chogegot_state", JSON.stringify({ screen: persistableScreen, name, event, eventName, gameId })); } catch (e) {}
-    if (!uid) return;
+
+    const username = authSession?.username;
+    if (!username) return;
     const t = setTimeout(() => {
-      fbSaveUserData(uid, { screen: persistableScreen, name, event, eventName, gameId, phone: fbCurrentUser()?.phoneNumber || null, lastSeen: Date.now() });
+      // Capture the per-feature data from localStorage so a re-login from another
+      // browser still gets the checklist, budget, groom answers etc.
+      let checklistItems, budgetExpenses, budgetParticipants, groomAnswers;
+      try { checklistItems = JSON.parse(localStorage.getItem("chogegot_checklist_items") || "null"); } catch (e) {}
+      try { budgetExpenses = JSON.parse(localStorage.getItem("chogegot_budget_expenses") || "null"); } catch (e) {}
+      try { budgetParticipants = JSON.parse(localStorage.getItem("chogegot_budget_participants") || "null"); } catch (e) {}
+      try { groomAnswers = JSON.parse(localStorage.getItem(GROOM_STORAGE_KEY) || "null"); } catch (e) {}
+      fbSaveAppState(username, {
+        screen: persistableScreen, name, event, eventName, gameId,
+        checklistItems, budgetExpenses, budgetParticipants, groomAnswers,
+      });
     }, 1500); // debounce 1.5s
     return () => clearTimeout(t);
-  }, [screen, name, event, eventName, gameId, uid]);
+  }, [screen, name, event, eventName, gameId, authSession]);
 
   const nav = (to, params = {}) => {
     if (params.gameId) setGameId(params.gameId);
@@ -4630,15 +4702,42 @@ function App() {
   const T = skin(skinName);
 
   let content;
-  if (screen === "login") content = <ScreenLogin T={T} prefillUsername={prefillUsername} onSuccess={(res) => {
-    setAuthSession(loadAuthSession());
-    if (res?.fullName) {
+  if (screen === "login") content = <ScreenLogin T={T} prefillUsername={prefillUsername} onSuccess={async (res) => {
+    const fresh = loadAuthSession();
+    setAuthSession(fresh);
+
+    // Try to pull this user's saved app state from Firestore (cross-browser sync).
+    // Falls back silently to the per-payment defaults if there's no cloud doc yet.
+    const cloud = fresh?.username ? await fbLoadAppState(fresh.username) : null;
+
+    if (cloud?.name) setName(cloud.name);
+    else if (res?.fullName) {
       const first = res.fullName.split(" ")[0];
       if (first) setName(first);
     }
-    // Auto-bind the event type bought, so the buyer can't switch to another product.
-    if (res?.eventType) setEvent(res.eventType);
-    setScreen("username");
+
+    if (cloud?.event) setEvent(cloud.event);
+    else if (res?.eventType) setEvent(res.eventType);
+
+    if (cloud?.eventName) setEventName(cloud.eventName);
+    if (cloud?.gameId) setGameId(cloud.gameId);
+
+    // Per-feature state lives in its own localStorage keys — drop the cloud copy in
+    // so the components hydrate from it on next mount.
+    try {
+      if (cloud?.checklistItems !== undefined) localStorage.setItem("chogegot_checklist_items", JSON.stringify(cloud.checklistItems));
+      if (cloud?.budgetExpenses !== undefined) localStorage.setItem("chogegot_budget_expenses", JSON.stringify(cloud.budgetExpenses));
+      if (cloud?.budgetParticipants !== undefined) localStorage.setItem("chogegot_budget_participants", JSON.stringify(cloud.budgetParticipants));
+      if (cloud?.groomAnswers !== undefined && cloud.groomAnswers) localStorage.setItem(GROOM_STORAGE_KEY, JSON.stringify(cloud.groomAnswers));
+    } catch (e) {}
+
+    // Returning user with a saved screen jumps straight back to it (skipping
+    // username again). New user goes through the normal onboarding.
+    if (cloud?.screen && cloud.screen !== "welcome" && cloud.screen !== "smsVerify" && cloud.screen !== "login") {
+      setScreen(cloud.screen);
+    } else {
+      setScreen("username");
+    }
   }}/>;
   // Demo mode: welcome screen used to chain into SMS verify, which now requires Firebase
   // Blaze. We bypass it and send the demo straight to the username step instead.
