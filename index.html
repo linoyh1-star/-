@@ -97,6 +97,25 @@ const loadGroomAnswers = () => {
 const clearGroomAnswers = () => { try { localStorage.removeItem(GROOM_STORAGE_KEY); } catch (e) {} };
 
 /* ──────────────────────────────────────────────────────────────
+   PER-FEATURE PERSISTENCE — checklist items, budget expenses,
+   budget participants. Each value lives under its own localStorage
+   key so a refresh / re-login keeps the user's progress intact.
+   ────────────────────────────────────────────────────────────── */
+function usePersistedState(key, initialValue) {
+  const [state, setState] = React.useState(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return typeof initialValue === "function" ? initialValue() : initialValue;
+  });
+  React.useEffect(() => {
+    try { localStorage.setItem(key, JSON.stringify(state)); } catch (e) {}
+  }, [key, state]);
+  return [state, setState];
+}
+
+/* ──────────────────────────────────────────────────────────────
    AUTH (username + password via Make.com Data Store)
 
    Cheap alternative to Firebase Phone Auth: Make.com generates
@@ -1630,7 +1649,7 @@ function MockupBudget({ T }) {
 
       {/* tabs */}
       <div style={{ display: "flex", gap: 2, padding: 2, background: T.surfaceAlt, borderRadius: 7 }}>
-        {["סיכום", "הוצאות", "בנות"].map((t, i) => (
+        {["סיכום", "הוצאות", "משתתפות"].map((t, i) => (
           <div key={i} style={{ flex: 1, fontSize: 7.5, fontWeight: 700, padding: "3px 0", textAlign: "center",
             background: i === 0 ? "#fff" : "transparent", color: i === 0 ? "#1A1A1A" : "#6B6764",
             borderRadius: 5 }}>{t}</div>
@@ -1937,18 +1956,19 @@ function ScreenSlideshow({ T, slides, onDone, eventName }) {
             return (
               <div key={i} dir="rtl" style={{
                 minWidth: "100%", scrollSnapAlign: "start",
-                padding: "10px 20px 4px",
+                padding: "8px 20px 4px",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start",
                 textAlign: "center",
               }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 1.8, textTransform: "uppercase", color: p.deep }}>
                   שלב {i + 1} / {slides.length}
                 </div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 14px", letterSpacing: -0.4, lineHeight: 1.15 }}>{s.title}</h1>
-                {Mockup ? <Mockup T={T}/> : null}
-                <p style={{ fontSize: 13.5, color: T.inkSoft, lineHeight: 1.55, fontWeight: 500, marginTop: 14, maxWidth: 280 }}>
+                <h1 style={{ fontSize: 20, fontWeight: 800, margin: "4px 0 6px", letterSpacing: -0.4, lineHeight: 1.15 }}>{s.title}</h1>
+                {/* Description first so it's never clipped under the mockup */}
+                <p style={{ fontSize: 12.5, color: T.inkSoft, lineHeight: 1.5, fontWeight: 500, margin: "0 0 10px", maxWidth: 290 }}>
                   {s.desc}
                 </p>
+                {Mockup ? <Mockup T={T}/> : null}
               </div>
             );
           })}
@@ -2351,7 +2371,7 @@ const buildSeedItems = () => {
 };
 
 function ScreenChecklist({ T, onBack }) {
-  const [items, setItems] = React.useState(buildSeedItems);
+  const [items, setItems] = usePersistedState("chogegot_checklist_items", buildSeedItems);
   const [adding, setAdding] = React.useState("");
   const [addingTo, setAddingTo] = React.useState(CHECKLIST_SECTIONS[0].id);
 
@@ -2623,13 +2643,13 @@ const SEED_EXPENSES = [
   { id: "e6", cat: "אחר",      item: 'בלת"מים',     type: "variable", amount: 150 },
 ];
 const SEED_PARTICIPANTS = Array.from({ length: 12 }, (_, i) => ({
-  id: `p${i+1}`, name: `חברה ${i+1}`, coming: true, paid: i < 5,
+  id: `p${i+1}`, name: `משתתפת ${i+1}`, coming: true, paid: i < 5,
 }));
 
 function ScreenBudget({ T, onBack }) {
   const [tab, setTab] = React.useState("summary");
-  const [expenses, setExpenses] = React.useState(SEED_EXPENSES);
-  const [participants, setParticipants] = React.useState(SEED_PARTICIPANTS);
+  const [expenses, setExpenses] = usePersistedState("chogegot_budget_expenses", SEED_EXPENSES);
+  const [participants, setParticipants] = usePersistedState("chogegot_budget_participants", SEED_PARTICIPANTS);
   const [newExp, setNewExp] = React.useState({ cat: EXPENSE_CATS[0], item: "", type: "fixed", amount: "" });
   const [newName, setNewName] = React.useState("");
 
@@ -2723,7 +2743,7 @@ function ScreenBudget({ T, onBack }) {
           background: T.surfaceAlt, borderRadius: T.radius, flexShrink: 0 }}>
           <TabBtn id="summary" label="סיכום"/>
           <TabBtn id="expenses" label={`הוצאות (${expenses.length})`}/>
-          <TabBtn id="people" label={`בנות (${comingN})`}/>
+          <TabBtn id="people" label={`משתתפות (${comingN})`}/>
         </div>
 
         {/* Body */}
@@ -2758,11 +2778,14 @@ function ScreenBudget({ T, onBack }) {
                 marginTop: 10, padding: "11px 14px", background: T.surfaceAlt, borderRadius: T.radius,
                 fontSize: 12, lineHeight: 1.55, color: T.inkSoft, fontWeight: 500,
               }}>
-                <div><b style={{ color: T.ink }}>הוצאה קבועה</b> — לא משתנה לפי כמות הבנות (וילה, אטרקציה).</div>
-                <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>הוצאה משתנה</b> — עולה או יורדת לפי כמות הבנות (אוכל, אלכוהול).</div>
+                <div><b style={{ color: T.ink }}>הוצאה קבועה</b> — לא משתנה לפי כמות המשתתפות (וילה, אטרקציה).</div>
+                <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>הוצאה משתנה</b> — עולה או יורדת לפי כמות המשתתפות (אוכל, אלכוהול).</div>
               </div>
               <div style={{ flex: 1, minHeight: 8 }}/>
-              <Btn T={T} icon="send" onClick={() => alert("בקשת תשלום מהבנות (דמו)")}>בקשי השלמת תשלום</Btn>
+              <Btn T={T} icon="send" onClick={() => {
+                const msg = `היוש!!! האירוע של השנה קרב ובא! 🎉 כדי שנוכל להמשיך בסגירות אחרונות מזכירות להעביר תשלום של ₪${perPerson} 💛`;
+                openWhatsApp(msg);
+              }}>בקשי השלמת תשלום</Btn>
             </>
           )}
 
@@ -2892,7 +2915,7 @@ function ScreenBudget({ T, onBack }) {
                 display: "flex", gap: 6 }}>
                 <input value={newName} onChange={e => setNewName(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && addParticipant()}
-                  placeholder="שם חברה חדשה..."
+                  placeholder="שם משתתפת חדשה..."
                   style={{
                     flex: 1, padding: "11px 12px", borderRadius: 10,
                     border: T.border, background: T.surface,
@@ -4444,17 +4467,10 @@ function App() {
     if (!window.FB) return;
     const off = fbOnAuthChange(async (user) => {
       setUid(user?.uid || null);
-      if (user) {
-        // First-time-on-this-device load: pull from cloud if exists
-        const cloud = await fbLoadUserData(user.uid);
-        if (cloud) {
-          if (cloud.name) setName(cloud.name);
-          if (cloud.event) setEvent(cloud.event);
-          if (cloud.eventName) setEventName(cloud.eventName);
-          if (cloud.screen && cloud.screen !== "welcome" && cloud.screen !== "smsVerify" && cloud.screen !== "login") setScreen(cloud.screen);
-          if (cloud.gameId) setGameId(cloud.gameId);
-        }
-      }
+      // The cloud screen-restore used to live here, but since we moved to Make.com auth it
+      // was hijacking flows like groom mode for users that still had a stale Firebase
+      // session from earlier SMS testing. Keep the uid for any future Firestore sync, but
+      // never let an old Firebase session override the current screen.
     });
     return () => off && off();
   }, []);
