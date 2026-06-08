@@ -3081,7 +3081,7 @@ const TIMER_DECKS = {
       "שחקנית א' שמה אוזניות עם מוזיקה רועשת במיוחד.",
       "שחקנית ב' רואה את המילה ומבטאת אותה בשפתיים בלבד.",
       "מותר להעביר בקול רם (לא מדי). אסור פנטומימה או מחוות שירמזו על המילה.",
-      "2 דקות לכל סבב, 2 סבבים סך הכל. בנק המילים מתחדש בין סבב לסבב.",
+      "2 דקות לכל סבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
     ],
     rounds: 2, secondsPerRound: 120,
     prompts: [
@@ -3105,7 +3105,7 @@ const TIMER_DECKS = {
       "שחקנית א' עומדת עם הגב למסך.",
       "שחקנית ב' רואה את המילה ומציגה בפנטומימה בלבד.",
       "מותר: להגזים, להשתטות. אסור: לדבר, גם לא אפקטים קוליים.",
-      "2 דקות לסבב. בנק המילים מתחדש בין סבב לסבב.",
+      "2 דקות לסבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
     ],
     rounds: 2, secondsPerRound: 120,
     prompts: [
@@ -3515,7 +3515,10 @@ function TimerGame({ T: parentT, game, onBack }) {
   const isImagePrompt = isImages && prompt && typeof prompt === "object";
   const mins = Math.floor(timeLeft / 60);
   const secs = String(timeLeft % 60).padStart(2, "0");
-  const danger = timeLeft <= 20;
+  // Last 10 seconds — force a hot-red pill so the countdown reads as urgent
+  // regardless of the per-game accent color.
+  const danger = timeLeft <= 10;
+  const DANGER_RED = "#E54848";
   const correct = () => { setGot(g => g + 1); setIdx(i => i + 1); };
   const skip = () => { setSkipped(s => s + 1); setIdx(i => i + 1); };
 
@@ -3613,8 +3616,8 @@ function TimerGame({ T: parentT, game, onBack }) {
       {/* Top row: timer + round + score */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
         <div style={{
-          background: danger ? T.accent : T.surfaceInk,
-          color: "#fff", border: `1px solid ${danger ? T.accent : T.surfaceInk}`,
+          background: danger ? DANGER_RED : T.surfaceInk,
+          color: "#fff", border: `1px solid ${danger ? DANGER_RED : T.surfaceInk}`,
           borderRadius: 999, padding: "10px 22px",
           fontSize: 30, fontWeight: 800, letterSpacing: 1.5,
           animation: danger ? "pulse 0.7s ease-in-out infinite" : "none",
@@ -3769,7 +3772,10 @@ function QuizGame({ T: parentT, game, onBack }) {
 
   const question = questions[qi];
   const mockAnswers = deck.mockAnswers?.[qi] || [];
-  const danger = timeLeft <= 3 && phase === "play";
+  // Match the timer game's danger threshold so the bride-quiz hot-state reads as 'last 10
+  // seconds = red' too, regardless of the per-game accent color.
+  const danger = timeLeft <= 10 && phase === "play";
+  const DANGER_RED = "#E54848";
 
   if (phase === "intro") {
     const introExtras = (
@@ -3834,7 +3840,7 @@ function QuizGame({ T: parentT, game, onBack }) {
         }}>שאלה {qi + 1} / {total}</span>
         <div className="num" style={{
           padding: big ? "8px 26px" : "7px 18px",
-          background: danger ? T.accent : T.surfaceInk, color: "#fff", border: "none",
+          background: danger ? DANGER_RED : T.surfaceInk, color: "#fff", border: "none",
           borderRadius: 999, fontSize: big ? "clamp(24px,3.5vw,46px)" : 22, fontWeight: 800,
           animation: danger ? "pulse 0.5s ease-in-out infinite" : "none", letterSpacing: 1,
         }}>00:{String(Math.max(timeLeft, 0)).padStart(2, "0")}</div>
