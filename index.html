@@ -330,6 +330,7 @@ const Icon = ({ name, size = 22, color = "currentColor", w = 1.5 }) => {
     star: <path d="M12 4l2.2 4.9 5.3.5-4 3.6 1.2 5.2L12 16l-4.7 2.7 1.2-5.2-4-3.6 5.3-.5L12 4z" {...p}/>,
     qr: <><rect x="4" y="4" width="6.5" height="6.5" rx="1.4" {...p}/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.4" {...p}/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.4" {...p}/><path d="M13.5 13.5h3v3h-3zM20 13.5v3M13.5 20h3v.5M20 20h.5" {...p}/></>,
     help: <><circle cx="12" cy="12" r="9" {...p}/><path d="M9.3 9.5a2.7 2.7 0 0 1 5.4 0c0 1.6-2.7 2-2.7 3.6" {...p}/><circle cx="12" cy="17" r="0.9" fill={color} stroke="none"/></>,
+    edit: <><path d="M4 20l4-1 10-10-3-3L5 16l-1 4z" {...p}/><path d="M14 6l3 3" {...p}/></>,
   };
   return <svg viewBox="0 0 24 24" style={s}>{paths[name] || null}</svg>;
 };
@@ -2650,8 +2651,34 @@ function ScreenBudget({ T, onBack }) {
   const [tab, setTab] = React.useState("summary");
   const [expenses, setExpenses] = usePersistedState("chogegot_budget_expenses", SEED_EXPENSES);
   const [participants, setParticipants] = usePersistedState("chogegot_budget_participants", SEED_PARTICIPANTS);
-  const [newExp, setNewExp] = React.useState({ cat: EXPENSE_CATS[0], item: "", type: "fixed", amount: "" });
+  const [newExp, setNewExp] = React.useState({ cat: "", item: "", type: "fixed", amount: "" });
   const [newName, setNewName] = React.useState("");
+  const [editingExpId, setEditingExpId] = React.useState(null);
+  const [editingExp, setEditingExp] = React.useState({ cat: "", item: "", type: "fixed", amount: "" });
+  const [editingPartId, setEditingPartId] = React.useState(null);
+  const [editingPart, setEditingPart] = React.useState("");
+
+  const startEditExpense = (e) => {
+    setEditingExpId(e.id);
+    setEditingExp({ cat: e.cat, item: e.item, type: e.type, amount: String(e.amount) });
+  };
+  const saveEditExpense = () => {
+    const amt = Number(editingExp.amount);
+    if (!editingExp.item.trim() || !amt) { setEditingExpId(null); return; }
+    setExpenses(expenses.map(e => e.id === editingExpId
+      ? { ...e, cat: editingExp.cat.trim() || "אחר", item: editingExp.item.trim(), type: editingExp.type, amount: amt }
+      : e));
+    setEditingExpId(null);
+  };
+  const cancelEditExpense = () => setEditingExpId(null);
+
+  const startEditParticipant = (p) => { setEditingPartId(p.id); setEditingPart(p.name); };
+  const saveEditParticipant = () => {
+    if (!editingPart.trim()) { setEditingPartId(null); return; }
+    setParticipants(participants.map(p => p.id === editingPartId ? { ...p, name: editingPart.trim() } : p));
+    setEditingPartId(null);
+  };
+  const cancelEditParticipant = () => setEditingPartId(null);
 
   const total     = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const comingArr = participants.filter(p => p.coming);
@@ -2662,8 +2689,8 @@ function ScreenBudget({ T, onBack }) {
 
   const addExpense = () => {
     const amt = Number(newExp.amount); if (!newExp.item.trim() || !amt) return;
-    setExpenses([...expenses, { id: `e-${Date.now()}`, cat: newExp.cat, item: newExp.item.trim(), type: newExp.type, amount: amt }]);
-    setNewExp({ cat: EXPENSE_CATS[0], item: "", type: "fixed", amount: "" });
+    setExpenses([...expenses, { id: `e-${Date.now()}`, cat: newExp.cat.trim() || "אחר", item: newExp.item.trim(), type: newExp.type, amount: amt }]);
+    setNewExp({ cat: "", item: "", type: "fixed", amount: "" });
   };
   const removeExpense = id => setExpenses(expenses.filter(e => e.id !== id));
   const addParticipant = () => {
@@ -2791,7 +2818,58 @@ function ScreenBudget({ T, onBack }) {
 
           {tab === "expenses" && (
             <>
-              {expenses.map((e, i) => (
+              {expenses.map((e, i) => editingExpId === e.id ? (
+                /* INLINE EDIT MODE */
+                <div key={e.id} style={{
+                  background: PB.orange.soft, border: `1px solid ${PB.orange.main}55`, borderRadius: 13,
+                  padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6,
+                }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input value={editingExp.cat} onChange={ev => setEditingExp({ ...editingExp, cat: ev.target.value })}
+                      placeholder="קטגוריה..." style={{
+                        flex: 1, padding: "8px 10px", borderRadius: 8,
+                        border: T.border, background: "#fff",
+                        fontSize: 12.5, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
+                      }}/>
+                    <select value={editingExp.type} onChange={ev => setEditingExp({ ...editingExp, type: ev.target.value })} style={{
+                      width: 90, padding: "8px 10px", borderRadius: 8,
+                      border: T.border, background: "#fff", color: T.ink,
+                      fontSize: 12.5, fontWeight: 600, fontFamily: T.font, outline: "none",
+                    }}>
+                      <option value="fixed">קבועה</option>
+                      <option value="variable">משתנה</option>
+                    </select>
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input value={editingExp.item} onChange={ev => setEditingExp({ ...editingExp, item: ev.target.value })}
+                      placeholder="פריט / תיאור..." style={{
+                        flex: 1, padding: "9px 10px", borderRadius: 8,
+                        border: T.border, background: "#fff",
+                        fontSize: 13, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none", minWidth: 0,
+                      }}/>
+                    <input value={editingExp.amount} onChange={ev => setEditingExp({ ...editingExp, amount: ev.target.value.replace(/[^0-9]/g, "") })}
+                      placeholder="₪0" inputMode="numeric" style={{
+                        width: 70, padding: "9px 10px", borderRadius: 8,
+                        border: T.border, background: "#fff",
+                        fontSize: 13, fontWeight: 700, fontFamily: T.font, color: T.ink, outline: "none",
+                        direction: "ltr", textAlign: "center",
+                      }}/>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 2 }}>
+                    <button onClick={saveEditExpense} style={{
+                      flex: 1, padding: "8px 10px", borderRadius: 8,
+                      background: PB.orange.main, color: PB.orange.on,
+                      border: "none", fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                    }}>שמירה</button>
+                    <button onClick={cancelEditExpense} style={{
+                      flex: 1, padding: "8px 10px", borderRadius: 8,
+                      background: "transparent", color: T.inkSoft,
+                      border: T.border, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font,
+                    }}>ביטול</button>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW MODE */
                 <div key={e.id} style={{
                   display: "flex", alignItems: "center", gap: 11,
                   background: T.surface, border: T.border, borderRadius: 13,
@@ -2805,7 +2883,7 @@ function ScreenBudget({ T, onBack }) {
                   }} className="num">{i + 1}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink }}>{e.item}</div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{e.cat}</span>
                       <span style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 999,
                         background: e.type === "fixed" ? PB.pink.soft : PB.orange.soft,
@@ -2814,11 +2892,18 @@ function ScreenBudget({ T, onBack }) {
                     </div>
                   </div>
                   <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>₪{e.amount.toLocaleString()}</div>
-                  <button onClick={() => removeExpense(e.id)} style={{
-                    width: 24, height: 24, borderRadius: 7, background: "transparent",
-                    border: "none", cursor: "pointer", padding: 0, color: T.muted,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    <button onClick={() => startEditExpense(e)} title="עריכה" style={{
+                      width: 24, height: 24, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0, color: PB.orange.deep,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="edit" size={13} color={PB.orange.deep} w={1.6}/></button>
+                    <button onClick={() => removeExpense(e.id)} title="מחיקה" style={{
+                      width: 24, height: 24, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0, color: T.muted,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
+                  </div>
                 </div>
               ))}
 
@@ -2828,13 +2913,13 @@ function ScreenBudget({ T, onBack }) {
                 display: "flex", flexDirection: "column", gap: 7 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>הוצאה חדשה</div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <select value={newExp.cat} onChange={e => setNewExp({ ...newExp, cat: e.target.value })} style={{
-                    flex: 1, padding: "10px 10px", borderRadius: 10,
-                    border: T.border, background: T.surface, color: T.ink,
-                    fontSize: 12.5, fontWeight: 600, fontFamily: T.font, outline: "none",
-                  }}>
-                    {EXPENSE_CATS.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <input value={newExp.cat} onChange={e => setNewExp({ ...newExp, cat: e.target.value })}
+                    placeholder="קטגוריה (לוקיישן, אוכל...)"
+                    style={{
+                      flex: 1, padding: "10px 10px", borderRadius: 10,
+                      border: T.border, background: T.surface, color: T.ink,
+                      fontSize: 12.5, fontWeight: 600, fontFamily: T.font, outline: "none", minWidth: 0,
+                    }}/>
                   <select value={newExp.type} onChange={e => setNewExp({ ...newExp, type: e.target.value })} style={{
                     width: 90, padding: "10px 10px", borderRadius: 10,
                     border: T.border, background: T.surface, color: T.ink,
@@ -2876,7 +2961,34 @@ function ScreenBudget({ T, onBack }) {
               <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginBottom: 4, padding: "0 4px", letterSpacing: 0.2 }}>
                 לחיצה על שם — הופכת ל"לא מגיעה". ✓ — שילמה.
               </div>
-              {participants.map(p => (
+              {participants.map(p => editingPartId === p.id ? (
+                /* INLINE EDIT MODE */
+                <div key={p.id} style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  background: PB.orange.soft, border: `1px solid ${PB.orange.main}55`, borderRadius: 13,
+                  padding: "9px 12px",
+                }}>
+                  <input value={editingPart} onChange={ev => setEditingPart(ev.target.value)}
+                    onKeyDown={ev => { if (ev.key === "Enter") saveEditParticipant(); if (ev.key === "Escape") cancelEditParticipant(); }}
+                    autoFocus
+                    style={{
+                      flex: 1, padding: "9px 11px", borderRadius: 8,
+                      border: T.border, background: "#fff",
+                      fontSize: 13, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
+                    }}/>
+                  <button onClick={saveEditParticipant} style={{
+                    padding: "8px 12px", borderRadius: 8,
+                    background: PB.orange.main, color: PB.orange.on, border: "none",
+                    fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+                  }}>שמירה</button>
+                  <button onClick={cancelEditParticipant} style={{
+                    padding: "8px 12px", borderRadius: 8,
+                    background: "transparent", color: T.inkSoft, border: T.border,
+                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: T.font,
+                  }}>ביטול</button>
+                </div>
+              ) : (
+                /* VIEW MODE */
                 <div key={p.id} style={{
                   display: "flex", alignItems: "center", gap: 11,
                   background: p.coming ? T.surface : T.surfaceAlt,
@@ -2902,11 +3014,18 @@ function ScreenBudget({ T, onBack }) {
                     color: p.coming ? (p.paid ? T.accent : T.inkSoft) : T.muted }}>
                     {!p.coming ? "לא מגיעה" : p.paid ? `שילמה · ₪${perPerson}` : `חייבת ₪${perPerson}`}
                   </div>
-                  <button onClick={() => removeParticipant(p.id)} style={{
-                    width: 24, height: 24, borderRadius: 7, background: "transparent",
-                    border: "none", cursor: "pointer", padding: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
+                  <div style={{ display: "flex", gap: 3 }}>
+                    <button onClick={() => startEditParticipant(p)} title="עריכה" style={{
+                      width: 24, height: 24, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0, color: PB.orange.deep,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="edit" size={13} color={PB.orange.deep} w={1.6}/></button>
+                    <button onClick={() => removeParticipant(p.id)} title="מחיקה" style={{
+                      width: 24, height: 24, borderRadius: 7, background: "transparent",
+                      border: "none", cursor: "pointer", padding: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><Icon name="close" size={13} color={T.muted} w={1.6}/></button>
+                  </div>
                 </div>
               ))}
 
