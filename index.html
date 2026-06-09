@@ -415,7 +415,7 @@ const SCREEN_SKIN = {
   bachHome: "ink", qrjoin: "ink", comingSoon: "ink",
   checklist: "orange", playlist: "ink", budget: "orange",
   games: "ink", game: "ink",
-  groomMode: "pink", helpCenter: "pink",
+  groomMode: "pink", helpCenter: "pink", participant: "pink",
 };
 
 /* ──────────────────────────────────────────────────────────────
@@ -1386,6 +1386,251 @@ function MiniQR({ size = 70, color = "#161616", bg = "#fff", radius = 10 }) {
       {cells.map((c, i) => <rect key={i} x={c.x*u+u*0.12} y={c.y*u+u*0.12} width={u*0.76} height={u*0.76} rx={u*0.25} fill={color}/>)}
       <F ox={0} oy={0}/><F ox={N-3} oy={0}/><F ox={0} oy={N-3}/>
     </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PARTICIPANT MODE — guest side of a multiplayer game session.
+   Reached via ?join=CODE. Stays in sync with the host's screen
+   through Firestore's onSnapshot.
+   ────────────────────────────────────────────────────────────── */
+const PARTICIPANT_NAME_KEY = "chogegot_participant_name";
+
+function ScreenParticipant({ T, code, onLeave }) {
+  const [session, setSession] = React.useState(null);
+  const [sessionLoading, setSessionLoading] = React.useState(true);
+  const [name, setName] = React.useState(() => {
+    try { return localStorage.getItem(PARTICIPANT_NAME_KEY) || ""; } catch (e) { return ""; }
+  });
+  const [participantId, setParticipantId] = React.useState(null);
+  const [joining, setJoining] = React.useState(false);
+  const [currentAnswer, setCurrentAnswer] = React.useState("");
+  const [submitted, setSubmitted] = React.useState(false);
+
+  // Subscribe to session updates as soon as we have a code
+  React.useEffect(() => {
+    if (!code) return;
+    setSessionLoading(true);
+    const off = fbSubscribeSession(code, (data) => {
+      setSessionLoading(false);
+      setSession(data);
+    });
+    return () => { try { off(); } catch (e) {} };
+  }, [code]);
+
+  // Reset 'submitted' flag whenever a new question is broadcast
+  React.useEffect(() => {
+    setSubmitted(false);
+    setCurrentAnswer("");
+  }, [session?.currentQi, session?.state]);
+
+  const join = async () => {
+    if (!name.trim() || joining || !code) return;
+    setJoining(true);
+    try {
+      const id = await fbJoinSession(code, name);
+      if (id) {
+        setParticipantId(id);
+        try { localStorage.setItem(PARTICIPANT_NAME_KEY, name.trim()); } catch (e) {}
+      }
+    } finally { setJoining(false); }
+  };
+
+  const submitAnswer = async () => {
+    if (!currentAnswer.trim() || !participantId || submitted) return;
+    setSubmitted(true);
+    await fbSubmitParticipantAnswer(code, participantId, session.currentQi, currentAnswer.trim());
+  };
+
+  // ── Loading ───────────────────────────────────────────────
+  if (sessionLoading) return (
+    <ParticipantShell T={T} onLeave={onLeave}>
+      <ParticipantCenter>
+        <div style={{ fontSize: 14, color: T.inkSoft }}>טוענת את המשחק...</div>
+      </ParticipantCenter>
+    </ParticipantShell>
+  );
+
+  // ── Bad / expired code ────────────────────────────────────
+  if (!session) return (
+    <ParticipantShell T={T} onLeave={onLeave}>
+      <ParticipantCenter>
+        <Icon name="close" size={32} color={PB.orange.deep} w={2}/>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: "12px 0 6px" }}>הקוד לא נמצא</h2>
+        <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.5 }}>
+          ייתכן שהמארחת עוד לא פתחה את המשחק או שהקוד כבר נסגר.<br/>
+          בקשי קוד חדש או נסי שוב בעוד רגע.
+        </p>
+      </ParticipantCenter>
+    </ParticipantShell>
+  );
+
+  // ── Name entry ────────────────────────────────────────────
+  if (!participantId) return (
+    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+      <ParticipantCenter>
+        <Eyebrow T={T}>הצטרפת לחידון</Eyebrow>
+        <h1 style={{ fontSize: 26, fontWeight: 800, margin: "10px 0 8px", letterSpacing: -0.4 }}>
+          איך לקרוא לך?
+        </h1>
+        <p style={{ fontSize: 13.5, color: T.inkSoft, lineHeight: 1.5, marginBottom: 18 }}>
+          השם שלך יוצג למארחת כשתעני על שאלות.
+        </p>
+        <input value={name} onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && join()}
+          placeholder="השם שלי..." autoFocus
+          style={{
+            width: "100%", padding: "14px 16px", borderRadius: 13,
+            background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${name ? PB.pink.main : T.line}`,
+            border: "none", outline: "none", fontSize: 17, fontWeight: 700,
+            color: T.ink, textAlign: "center", fontFamily: T.font,
+          }}/>
+        <Btn T={T} onClick={join} disabled={!name.trim() || joining} style={{ marginTop: 16 }}>
+          {joining ? "מצטרפת..." : "אני בפנים"}
+        </Btn>
+      </ParticipantCenter>
+    </ParticipantShell>
+  );
+
+  // ── Lobby ────────────────────────────────────────────────
+  if (session.state === "lobby") return (
+    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+      <ParticipantCenter>
+        <div style={{ fontSize: 38, marginBottom: 6 }}>👯</div>
+        <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.4 }}>היי {name}!</h1>
+        <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.55 }}>
+          את כבר בפנים. ברגע שהמארחת מתחילה, השאלה הראשונה תופיע כאן.
+        </p>
+      </ParticipantCenter>
+    </ParticipantShell>
+  );
+
+  // ── Playing — show current question + input ──────────────
+  if (session.state === "playing") {
+    const q = session.questions?.[session.currentQi] || "";
+    return (
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+        <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", height: "100%" }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
+            שאלה {session.currentQi + 1} / {session.questions?.length || 0}
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 18px", letterSpacing: -0.3, lineHeight: 1.25 }}>
+            {q}
+          </h1>
+          {submitted ? (
+            <div style={{ padding: "18px 16px", background: PB.pink.soft, borderRadius: 14,
+              border: `1px solid ${PB.pink.main}55`, textAlign: "center" }}>
+              <Icon name="check" size={28} color={PB.pink.deep} w={2}/>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: PB.pink.deep, marginTop: 6 }}>נשלח!</div>
+              <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 4 }}>מחכות לשאר הבנות...</div>
+            </div>
+          ) : (
+            <>
+              <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)}
+                placeholder="התשובה שלך..." rows={3}
+                style={{
+                  width: "100%", padding: "14px 16px", borderRadius: 13,
+                  background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${currentAnswer ? PB.pink.main : T.line}`,
+                  border: "none", outline: "none", fontSize: 16, fontWeight: 500,
+                  color: T.ink, fontFamily: T.font, resize: "none", lineHeight: 1.4,
+                }}/>
+              <Btn T={T} onClick={submitAnswer} disabled={!currentAnswer.trim()} style={{ marginTop: 14 }}>
+                שליחת תשובה
+              </Btn>
+            </>
+          )}
+        </div>
+      </ParticipantShell>
+    );
+  }
+
+  // ── Reveal — show all answers ─────────────────────────────
+  if (session.state === "reveal") {
+    return (
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+        <ParticipantCenter>
+          <Eyebrow T={T}>מתאספים</Eyebrow>
+          <h2 style={{ fontSize: 22, fontWeight: 800, margin: "10px 0 6px", letterSpacing: -0.3 }}>
+            המארחת חושפת תשובות
+          </h2>
+          <p style={{ fontSize: 13.5, color: T.inkSoft, lineHeight: 1.5 }}>
+            תסתכלי על המסך הגדול — שאלה הבאה בעוד רגע.
+          </p>
+        </ParticipantCenter>
+      </ParticipantShell>
+    );
+  }
+
+  // ── Done ──────────────────────────────────────────────────
+  if (session.state === "done") {
+    return (
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+        <ParticipantCenter>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px", letterSpacing: -0.4 }}>
+            סיימנו!
+          </h2>
+          <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.5 }}>
+            תודה שהשתתפת. תהנו מהמסיבה 🥂
+          </p>
+        </ParticipantCenter>
+      </ParticipantShell>
+    );
+  }
+
+  return null;
+}
+
+function ParticipantShell({ T, children, code, brideName, onLeave }) {
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Pink header showing what session you're in */}
+        <div style={{
+          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+          padding: "36px 22px 14px",
+          borderRadius: "0 0 22px 22px",
+          color: "#1A1A1A",
+          boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
+          position: "relative", overflow: "hidden", flexShrink: 0,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+            <div style={{ width: 24 }}/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>חידון על הכלה</div>
+            {onLeave ? (
+              <button onClick={onLeave} style={{
+                background: "rgba(0,0,0,0.18)", border: "none",
+                color: "#fff", padding: "4px 10px", borderRadius: 999,
+                fontSize: 10.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
+              }}>יציאה</button>
+            ) : <div style={{ width: 24 }}/>}
+          </div>
+          {(code || brideName) && (
+            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, position: "relative" }}>
+              {brideName && (
+                <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: -0.2 }}>{brideName}</div>
+              )}
+              {code && (
+                <div style={{ padding: "3px 9px", borderRadius: 999, background: "#1A1A1A", color: "#fff",
+                  fontSize: 11.5, fontWeight: 800, letterSpacing: 1 }} className="num">{code}</div>
+              )}
+            </div>
+          )}
+        </div>
+        {children}
+      </div>
+      <HomeBar/>
+    </>
+  );
+}
+
+function ParticipantCenter({ children }) {
+  return (
+    <div style={{ flex: 1, padding: "24px 22px", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+      {children}
+    </div>
   );
 }
 
@@ -4692,6 +4937,7 @@ function App() {
   const [pendingLoading, setPendingLoading] = React.useState(false);
   const [authSession, setAuthSession] = React.useState(loadAuthSession);
   const [prefillUsername, setPrefillUsername] = React.useState("");
+  const [participantCode, setParticipantCode] = React.useState("");
 
   // hash + URL detection — runs ONCE on mount before anything else
   React.useEffect(() => {
@@ -4714,6 +4960,16 @@ function App() {
     }
 
     const params = new URLSearchParams(window.location.search);
+
+    // ?join=CODE — guest joins a multiplayer game session. No login required;
+    // this lives in its own little universe and doesn't touch the host's state.
+    const joinCode = params.get("join");
+    if (joinCode) {
+      setParticipantCode(joinCode.toUpperCase());
+      setScreen("participant");
+      try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+      return;
+    }
 
     // Demo mode — old code/welcome screen for showcasing without payment
     if (params.get("demo") === "1") {
@@ -4885,6 +5141,8 @@ function App() {
   else if (screen === "comingSoon") content = <ScreenComingSoon T={T} eventId={event} onBack={() => setScreen("event")}/>;
   else if (screen === "helpCenter") content = <ScreenHelpCenter T={T} onBack={() => setScreen("bachHome")}/>;
   else if (screen === "groomMode") content = <ScreenGroomMode T={T} data={groomData} onSent={() => {}}/>;
+  else if (screen === "participant") content = <ScreenParticipant T={T} code={participantCode}
+    onLeave={() => { setParticipantCode(""); setScreen("login"); }}/>;
 
   return (
     <>
