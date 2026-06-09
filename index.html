@@ -245,6 +245,109 @@ const fbLoadAppState = async (username) => {
   } catch (e) { console.error("[FS] load app state failed:", e); return null; }
 };
 
+/* ──────────────────────────────────────────────────────────────
+   MULTIPLAYER GAME SESSIONS — host + participants on different devices
+   Doc shape under /game_sessions/{code}:
+     hostUsername, gameId, state ('lobby' | 'playing' | 'reveal' | 'done'),
+     currentQi, brideName, eventName, questions[], createdAt, expiresAt
+   Subcollection /participants/{participantId}:
+     name, joinedAt, answers: { 0: 'string', 1: 'string', ... } | votes: { 0: 'F' }
+   ────────────────────────────────────────────────────────────── */
+const SESSION_COLLECTION = "game_sessions";
+
+// 6-char human-friendly code. Skips look-alikes (0/O, 1/I) so guests don't mistype.
+const SESSION_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const generateSessionCode = () => {
+  const arr = new Uint8Array(6);
+  try { crypto.getRandomValues(arr); }
+  catch (e) { for (let i = 0; i < 6; i++) arr[i] = Math.floor(Math.random() * 256); }
+  return Array.from(arr, b => SESSION_CODE_ALPHABET[b % SESSION_CODE_ALPHABET.length]).join("");
+};
+
+const fbCreateSession = async ({ hostUsername, gameId, questions, brideName, eventName }) => {
+  if (!FB) return null;
+  // Loop a couple of times in case of an accidental collision.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateSessionCode();
+    try {
+      const ref = FB.db.collection(SESSION_COLLECTION).doc(code);
+      const existing = await ref.get();
+      if (existing.exists) continue;
+      const now = Date.now();
+      await ref.set({
+        hostUsername: hostUsername || null,
+        gameId,
+        state: "lobby",
+        currentQi: 0,
+        brideName: brideName || "",
+        eventName: eventName || "",
+        questions: questions || [],
+        createdAt: now,
+        expiresAt: now + 1000 * 60 * 60 * 12, // 12 hours
+      });
+      return code;
+    } catch (e) {
+      console.error("[FS] create session failed:", e);
+      return null;
+    }
+  }
+  return null;
+};
+
+const fbSubscribeSession = (code, cb) => {
+  if (!FB || !code) return () => {};
+  try {
+    return FB.db.collection(SESSION_COLLECTION).doc(code).onSnapshot(
+      doc => cb(doc.exists ? { code, ...doc.data() } : null),
+      err => { console.error("[FS] session subscribe error:", err); cb(null); }
+    );
+  } catch (e) { console.error("[FS] subscribe failed:", e); return () => {}; }
+};
+
+const fbSubscribeParticipants = (code, cb) => {
+  if (!FB || !code) return () => {};
+  try {
+    return FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants")
+      .onSnapshot(
+        snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+        err => { console.error("[FS] participants subscribe error:", err); cb([]); }
+      );
+  } catch (e) { console.error("[FS] subscribe participants failed:", e); return () => {}; }
+};
+
+const fbUpdateSession = async (code, updates) => {
+  if (!FB || !code) return;
+  try { await FB.db.collection(SESSION_COLLECTION).doc(code).update(updates); }
+  catch (e) { console.error("[FS] update session failed:", e); }
+};
+
+// Participants — joining the session and submitting answers.
+const fbJoinSession = async (code, name) => {
+  if (!FB || !code || !name) return null;
+  try {
+    // Use the trimmed name as the doc id so a refresh by the same person reuses the slot.
+    const participantId = name.trim().slice(0, 40);
+    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+    await ref.set({ name: name.trim(), joinedAt: Date.now() }, { merge: true });
+    return participantId;
+  } catch (e) { console.error("[FS] join session failed:", e); return null; }
+};
+
+const fbSubmitParticipantAnswer = async (code, participantId, qi, value) => {
+  if (!FB || !code || !participantId) return;
+  try {
+    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+    // Firestore field-path update: answers.{qi} = value
+    await ref.update({ [`answers.${qi}`]: value, lastSubmitAt: Date.now() });
+  } catch (e) {
+    // If the doc has no answers map yet, the field-path update fails. Fall back to a set+merge.
+    try {
+      const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+      await ref.set({ answers: { [qi]: value }, lastSubmitAt: Date.now() }, { merge: true });
+    } catch (e2) { console.error("[FS] submit answer failed:", e2); }
+  }
+};
+
 // Pending users (pre-auth) — written by Make.com when customer pays
 const fbLoadPendingUser = async (token) => {
   if (!FB || !token) return null;
