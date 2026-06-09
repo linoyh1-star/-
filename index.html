@@ -2420,6 +2420,11 @@ const CHECKLIST_SECTIONS = [
   ]},
   { id: "1w", t: "שבוע לפני", sub: "מוודאות", pop: "orange", items: [
     "וידוא הגעת ספקים", "סגירת לו\"ז למלוות",
+    "בדיקת האפליקציה ותקינות המשחקים",
+    "וידוא שליחת שאלון לחתן",
+    "וידוא טעינת תשובות החתן",
+    "ציוד למשחק \"מפה לאוזן\" — אוזניות טובות",
+    "וידוא אפשרות \"הקרנה\" בלוקיישן (לא חובה)",
   ]},
   { id: "1d", t: "יום לפני", sub: "לא שוכחות", pop: "ink", items: [
     "קישוטים", "קניות (חד\"פ, חטיפים, אלכוהול)",
@@ -2443,6 +2448,17 @@ const buildSeedItems = () => {
 
 function ScreenChecklist({ T, onBack }) {
   const [items, setItems] = usePersistedState("chogegot_checklist_items", buildSeedItems);
+
+  // One-time migration: surface any newly-added seed items to existing users whose
+  // localStorage was filled before the new rows were defined. Anything they've already
+  // ticked / removed stays as-is; we only append the missing seed IDs.
+  React.useEffect(() => {
+    const existingIds = new Set(items.map(i => i.id));
+    const seed = buildSeedItems();
+    const missing = seed.filter(s => !existingIds.has(s.id));
+    if (missing.length > 0) setItems(prev => [...prev, ...missing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [adding, setAdding] = React.useState("");
   const [addingTo, setAddingTo] = React.useState(CHECKLIST_SECTIONS[0].id);
 
