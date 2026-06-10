@@ -6,6 +6,28 @@
 ## ⚠️ כללים קבועים לעבודה
 1. **כל שינוי עיצובי במסך אמיתי באפליקציה → לעדכן את ה-Mockup התואם בסלייד שואו**, ללא צורך בהוראה מפורשת. Mockups: `MockupHome`, `MockupChecklist`, `MockupBudget`, `MockupPlaylist`, `MockupGames`, `MockupJoin` ב-index.html.
 
+## 🎮 Multiplayer game sessions — Firestore (חי ועובד)
+- **Collections**: `/game_sessions/{code}` + subcollection `/participants/{name}`
+- **Helpers** ב-index.html: `generateSessionCode`, `fbCreateSession`, `fbSubscribeSession`, `fbSubscribeParticipants`, `fbUpdateSession`, `fbJoinSession`, `fbSubmitParticipantAnswer`, `fbSubmitParticipantVotes`
+- **Firestore Rules**: כבר עודכנו ב-Firebase ע"י Cowork — `game_sessions` ו-`participants` פתוחים לקריאה/כתיבה
+- **משחקים מחוברים**:
+  - **bridequiz** (חידון על הכלה): QuizGame → לוביי + שאלות → משתתפת כותבת תשובה → המארחת רואה בזמן אמת
+  - **fmk** (Fuck Marry Kill): CardGame → לוביי + כרטיסים → משתתפת מצביעה F/M/K → צבירה חיה של "איך הבנות הצביעו"
+- **URL Routing**: `?join=CODE` → `ScreenParticipant` (אוטומטי)
+- **QR Code**: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=...` (חינמי, ללא הקמה)
+- **TTL ל-cleanup**: לא מוגדר (Spark plan לא תומך). sessions קטנים, מצטברים. אם נחוץ — Blaze.
+
+## 📦 Firestore — מה משתמשים בו (לזיכרון)
+- `/users/{uid}` — Firebase Auth users (לא בשימוש פעיל)
+- `/pending_users/{token}` — לקוחות חדשים שמ-Make.com יוצר (לא בשימוש פעיל)
+- `/app_user_states/{username}` — סנכרון בין דפדפנים של state האפליקציה (אקטיבי!) — כתיבה ב-debounce של 1.5s לכל שינוי. כולל name, event, eventName, gameId, screen, checklistItems, budgetExpenses, budgetParticipants, groomAnswers.
+- `/game_sessions/{code}` + `/participants/{name}` — multiplayer sessions
+
+## 🔥 דברים שעדיין פתוחים (לא קריטיים)
+- **MAKE_LOGIN_URL** ב-index.html: כבר אמיתי ועובד (`https://hook.eu1.make.com/coi9bjj6dxny0g7j6edppcm7i2bpedjy`)
+- **CHOGEGOT_PLAYLIST_URL**: placeholder (Today's Top Hits) — לעדכן כשתיצור פלייליסט אמיתי
+- **שם משתמש = רק מספרים בבדיקת אדווה**: נוסחה ב-Make.com Tools — Cowork עזרה לתקן את ה-`to` field ב-Gmail, אבל הנוסחה של username אולי עדיין `first(split(...))` שלא מפצל. אם זה חוזר — נחליף ל-`{{substring(1.data.fullName; 0; indexOf(1.data.fullName; " "))}}{{floor(random * 9000 + 1000)}}`
+
 ## בעלת המוצר
 - לינוי ניסים
 - ווטסאפ תמיכה: `0509419988` / `+972509419988`
