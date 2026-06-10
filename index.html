@@ -348,6 +348,15 @@ const fbSubmitParticipantAnswer = async (code, participantId, qi, value) => {
   }
 };
 
+// FMK votes: { 0: 'F', 1: 'M', 2: 'K' } for the three options on a card.
+const fbSubmitParticipantVotes = async (code, participantId, qi, votes) => {
+  if (!FB || !code || !participantId) return;
+  try {
+    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+    await ref.set({ votes: { [qi]: votes }, lastSubmitAt: Date.now() }, { merge: true });
+  } catch (e) { console.error("[FS] submit votes failed:", e); }
+};
+
 // Pending users (pre-auth) — written by Make.com when customer pays
 const fbLoadPendingUser = async (token) => {
   if (!FB || !token) return null;
@@ -1467,7 +1476,7 @@ function ScreenParticipant({ T, code, onLeave }) {
 
   // ── Name entry ────────────────────────────────────────────
   if (!participantId) return (
-    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
       <ParticipantCenter>
         <Eyebrow T={T}>הצטרפת לחידון</Eyebrow>
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: "10px 0 8px", letterSpacing: -0.4 }}>
@@ -1494,7 +1503,7 @@ function ScreenParticipant({ T, code, onLeave }) {
 
   // ── Lobby ────────────────────────────────────────────────
   if (session.state === "lobby") return (
-    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
       <ParticipantCenter>
         <div style={{ fontSize: 38, marginBottom: 6 }}>👯</div>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.4 }}>היי {name}!</h1>
@@ -1507,9 +1516,19 @@ function ScreenParticipant({ T, code, onLeave }) {
 
   // ── Playing — show current question + input ──────────────
   if (session.state === "playing") {
+    // FMK gets its own branch — same shell, different body.
+    if (session.gameId === "fmk") {
+      return (
+        <ParticipantFMK
+          T={T} onLeave={onLeave} code={code} session={session}
+          submitted={submitted} setSubmitted={setSubmitted}
+          participantId={participantId}
+        />
+      );
+    }
     const q = session.questions?.[session.currentQi] || "";
     return (
-      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
         <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", height: "100%" }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
             שאלה {session.currentQi + 1} / {session.questions?.length || 0}
@@ -1547,7 +1566,7 @@ function ScreenParticipant({ T, code, onLeave }) {
   // ── Reveal — show all answers ─────────────────────────────
   if (session.state === "reveal") {
     return (
-      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
         <ParticipantCenter>
           <Eyebrow T={T}>מתאספים</Eyebrow>
           <h2 style={{ fontSize: 22, fontWeight: 800, margin: "10px 0 6px", letterSpacing: -0.3 }}>
@@ -1564,7 +1583,7 @@ function ScreenParticipant({ T, code, onLeave }) {
   // ── Done ──────────────────────────────────────────────────
   if (session.state === "done") {
     return (
-      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName}>
+      <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
         <ParticipantCenter>
           <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
           <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px", letterSpacing: -0.4 }}>
@@ -1581,7 +1600,111 @@ function ScreenParticipant({ T, code, onLeave }) {
   return null;
 }
 
-function ParticipantShell({ T, children, code, brideName, onLeave }) {
+function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, participantId }) {
+  const qi = session.currentQi;
+  const options = Array.isArray(session.questions?.[qi]) ? session.questions[qi] : [];
+  const total = session.questions?.length || 0;
+
+  // Local FMK votes for the CURRENT card: { 0: 'F', 1: 'M', 2: 'K' }
+  const [votes, setVotes] = React.useState({});
+
+  // Reset votes whenever the card changes
+  React.useEffect(() => { setVotes({}); }, [qi]);
+
+  const assign = (optIdx, letter) => {
+    setVotes(prev => {
+      const next = { ...prev };
+      // Each letter only once; clicking the same one again clears.
+      Object.keys(next).forEach(k => { if (next[k] === letter) delete next[k]; });
+      if (prev[optIdx] === letter) delete next[optIdx];
+      else next[optIdx] = letter;
+      return next;
+    });
+  };
+
+  const allAssigned = Object.keys(votes).length === 3;
+
+  const submit = async () => {
+    if (!allAssigned || submitted) return;
+    setSubmitted(true);
+    await fbSubmitParticipantVotes(code, participantId, qi, votes);
+  };
+
+  const letters = [
+    { l: "F", c: PB.orange, label: "Fuck" },
+    { l: "M", c: PB.pink,   label: "Marry" },
+    { l: "K", c: PB.ink,    label: "Kill" },
+  ];
+
+  return (
+    <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
+      <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", height: "100%" }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
+          כרטיס {qi + 1} / {total}
+        </div>
+        <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 14px", letterSpacing: -0.3, lineHeight: 1.25 }}>
+          סמני F · M · K לכל אחת
+        </h1>
+
+        {submitted ? (
+          <div style={{ padding: "18px 16px", background: PB.pink.soft, borderRadius: 14,
+            border: `1px solid ${PB.pink.main}55`, textAlign: "center" }}>
+            <Icon name="check" size={28} color={PB.pink.deep} w={2}/>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: PB.pink.deep, marginTop: 6 }}>נשלח!</div>
+            <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 4 }}>מחכות לכרטיס הבא...</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {options.map((opt, idx) => {
+                const assigned = votes[idx];
+                const bg = assigned ? letters.find(x => x.l === assigned).c.main : "#FFFFFF";
+                const fg = assigned ? (assigned === "M" ? "#1A1A1A" : "#fff") : "#1A1A1A";
+                return (
+                  <div key={idx} style={{
+                    padding: "12px 13px", background: bg, color: fg, borderRadius: 12,
+                    boxShadow: T.shadowSm, border: assigned ? "none" : T.border,
+                    display: "flex", alignItems: "center", gap: 8,
+                    transition: "background 180ms",
+                  }}>
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                      {letters.map(it => {
+                        const isSel = assigned === it.l;
+                        const isUsedByOther = Object.values(votes).includes(it.l) && !isSel;
+                        return (
+                          <button key={it.l} onClick={() => assign(idx, it.l)} disabled={isUsedByOther} style={{
+                            width: 34, height: 34, borderRadius: 8,
+                            background: isSel ? "#fff" : (isUsedByOther ? "rgba(0,0,0,0.05)" : "transparent"),
+                            color: isSel ? it.c.main : (isUsedByOther ? "#A7A39F" : (assigned ? "rgba(255,255,255,0.7)" : it.c.main)),
+                            border: isSel ? "none" : (isUsedByOther ? "1px solid rgba(0,0,0,0.08)" :
+                              `1.5px solid ${assigned ? (assigned === "M" ? "rgba(0,0,0,0.25)" : "rgba(255,255,255,0.45)") : it.c.main}`),
+                            fontSize: 13, fontWeight: 800, cursor: isUsedByOther ? "not-allowed" : "pointer",
+                            opacity: isUsedByOther ? 0.55 : 1, padding: 0, fontFamily: T.font,
+                          }}>{it.l}</button>
+                        );
+                      })}
+                    </div>
+                    <span style={{ flex: 1, textAlign: "right", fontSize: 17, fontWeight: 800, letterSpacing: -0.2, lineHeight: 1.2 }}>
+                      {opt}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ flex: 1, minHeight: 12 }}/>
+            <Btn T={T} onClick={submit} disabled={!allAssigned}>
+              {allAssigned ? "שליחת ההצבעה" : `סמני עוד ${3 - Object.keys(votes).length}`}
+            </Btn>
+          </>
+        )}
+      </div>
+    </ParticipantShell>
+  );
+}
+
+function ParticipantShell({ T, children, code, brideName, onLeave, gameId }) {
+  const titleByGame = { bridequiz: "חידון על הכלה", fmk: "Fuck Marry Kill" };
+  const title = titleByGame[gameId] || "חוגגות";
   return (
     <>
       <StatusBar T={T}/>
@@ -1597,7 +1720,7 @@ function ParticipantShell({ T, children, code, brideName, onLeave }) {
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
             <div style={{ width: 24 }}/>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>חידון על הכלה</div>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>{title}</div>
             {onLeave ? (
               <button onClick={onLeave} style={{
                 background: "rgba(0,0,0,0.18)", border: "none",
@@ -4583,6 +4706,27 @@ function CardGame({ T: parentT, game, onBack }) {
   const [groomSummary, setGroomSummary] = React.useState(false);
   const [fmkChoices, setFmkChoices] = React.useState({}); // { cardIdx: { 0: 'F', 1: 'M', 2: 'K' } }
 
+  // ─── Multiplayer session state (only used for fmk right now) ───
+  const [sessionCode, setSessionCode] = React.useState(null);
+  const [sessionDoc, setSessionDoc] = React.useState(null);
+  const [liveParticipants, setLiveParticipants] = React.useState([]);
+  const [creatingSession, setCreatingSession] = React.useState(false);
+
+  const persistedState = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("chogegot_state") || "{}"); } catch (e) { return {}; }
+  }, []);
+  const authSession = React.useMemo(loadAuthSession, []);
+  const hostUsername = authSession?.username || null;
+  const brideName = persistedState?.name || authSession?.fullName?.split(" ")[0] || "הכלה";
+  const eventName = persistedState?.eventName || "";
+
+  React.useEffect(() => {
+    if (!sessionCode) return;
+    const off1 = fbSubscribeSession(sessionCode, setSessionDoc);
+    const off2 = fbSubscribeParticipants(sessionCode, setLiveParticipants);
+    return () => { try { off1(); } catch (e) {} try { off2(); } catch (e) {} };
+  }, [sessionCode]);
+
   const currentFmk = fmkChoices[i] || {};
   const assignFmk = (nameIdx, letter) => {
     const next = { ...currentFmk };
@@ -4605,10 +4749,17 @@ function CardGame({ T: parentT, game, onBack }) {
   const isFmk = game.id === "fmk";
   const isMultiOption = Array.isArray(prompt);
 
-  // FMK — simulated other girls' picks (deterministic per card so it stays consistent across renders)
+  // FMK 'other girls' picks: real participants when a session is active, otherwise a
+  // deterministic simulation so the solo demo still shows a group vote.
   const FMK_GIRLS = ["שירה", "ליהי", "תמר", "נועה", "רוני"];
   const fmkGirlsChoices = React.useMemo(() => {
     if (!isFmk || !Array.isArray(prompt)) return [];
+    if (sessionCode) {
+      // Each participant doc has `votes: { [cardIdx]: { 0: 'F', 1: 'M', 2: 'K' } }`
+      return liveParticipants
+        .filter(p => p.votes && p.votes[i] && Object.keys(p.votes[i]).length === 3)
+        .map(p => ({ name: p.name, picks: p.votes[i] }));
+    }
     const seed = (n) => { const x = (n * 9301 + 49297) % 233280; return x / 233280; };
     return FMK_GIRLS.map((name, gi) => {
       const letters = ["F", "M", "K"];
@@ -4618,7 +4769,7 @@ function CardGame({ T: parentT, game, onBack }) {
       }
       return { name, picks: { 0: letters[0], 1: letters[1], 2: letters[2] } };
     });
-  }, [i, isFmk]);
+  }, [i, isFmk, sessionCode, liveParticipants]);
 
   // Aggregate vote tally per name: { nameIdx: { F:count, M:count, K:count } }
   const fmkTally = React.useMemo(() => {
@@ -4628,6 +4779,27 @@ function CardGame({ T: parentT, game, onBack }) {
     Object.entries(currentFmk).forEach(([k, l]) => { t[k][l] = (t[k][l] || 0) + 1; });
     return t;
   }, [fmkGirlsChoices, currentFmk, isFmk]);
+
+  // Push card index + phase into the session doc so participants follow along.
+  React.useEffect(() => {
+    if (!sessionCode || !isFmk) return;
+    const map = { play: "playing", lobby: "lobby", intro: "lobby" };
+    fbUpdateSession(sessionCode, { state: map[phase] || "playing", currentQi: i });
+  }, [sessionCode, isFmk, phase, i]);
+
+  const openFmkLobby = async () => {
+    if (creatingSession) return;
+    setCreatingSession(true);
+    try {
+      // For FMK we ship the prompt array (3-item rows) as 'questions' so the participant
+      // view can render each row's three options.
+      const code = await fbCreateSession({
+        hostUsername, gameId: "fmk", questions: deck.prompts, brideName, eventName,
+      });
+      if (code) { setSessionCode(code); setPhase("lobby"); }
+      else alert("לא הצלחנו לפתוח לוביי. בדקי חיבור ונסי שוב.");
+    } finally { setCreatingSession(false); }
+  };
 
   // Groom answer lookup — only meaningful for groomq game
   const groomAnswerForPrompt = (() => {
@@ -4706,14 +4878,110 @@ function CardGame({ T: parentT, game, onBack }) {
     )
   ) : null;
 
+  const fmkExtras = isFmk ? (
+    <Card T={T} padding={"14px 16px"} style={{ marginTop: 14, background: PB.pink.soft, border: `1px solid ${PB.pink.main}33` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: PB.pink.main, color: PB.pink.on,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="qr" size={22} color={PB.pink.on} w={1.6}/>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: PB.pink.deep }}>הצטרפות הבנות בזמן אמת</div>
+          <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 2 }}>
+            סורקות QR או מקלידות קוד — ומצביעות F/M/K מהטלפון.
+          </div>
+        </div>
+      </div>
+      <button onClick={openFmkLobby} disabled={creatingSession} style={{
+        marginTop: 12, width: "100%", padding: "10px 14px",
+        background: PB.pink.main, color: PB.pink.on, border: "none", borderRadius: T.radius,
+        fontSize: 13.5, fontWeight: 800, cursor: creatingSession ? "wait" : "pointer", fontFamily: T.font,
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+        opacity: creatingSession ? 0.7 : 1,
+      }}>
+        <Icon name="qr" size={15} color={PB.pink.on} w={1.7}/>
+        {creatingSession ? "פותחת..." : "פתחי לוביי לחברות"}
+      </button>
+      <button onClick={() => setPhase("play")} style={{
+        marginTop: 7, width: "100%", padding: "8px 14px",
+        background: "transparent", color: T.inkSoft, border: "none",
+        fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font,
+      }}>או לדלג לתצוגה ללא חברות (דמו)</button>
+    </Card>
+  ) : null;
+
   if (phase === "intro")
-    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack} onStart={() => setPhase("play")}
+    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
+      onStart={isFmk ? openFmkLobby : () => setPhase("play")}
       startLabel={
-        isFmk ? "מתחילות סבב" :
+        isFmk ? "פתחי לוביי לחברות" :
         isNhie ? "מוזגות ומתחילות" :
         (isGroomq && !groomData?.a?.length ? "מתחילות גם בלי תשובות" : "מתחילות שאלון")
       }
-      extras={groomExtras}/>;
+      extras={isFmk ? fmkExtras : groomExtras}/>;
+
+  // ─── FMK lobby phase ────────────────────────────────────────────
+  if (phase === "lobby" && isFmk) {
+    const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ marginTop: 4, textAlign: "center" }}>
+            <Eyebrow T={T}>לוביי פתוח</Eyebrow>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 4px", letterSpacing: -0.4 }}>
+              הבנות מצטרפות
+            </h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
+              סרקי את ה-QR או הקלידי את הקוד באפליקציה.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 14, padding: 16, background: T.surface, borderRadius: T.radiusLg,
+            border: T.border, boxShadow: T.shadow, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <img src={qrSrc} alt={`QR code for ${joinUrl}`}
+              style={{ width: 180, height: 180, borderRadius: 12, display: "block" }}/>
+            <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 800, color: T.muted, letterSpacing: 1.6, textTransform: "uppercase" }}>קוד הצטרפות</div>
+            <div className="num" style={{ fontSize: 30, fontWeight: 800, color: T.ink, letterSpacing: 4, marginTop: 4 }}>{sessionCode}</div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
+              הצטרפו {liveParticipants.length}
+            </div>
+            {liveParticipants.length === 0 ? (
+              <div style={{ padding: "14px 16px", background: T.surfaceAlt, borderRadius: T.radius,
+                border: `1px dashed ${T.lineStrong}`, fontSize: 12.5, color: T.inkSoft, fontWeight: 600, textAlign: "center" }}>
+                מחכות לחברה הראשונה...
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {liveParticipants.map(p => (
+                  <span key={p.id} style={{
+                    padding: "5px 11px", borderRadius: 999, background: PB.pink.soft, color: PB.pink.deep,
+                    fontSize: 12.5, fontWeight: 800,
+                  }}>{p.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1, minHeight: 14 }}/>
+
+          <Btn T={T} onClick={() => setPhase("play")} disabled={liveParticipants.length === 0}>
+            {liveParticipants.length === 0 ? "מחכות שיצטרפו" : `מתחילות סבב (${liveParticipants.length})`}
+          </Btn>
+          <button onClick={() => setPhase("play")} style={{
+            marginTop: 8, background: "transparent", border: "none",
+            fontSize: 11.5, fontWeight: 700, color: T.inkSoft, cursor: "pointer", fontFamily: T.font,
+          }}>או להתחיל בכל זאת לדמו</button>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
 
   if (isGroomq && groomSummary) {
     const right = Object.values(groomMarks).filter(m => m === "right").length;
