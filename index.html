@@ -3812,8 +3812,10 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
           </div>
         </Card>
 
-        {/* Invite participants — only for games where joining matters */}
-        {game.joinable && (
+        {/* Invite participants — only for games where joining matters AND where the
+            game itself doesn't already render its own session lobby (bridequiz/FMK pass
+            their own join card through `extras`). */}
+        {game.joinable && game.id !== "bridequiz" && game.id !== "fmk" && (
           <Card T={T} padding="14px 16px" style={{ marginTop: 14, background: p.soft, border: `1px solid ${p.main}33` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: p.main, color: p.on,
@@ -4161,16 +4163,50 @@ function QuizGame({ T: parentT, game, onBack }) {
   const total = questions.length;
   const timerSec = deck.secondsPerQ || 10;
 
-  // Pool of girls who joined (extracted from mock data — in real life from QR scan)
-  const participants = React.useMemo(() => {
+  // Session state — null when running solo with mock participants. Once the host clicks
+  // 'פתחי לוביי' we create a Firestore doc and from then on the screen is driven by it.
+  const [sessionCode, setSessionCode] = React.useState(null);
+  const [sessionDoc, setSessionDoc] = React.useState(null);
+  const [liveParticipants, setLiveParticipants] = React.useState([]);
+  const [creatingSession, setCreatingSession] = React.useState(false);
+
+  // App-state context for the host's identifying details (used to seed the session)
+  const persistedState = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("chogegot_state") || "{}"); } catch (e) { return {}; }
+  }, []);
+  const authSession = React.useMemo(loadAuthSession, []);
+  const hostUsername = authSession?.username || null;
+  const brideName = persistedState?.name || authSession?.fullName?.split(" ")[0] || "הכלה";
+  const eventName = persistedState?.eventName || "";
+
+  // Real participants pool (live) → falls back to the simulated names for the solo flow
+  const mockNames = React.useMemo(() => {
     const list = (deck.mockAnswers?.[0] || []).map(a => a.n);
     return list.length ? list : ["ליהי", "שירה", "תמר"];
   }, [deck]);
+  const participants = sessionCode ? liveParticipants.map(p => p.name) : mockNames;
 
-  const [phase, setPhase] = React.useState("intro"); // intro | play | timeUp | revealed | done
+  const [phase, setPhase] = React.useState("intro"); // intro | lobby | play | timeUp | revealed | done
   const [qi, setQi] = React.useState(0);
   const [timeLeft, setTimeLeft] = React.useState(timerSec);
   const [answered, setAnswered] = React.useState([]); // names of participants who answered
+
+  // Live subscriptions when a session is open
+  React.useEffect(() => {
+    if (!sessionCode) return;
+    const off1 = fbSubscribeSession(sessionCode, setSessionDoc);
+    const off2 = fbSubscribeParticipants(sessionCode, setLiveParticipants);
+    return () => { try { off1(); } catch (e) {} try { off2(); } catch (e) {} };
+  }, [sessionCode]);
+
+  // Reflect real submissions into the `answered` list during play
+  React.useEffect(() => {
+    if (!sessionCode || phase !== "play") return;
+    const submittedNames = liveParticipants
+      .filter(p => p.answers && p.answers[qi] != null && String(p.answers[qi]).trim())
+      .map(p => p.name);
+    setAnswered(submittedNames);
+  }, [sessionCode, phase, liveParticipants, qi]);
 
   // Effect 1: timer countdown
   React.useEffect(() => {
@@ -4180,15 +4216,13 @@ function QuizGame({ T: parentT, game, onBack }) {
     return () => clearTimeout(t);
   }, [phase, timeLeft]);
 
-  // Effect 2: simulate participants gradually answering (random intervals)
+  // Effect 2: simulated participants (solo mode only)
   React.useEffect(() => {
-    if (phase !== "play") return;
+    if (sessionCode || phase !== "play") return;
     if (answered.length >= participants.length) {
-      // All answered — trigger overlay early
       const t = setTimeout(() => setPhase("timeUp"), 700);
       return () => clearTimeout(t);
     }
-    // Schedule the next "answer" — 2-7 seconds from now
     const delay = 2000 + Math.random() * 5000;
     const t = setTimeout(() => {
       const remaining = participants.filter(p => !answered.includes(p));
@@ -4198,14 +4232,41 @@ function QuizGame({ T: parentT, game, onBack }) {
       }
     }, delay);
     return () => clearTimeout(t);
-  }, [phase, answered.length, participants.length]);
+  }, [phase, answered.length, participants.length, sessionCode]);
+
+  // Push host-side phase changes into the session doc so participants stay in sync
+  React.useEffect(() => {
+    if (!sessionCode) return;
+    const map = { play: "playing", timeUp: "reveal", revealed: "reveal", done: "done", lobby: "lobby" };
+    const wireState = map[phase];
+    if (wireState) fbUpdateSession(sessionCode, { state: wireState, currentQi: qi });
+  }, [sessionCode, phase, qi]);
+
+  const openLobby = async () => {
+    if (creatingSession) return;
+    setCreatingSession(true);
+    try {
+      const code = await fbCreateSession({
+        hostUsername, gameId: game.id, questions, brideName, eventName,
+      });
+      if (code) { setSessionCode(code); setPhase("lobby"); }
+      else alert("לא הצלחנו לפתוח לוביי. בדקי חיבור ונסי שוב.");
+    } finally { setCreatingSession(false); }
+  };
 
   const startQ = (idx) => { setQi(idx); setTimeLeft(timerSec); setAnswered([]); setPhase("play"); };
   const nextQ = () => { if (qi + 1 >= total) { setPhase("done"); return; } startQ(qi + 1); };
-  const restart = () => { setQi(0); setAnswered([]); setPhase("intro"); };
+  const restart = () => { setQi(0); setAnswered([]); setPhase(sessionCode ? "lobby" : "intro"); };
 
   const question = questions[qi];
   const mockAnswers = deck.mockAnswers?.[qi] || [];
+  // Real submitted answers from session participants for this question
+  const liveAnswers = sessionCode
+    ? liveParticipants
+        .filter(p => p.answers && p.answers[qi] != null && String(p.answers[qi]).trim())
+        .map(p => ({ n: p.name, a: String(p.answers[qi]).trim() }))
+    : [];
+  const answersToShow = sessionCode ? liveAnswers : mockAnswers;
   // Match the timer game's danger threshold so the bride-quiz hot-state reads as 'last 10
   // seconds = red' too, regardless of the per-game accent color.
   const danger = timeLeft <= 10 && phase === "play";
@@ -4213,28 +4274,102 @@ function QuizGame({ T: parentT, game, onBack }) {
 
   if (phase === "intro") {
     const introExtras = (
-      <Card T={T} padding={"13px 14px"} style={{ marginTop: 14, background: T.surfaceAlt, border: `1px dashed ${T.lineStrong}` }}>
+      <Card T={T} padding={"14px 16px"} style={{ marginTop: 14, background: PB.pink.soft, border: `1px solid ${PB.pink.main}33` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 11, background: T.accent, color: T.onAccent,
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: PB.pink.main, color: PB.pink.on,
             display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon name="qr" size={20} color={T.onAccent} w={1.6}/>
+            <Icon name="qr" size={22} color={PB.pink.on} w={1.6}/>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: T.ink }}>הצטרפות הבנות לחידון</div>
-            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 1 }}>
-              סורקות QR מהמכשיר, רואות את השאלה ועונות.
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: PB.pink.deep }}>הצטרפות הבנות בזמן אמת</div>
+            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 2 }}>
+              סורקות QR או מקלידות קוד — רואות שאלות ועונות מהטלפון שלהן.
             </div>
           </div>
-          <button onClick={() => alert("פתיחת סריקה (דמו)")} style={{
-            padding: "8px 12px", background: T.accent, color: T.onAccent,
-            border: "none", borderRadius: T.radius,
-            fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: T.font,
-          }}>QR</button>
         </div>
+        <button onClick={openLobby} disabled={creatingSession} style={{
+          marginTop: 12, width: "100%", padding: "10px 14px",
+          background: PB.pink.main, color: PB.pink.on, border: "none", borderRadius: T.radius,
+          fontSize: 13.5, fontWeight: 800, cursor: creatingSession ? "wait" : "pointer", fontFamily: T.font,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          opacity: creatingSession ? 0.7 : 1,
+        }}>
+          <Icon name="qr" size={15} color={PB.pink.on} w={1.7}/>
+          {creatingSession ? "פותחת..." : "פתחי לוביי לחברות"}
+        </button>
+        <button onClick={() => startQ(0)} style={{
+          marginTop: 7, width: "100%", padding: "8px 14px",
+          background: "transparent", color: T.inkSoft, border: "none",
+          fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: T.font,
+        }}>או לדלג לתצוגה ללא חברות (דמו)</button>
       </Card>
     );
     return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
-      onStart={() => startQ(0)} startLabel="מתחילות חידון" extras={introExtras}/>;
+      onStart={openLobby} startLabel="פתחי לוביי לחברות" extras={introExtras}/>;
+  }
+
+  // ─── Lobby phase — show QR + code, wait for participants ────────
+  if (phase === "lobby") {
+    const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ marginTop: 4, textAlign: "center" }}>
+            <Eyebrow T={T}>לוביי פתוח</Eyebrow>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 4px", letterSpacing: -0.4 }}>
+              הבנות מצטרפות
+            </h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
+              סרקי את ה-QR או הקלידי את הקוד באפליקציה.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 14, padding: 16, background: T.surface, borderRadius: T.radiusLg,
+            border: T.border, boxShadow: T.shadow, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <img src={qrSrc} alt={`QR code for ${joinUrl}`}
+              style={{ width: 180, height: 180, borderRadius: 12, display: "block" }}/>
+            <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 800, color: T.muted, letterSpacing: 1.6, textTransform: "uppercase" }}>קוד הצטרפות</div>
+            <div className="num" style={{ fontSize: 30, fontWeight: 800, color: T.ink, letterSpacing: 4, marginTop: 4 }}>{sessionCode}</div>
+          </div>
+
+          {/* Live participants list */}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
+              הצטרפו {liveParticipants.length}
+            </div>
+            {liveParticipants.length === 0 ? (
+              <div style={{ padding: "14px 16px", background: T.surfaceAlt, borderRadius: T.radius,
+                border: `1px dashed ${T.lineStrong}`, fontSize: 12.5, color: T.inkSoft, fontWeight: 600, textAlign: "center" }}>
+                מחכות לחברה הראשונה...
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {liveParticipants.map(p => (
+                  <span key={p.id} style={{
+                    padding: "5px 11px", borderRadius: 999, background: PB.pink.soft, color: PB.pink.deep,
+                    fontSize: 12.5, fontWeight: 800,
+                  }}>{p.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1, minHeight: 14 }}/>
+
+          <Btn T={T} onClick={() => startQ(0)} disabled={liveParticipants.length === 0}>
+            {liveParticipants.length === 0 ? "מחכות שיצטרפו" : `מתחילות חידון (${liveParticipants.length})`}
+          </Btn>
+          <button onClick={() => startQ(0)} style={{
+            marginTop: 8, background: "transparent", border: "none",
+            fontSize: 11.5, fontWeight: 700, color: T.inkSoft, cursor: "pointer", fontFamily: T.font,
+          }}>או להתחיל בכל זאת לדמו</button>
+        </div>
+        <HomeBar/>
+      </>
+    );
   }
 
   if (phase === "done") {
@@ -4378,13 +4513,13 @@ function QuizGame({ T: parentT, game, onBack }) {
           </div>
 
           <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: big ? 10 : 8 }}>
-            {mockAnswers.length === 0 ? (
+            {answersToShow.length === 0 ? (
               <div style={{ padding: 20, color: big ? "rgba(255,255,255,0.7)" : T.inkSoft,
                 textAlign: "center", fontSize: 13, fontWeight: 500 }}>
-                במצב אמיתי יופיעו פה כל הבנות שסרקו QR והתשובות שלהן.
+                {sessionCode ? "אף בת עוד לא ענתה — תתקדמי לשאלה הבאה כשתרצי." : "במצב אמיתי יופיעו פה כל הבנות שסרקו QR והתשובות שלהן."}
               </div>
             ) : (
-              mockAnswers.map((ans, idx) => {
+              answersToShow.map((ans, idx) => {
                 const cycle = [PB.pink, PB.ink, PB.pink];
                 const p = cycle[idx % cycle.length];
                 return (
