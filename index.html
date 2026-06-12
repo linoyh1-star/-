@@ -3551,6 +3551,7 @@ function ScreenBudget({ T, onBack }) {
                 <div style={{ display: "flex", gap: 6 }}>
                   <input value={newExp.item} onChange={e => setNewExp({ ...newExp, item: e.target.value })}
                     placeholder="פריט / תיאור..."
+                    onKeyDown={e => e.key === "Enter" && addExpense()}
                     style={{
                       flex: 1, padding: "11px 12px", borderRadius: 10,
                       border: T.border, background: T.surface,
@@ -3559,18 +3560,26 @@ function ScreenBudget({ T, onBack }) {
                     }}/>
                   <input value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value.replace(/[^0-9]/g, "") })}
                     placeholder="₪0" inputMode="numeric"
+                    onKeyDown={e => e.key === "Enter" && addExpense()}
                     style={{
                       width: 80, padding: "11px 12px", borderRadius: 10,
                       border: T.border, background: T.surface,
                       fontSize: 13, fontWeight: 700, fontFamily: T.font,
                       color: T.ink, outline: "none", direction: "ltr", textAlign: "center",
                     }}/>
-                  <button onClick={addExpense} style={{
-                    width: 44, flexShrink: 0, borderRadius: 10, background: T.accent, color: T.onAccent,
-                    border: "none", cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name="plus" size={17} color={T.onAccent} w={2}/></button>
                 </div>
+                <button onClick={addExpense} disabled={!newExp.item.trim() || !newExp.amount} style={{
+                  width: "100%", padding: "11px 14px", borderRadius: 10,
+                  background: newExp.item.trim() && newExp.amount ? T.accent : T.surfaceAlt,
+                  color: newExp.item.trim() && newExp.amount ? T.onAccent : T.muted,
+                  border: "none", cursor: newExp.item.trim() && newExp.amount ? "pointer" : "default",
+                  fontFamily: T.font, fontSize: 14, fontWeight: 800,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                  transition: "background 150ms",
+                }}>
+                  <Icon name="plus" size={16} color={newExp.item.trim() && newExp.amount ? T.onAccent : T.muted} w={2}/>
+                  הוסף הוצאה
+                </button>
               </div>
             </>
           )}
