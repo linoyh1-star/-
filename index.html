@@ -3281,11 +3281,11 @@ const EXPENSE_CATS = ["לוקיישן", "אוכל", "אלכוהול", "עיצו�
 
 const SEED_EXPENSES = [
   { id: "e1", cat: "לוקיישן",  item: "וילה",        type: "fixed",    amount: 2500 },
-  { id: "e2", cat: "אוכל",     item: "שולחן שוק",  type: "variable", amount: 1500 },
-  { id: "e3", cat: "אלכוהול",  type: "variable", item: "יין ובירות", amount: 400 },
+  { id: "e2", cat: "אוכל",     item: "שולחן שוק",  type: "variable", amount: 125 },
+  { id: "e3", cat: "אלכוהול",  type: "variable", item: "יין ובירות", amount: 33 },
   { id: "e4", cat: "עיצוב",    item: "פיצ'יפקס",    type: "fixed",    amount: 300 },
   { id: "e5", cat: "אטרקציה",  item: "מפעילה",      type: "fixed",    amount: 1800 },
-  { id: "e6", cat: "אחר",      item: 'בלת"מים',     type: "variable", amount: 150 },
+  { id: "e6", cat: "אחר",      item: 'בלת"מים',     type: "variable", amount: 13 },
 ];
 const SEED_PARTICIPANTS = Array.from({ length: 12 }, (_, i) => ({
   id: `p${i+1}`, name: `משתתפת ${i+1}`, coming: true, paid: i < 5,
@@ -3328,9 +3328,13 @@ function ScreenBudget({ T, onBack }) {
   };
   const cancelEditParticipant = () => setEditingPartId(null);
 
-  const total     = safeExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const comingArr = safeParticipants.filter(p => p.coming);
   const comingN   = comingArr.length;
+  // variable expenses are stored as per-person price; scale by headcount
+  const total     = safeExpenses.reduce((s, e) => {
+    const amt = Number(e.amount) || 0;
+    return s + (e.type === "variable" ? amt * (comingN || 1) : amt);
+  }, 0);
   const perPerson = comingN > 0 ? Math.round(total / comingN) : 0;
   const collected = comingArr.filter(p => p.paid).length * perPerson;
   const remaining = Math.max(total - collected, 0);
@@ -3432,7 +3436,10 @@ function ScreenBudget({ T, onBack }) {
                 </span>
               </div>
               {EXPENSE_CATS.map(c => {
-                const sum = safeExpenses.filter(e => e.cat === c).reduce((s, e) => s + e.amount, 0);
+                const sum = safeExpenses.filter(e => e.cat === c).reduce((s, e) => {
+                  const amt = Number(e.amount) || 0;
+                  return s + (e.type === "variable" ? amt * (comingN || 1) : amt);
+                }, 0);
                 if (!sum) return null;
                 const pct = total ? Math.round((sum / total) * 100) : 0;
                 return (
@@ -3453,8 +3460,8 @@ function ScreenBudget({ T, onBack }) {
                 marginTop: 10, padding: "11px 14px", background: T.surfaceAlt, borderRadius: T.radius,
                 fontSize: 12, lineHeight: 1.55, color: T.inkSoft, fontWeight: 500,
               }}>
-                <div><b style={{ color: T.ink }}>הוצאה קבועה</b> — לא משתנה לפי כמות המשתתפות (וילה, אטרקציה).</div>
-                <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>הוצאה משתנה</b> — עולה או יורדת לפי כמות המשתתפות (אוכל, אלכוהול).</div>
+                <div><b style={{ color: T.ink }}>קבועה</b> — סכום כולל קבוע, ללא קשר לכמות (וילה, אטרקציה).</div>
+                <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>משתנה</b> — הכניסי <b>מחיר לאדם</b>; הסכום הכולל יתעדכן אוטומטית עם שינוי מספר המשתתפות.</div>
               </div>
               <div style={{ flex: 1, minHeight: 8 }}/>
               <Btn T={T} icon="send" onClick={() => {
@@ -3496,7 +3503,7 @@ function ScreenBudget({ T, onBack }) {
                         fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none", minWidth: 0,
                       }}/>
                     <input value={editingExp.amount} onChange={ev => setEditingExp({ ...editingExp, amount: ev.target.value.replace(/[^0-9]/g, "") })}
-                      placeholder="₪0" inputMode="numeric" style={{
+                      placeholder={editingExp.type === "variable" ? "₪/אדם" : "₪0"} inputMode="numeric" style={{
                         width: 70, padding: "9px 10px", borderRadius: 8,
                         border: T.border, background: "#fff",
                         fontSize: "max(16px, 13px)", fontWeight: 700, fontFamily: T.font, color: T.ink, outline: "none",
@@ -3539,7 +3546,16 @@ function ScreenBudget({ T, onBack }) {
                       }}>{e.type === "fixed" ? "קבועה" : "משתנה"}</span>
                     </div>
                   </div>
-                  <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>₪{e.amount.toLocaleString()}</div>
+                  <div style={{ textAlign: "left", flexShrink: 0 }}>
+                    {e.type === "variable" ? (
+                      <>
+                        <div className="num" style={{ fontSize: 11, fontWeight: 700, color: T.muted }}>₪{e.amount}/אדם</div>
+                        <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: PB.orange.deep }}>₪{(e.amount * comingN).toLocaleString()}</div>
+                      </>
+                    ) : (
+                      <div className="num" style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>₪{e.amount.toLocaleString()}</div>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: 3 }}>
                     <button onClick={() => startEditExpense(e)} title="עריכה" style={{
                       width: 24, height: 24, borderRadius: 7, background: "transparent",
@@ -3588,7 +3604,7 @@ function ScreenBudget({ T, onBack }) {
                       color: T.ink, outline: "none", minWidth: 0,
                     }}/>
                   <input value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value.replace(/[^0-9]/g, "") })}
-                    placeholder="₪0" inputMode="numeric"
+                    placeholder={newExp.type === "variable" ? "₪/אדם" : "₪0"} inputMode="numeric"
                     onKeyDown={e => e.key === "Enter" && addExpense()}
                     style={{
                       width: 80, padding: "11px 12px", borderRadius: 10,
