@@ -2996,9 +2996,12 @@ function ScreenChecklist({ T, onBack }) {
   const [adding, setAdding] = React.useState("");
   const [addingTo, setAddingTo] = React.useState(CHECKLIST_SECTIONS[0].id);
 
-  const done = items.filter(i => i.done).length;
-  const pct = Math.round((done / items.length) * 100);
-  const toggle = id => setItems(items.map(i => i.id === id ? { ...i, done: !i.done } : i));
+  // Guard: same null-heal as ScreenBudget
+  const safeItems = Array.isArray(items) ? items : buildSeedItems();
+
+  const done = safeItems.filter(i => i.done).length;
+  const pct = safeItems.length ? Math.round((done / safeItems.length) * 100) : 0;
+  const toggle = id => setItems(safeItems.map(i => i.id === id ? { ...i, done: !i.done } : i));
   const removeItem = id => setItems(items.filter(i => i.id !== id));
   const add = () => {
     if (!adding.trim()) return;
@@ -3034,7 +3037,7 @@ function ScreenChecklist({ T, onBack }) {
           <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
             <div>
               <div style={{ fontSize: 11.5, color: "rgba(26,26,26,0.78)", fontWeight: 700, letterSpacing: 0.4 }}>משימות לארגון</div>
-              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: "#1A1A1A", lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{items.length}</span></div>
+              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: "#1A1A1A", lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{safeItems.length}</span></div>
             </div>
             <div style={{ padding: "5px 12px", borderRadius: 999,
               background: "#1A1A1A", color: "#fff",
@@ -3049,7 +3052,7 @@ function ScreenChecklist({ T, onBack }) {
         {/* Sections */}
         <div style={{ flex: 1, overflow: "auto", padding: "20px 22px 14px", display: "flex", flexDirection: "column", gap: 18 }}>
           {CHECKLIST_SECTIONS.map((sec, sidx) => {
-            const sectionItems = items.filter(i => i.section === sec.id);
+            const sectionItems = safeItems.filter(i => i.section === sec.id);
             const secDone = sectionItems.filter(i => i.done).length;
             const secPct = sectionItems.length ? Math.round((secDone / sectionItems.length) * 100) : 0;
             // Rotate through orange, pink, black for visual variety across timeline sections.
