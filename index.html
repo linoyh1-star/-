@@ -1421,6 +1421,7 @@ function ScreenParticipant({ T, code, onLeave }) {
   });
   const [participantId, setParticipantId] = React.useState(null);
   const [joining, setJoining] = React.useState(false);
+  const [joinError, setJoinError] = React.useState(false);
   const [currentAnswer, setCurrentAnswer] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
 
@@ -1444,19 +1445,26 @@ function ScreenParticipant({ T, code, onLeave }) {
   const join = async () => {
     if (!name.trim() || joining || !code) return;
     setJoining(true);
+    setJoinError(false);
     try {
       const id = await fbJoinSession(code, name);
       if (id) {
         setParticipantId(id);
         try { localStorage.setItem(PARTICIPANT_NAME_KEY, name.trim()); } catch (e) {}
       }
+    } catch (e) {
+      setJoinError(true);
     } finally { setJoining(false); }
   };
 
   const submitAnswer = async () => {
     if (!currentAnswer.trim() || !participantId || submitted) return;
     setSubmitted(true);
-    await fbSubmitParticipantAnswer(code, participantId, session.currentQi, currentAnswer.trim());
+    try {
+      await fbSubmitParticipantAnswer(code, participantId, session.currentQi, currentAnswer.trim());
+    } catch (e) {
+      setSubmitted(false);
+    }
   };
 
   // ── Loading ───────────────────────────────────────────────
@@ -1502,6 +1510,13 @@ function ScreenParticipant({ T, code, onLeave }) {
             border: "none", outline: "none", fontSize: 17, fontWeight: 700,
             color: T.ink, textAlign: "center", fontFamily: T.font,
           }}/>
+        {joinError && (
+          <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10,
+            background: PB.orange.soft, color: PB.orange.deep,
+            fontSize: 13, fontWeight: 700, textAlign: "center" }}>
+            משהו השתבש. בדקי חיבור ונסי שוב.
+          </div>
+        )}
         <Btn T={T} onClick={join} disabled={!name.trim() || joining} style={{ marginTop: 16 }}>
           {joining ? "מצטרפת..." : "אני בפנים"}
         </Btn>
@@ -1637,7 +1652,11 @@ function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, pa
   const submit = async () => {
     if (!allAssigned || submitted) return;
     setSubmitted(true);
-    await fbSubmitParticipantVotes(code, participantId, qi, votes);
+    try {
+      await fbSubmitParticipantVotes(code, participantId, qi, votes);
+    } catch (e) {
+      setSubmitted(false);
+    }
   };
 
   const letters = [
@@ -3002,10 +3021,10 @@ function ScreenChecklist({ T, onBack }) {
   const done = safeItems.filter(i => i.done).length;
   const pct = safeItems.length ? Math.round((done / safeItems.length) * 100) : 0;
   const toggle = id => setItems(safeItems.map(i => i.id === id ? { ...i, done: !i.done } : i));
-  const removeItem = id => setItems(items.filter(i => i.id !== id));
+  const removeItem = id => setItems(safeItems.filter(i => i.id !== id));
   const add = () => {
     if (!adding.trim()) return;
-    setItems([...items, { id: `c-${Date.now()}`, section: addingTo, t: adding.trim(), done: false, custom: true }]);
+    setItems([...safeItems, { id: `c-${Date.now()}`, section: addingTo, t: adding.trim(), done: false, custom: true }]);
     setAdding("");
   };
 
@@ -3131,7 +3150,7 @@ function ScreenChecklist({ T, onBack }) {
             style={{
               flex: 1, padding: "12px 14px", borderRadius: 12,
               border: T.border, background: T.surfaceAlt,
-              fontSize: 13.5, fontWeight: 500, fontFamily: T.font,
+              fontSize: "max(16px, 13.5px)", fontWeight: 500, fontFamily: T.font,
               color: T.ink, outline: "none", minWidth: 0,
             }}/>
           <button onClick={add} style={{
@@ -3456,7 +3475,7 @@ function ScreenBudget({ T, onBack }) {
                       placeholder="קטגוריה..." style={{
                         flex: 1, padding: "8px 10px", borderRadius: 8,
                         border: T.border, background: "#fff",
-                        fontSize: 12.5, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
+                        fontSize: "max(16px, 12.5px)", fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
                       }}/>
                     <select value={editingExp.type} onChange={ev => setEditingExp({ ...editingExp, type: ev.target.value })} style={{
                       width: 90, padding: "8px 10px", borderRadius: 8,
@@ -3472,13 +3491,13 @@ function ScreenBudget({ T, onBack }) {
                       placeholder="פריט / תיאור..." style={{
                         flex: 1, padding: "9px 10px", borderRadius: 8,
                         border: T.border, background: "#fff",
-                        fontSize: 13, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none", minWidth: 0,
+                        fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none", minWidth: 0,
                       }}/>
                     <input value={editingExp.amount} onChange={ev => setEditingExp({ ...editingExp, amount: ev.target.value.replace(/[^0-9]/g, "") })}
                       placeholder="₪0" inputMode="numeric" style={{
                         width: 70, padding: "9px 10px", borderRadius: 8,
                         border: T.border, background: "#fff",
-                        fontSize: 13, fontWeight: 700, fontFamily: T.font, color: T.ink, outline: "none",
+                        fontSize: "max(16px, 13px)", fontWeight: 700, fontFamily: T.font, color: T.ink, outline: "none",
                         direction: "ltr", textAlign: "center",
                       }}/>
                   </div>
@@ -3545,7 +3564,7 @@ function ScreenBudget({ T, onBack }) {
                     style={{
                       flex: 1, padding: "10px 10px", borderRadius: 10,
                       border: T.border, background: T.surface, color: T.ink,
-                      fontSize: 12.5, fontWeight: 600, fontFamily: T.font, outline: "none", minWidth: 0,
+                      fontSize: "max(16px, 12.5px)", fontWeight: 600, fontFamily: T.font, outline: "none", minWidth: 0,
                     }}/>
                   <select value={newExp.type} onChange={e => setNewExp({ ...newExp, type: e.target.value })} style={{
                     width: 90, padding: "10px 10px", borderRadius: 10,
@@ -3563,7 +3582,7 @@ function ScreenBudget({ T, onBack }) {
                     style={{
                       flex: 1, padding: "11px 12px", borderRadius: 10,
                       border: T.border, background: T.surface,
-                      fontSize: 13, fontWeight: 600, fontFamily: T.font,
+                      fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font,
                       color: T.ink, outline: "none", minWidth: 0,
                     }}/>
                   <input value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value.replace(/[^0-9]/g, "") })}
@@ -3572,7 +3591,7 @@ function ScreenBudget({ T, onBack }) {
                     style={{
                       width: 80, padding: "11px 12px", borderRadius: 10,
                       border: T.border, background: T.surface,
-                      fontSize: 13, fontWeight: 700, fontFamily: T.font,
+                      fontSize: "max(16px, 13px)", fontWeight: 700, fontFamily: T.font,
                       color: T.ink, outline: "none", direction: "ltr", textAlign: "center",
                     }}/>
                 </div>
@@ -3610,7 +3629,7 @@ function ScreenBudget({ T, onBack }) {
                     style={{
                       flex: 1, padding: "9px 11px", borderRadius: 8,
                       border: T.border, background: "#fff",
-                      fontSize: 13, fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
+                      fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font, color: T.ink, outline: "none",
                     }}/>
                   <button onClick={saveEditParticipant} style={{
                     padding: "8px 12px", borderRadius: 8,
@@ -3674,7 +3693,7 @@ function ScreenBudget({ T, onBack }) {
                   style={{
                     flex: 1, padding: "11px 12px", borderRadius: 10,
                     border: T.border, background: T.surface,
-                    fontSize: 13, fontWeight: 600, fontFamily: T.font,
+                    fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font,
                     color: T.ink, outline: "none", minWidth: 0,
                   }}/>
                 <button onClick={addParticipant} style={{
