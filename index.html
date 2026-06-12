@@ -1627,7 +1627,9 @@ function ScreenParticipant({ T, code, onLeave }) {
 
 function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, participantId }) {
   const qi = session.currentQi;
-  const options = Array.isArray(session.questions?.[qi]) ? session.questions[qi] : [];
+  const rawQ = session.questions?.[qi];
+  // Questions stored as "a|b|c" strings (Firestore doesn't allow nested arrays)
+  const options = Array.isArray(rawQ) ? rawQ : (typeof rawQ === "string" ? rawQ.split("|") : []);
   const total = session.questions?.length || 0;
 
   // Local FMK votes for the CURRENT card: { 0: 'F', 1: 'M', 2: 'K' }
@@ -4889,10 +4891,12 @@ function CardGame({ T: parentT, game, onBack }) {
     if (creatingSession) return;
     setCreatingSession(true);
     try {
-      // For FMK we ship the prompt array (3-item rows) as 'questions' so the participant
-      // view can render each row's three options.
+      // For FMK we ship the prompt array (3-item rows) as 'questions'.
+      // Firestore doesn't support nested arrays, so each [a,b,c] is stored as "a|b|c".
       const code = await fbCreateSession({
-        hostUsername, gameId: "fmk", questions: deck.prompts, brideName, eventName,
+        hostUsername, gameId: "fmk",
+        questions: deck.prompts.map(row => Array.isArray(row) ? row.join("|") : row),
+        brideName, eventName,
       });
       if (code) { setSessionCode(code); setPhase("lobby"); }
       else alert("לא הצלחנו לפתוח לוביי. בדקי חיבור ונסי שוב.");
