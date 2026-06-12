@@ -2986,10 +2986,11 @@ function ScreenChecklist({ T, onBack }) {
   // localStorage was filled before the new rows were defined. Anything they've already
   // ticked / removed stays as-is; we only append the missing seed IDs.
   React.useEffect(() => {
+    if (!Array.isArray(items)) { setItems(buildSeedItems()); return; }
     const existingIds = new Set(items.map(i => i.id));
     const seed = buildSeedItems();
     const missing = seed.filter(s => !existingIds.has(s.id));
-    if (missing.length > 0) setItems(prev => [...prev, ...missing]);
+    if (missing.length > 0) setItems(prev => [...(Array.isArray(prev) ? prev : []), ...missing]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [adding, setAdding] = React.useState("");
@@ -3277,6 +3278,10 @@ function ScreenBudget({ T, onBack }) {
   const [editingPartId, setEditingPartId] = React.useState(null);
   const [editingPart, setEditingPart] = React.useState("");
 
+  // Guard: heal any null left by the pre-fix cloud-sync bug so .map/.filter don't crash
+  const safeExpenses     = Array.isArray(expenses)     ? expenses     : SEED_EXPENSES;
+  const safeParticipants = Array.isArray(participants) ? participants : SEED_PARTICIPANTS;
+
   const startEditExpense = (e) => {
     setEditingExpId(e.id);
     setEditingExp({ cat: e.cat, item: e.item, type: e.type, amount: String(e.amount) });
@@ -3284,7 +3289,7 @@ function ScreenBudget({ T, onBack }) {
   const saveEditExpense = () => {
     const amt = Number(editingExp.amount);
     if (!editingExp.item.trim() || !amt) { setEditingExpId(null); return; }
-    setExpenses(expenses.map(e => e.id === editingExpId
+    setExpenses(safeExpenses.map(e => e.id === editingExpId
       ? { ...e, cat: editingExp.cat.trim() || "אחר", item: editingExp.item.trim(), type: editingExp.type, amount: amt }
       : e));
     setEditingExpId(null);
@@ -3294,13 +3299,13 @@ function ScreenBudget({ T, onBack }) {
   const startEditParticipant = (p) => { setEditingPartId(p.id); setEditingPart(p.name); };
   const saveEditParticipant = () => {
     if (!editingPart.trim()) { setEditingPartId(null); return; }
-    setParticipants(participants.map(p => p.id === editingPartId ? { ...p, name: editingPart.trim() } : p));
+    setParticipants(safeParticipants.map(p => p.id === editingPartId ? { ...p, name: editingPart.trim() } : p));
     setEditingPartId(null);
   };
   const cancelEditParticipant = () => setEditingPartId(null);
 
-  const total     = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const comingArr = participants.filter(p => p.coming);
+  const total     = safeExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const comingArr = safeParticipants.filter(p => p.coming);
   const comingN   = comingArr.length;
   const perPerson = comingN > 0 ? Math.round(total / comingN) : 0;
   const collected = comingArr.filter(p => p.paid).length * perPerson;
@@ -3308,18 +3313,18 @@ function ScreenBudget({ T, onBack }) {
 
   const addExpense = () => {
     const amt = Number(newExp.amount); if (!newExp.item.trim() || !amt) return;
-    setExpenses([...expenses, { id: `e-${Date.now()}`, cat: newExp.cat.trim() || "אחר", item: newExp.item.trim(), type: newExp.type, amount: amt }]);
+    setExpenses([...safeExpenses, { id: `e-${Date.now()}`, cat: newExp.cat.trim() || "אחר", item: newExp.item.trim(), type: newExp.type, amount: amt }]);
     setNewExp({ cat: "", item: "", type: "fixed", amount: "" });
   };
-  const removeExpense = id => setExpenses(expenses.filter(e => e.id !== id));
+  const removeExpense = id => setExpenses(safeExpenses.filter(e => e.id !== id));
   const addParticipant = () => {
     if (!newName.trim()) return;
-    setParticipants([...participants, { id: `p-${Date.now()}`, name: newName.trim(), coming: true, paid: false }]);
+    setParticipants([...safeParticipants, { id: `p-${Date.now()}`, name: newName.trim(), coming: true, paid: false }]);
     setNewName("");
   };
-  const togglePaid   = id => setParticipants(participants.map(p => p.id === id ? { ...p, paid: !p.paid } : p));
-  const toggleComing = id => setParticipants(participants.map(p => p.id === id ? { ...p, coming: !p.coming, paid: p.coming ? false : p.paid } : p));
-  const removeParticipant = id => setParticipants(participants.filter(p => p.id !== id));
+  const togglePaid   = id => setParticipants(safeParticipants.map(p => p.id === id ? { ...p, paid: !p.paid } : p));
+  const toggleComing = id => setParticipants(safeParticipants.map(p => p.id === id ? { ...p, coming: !p.coming, paid: p.coming ? false : p.paid } : p));
+  const removeParticipant = id => setParticipants(safeParticipants.filter(p => p.id !== id));
 
   const TabBtn = ({ id, label }) => (
     <button onClick={() => setTab(id)} style={{
@@ -3388,7 +3393,7 @@ function ScreenBudget({ T, onBack }) {
         <div style={{ display: "flex", gap: 4, margin: "16px 20px 0", padding: 4,
           background: T.surfaceAlt, borderRadius: T.radius, flexShrink: 0 }}>
           <TabBtn id="summary" label="סיכום"/>
-          <TabBtn id="expenses" label={`הוצאות (${expenses.length})`}/>
+          <TabBtn id="expenses" label={`הוצאות (${safeExpenses.length})`}/>
           <TabBtn id="people" label={`משתתפות (${comingN})`}/>
         </div>
 
@@ -3399,11 +3404,11 @@ function ScreenBudget({ T, onBack }) {
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
                 <h3 style={{ fontSize: 14.5, fontWeight: 700, margin: 0, letterSpacing: -0.2 }}>פירוט לפי קטגוריה</h3>
                 <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
-                  {EXPENSE_CATS.filter(c => expenses.some(e => e.cat === c)).length} קטגוריות
+                  {EXPENSE_CATS.filter(c => safeExpenses.some(e => e.cat === c)).length} קטגוריות
                 </span>
               </div>
               {EXPENSE_CATS.map(c => {
-                const sum = expenses.filter(e => e.cat === c).reduce((s, e) => s + e.amount, 0);
+                const sum = safeExpenses.filter(e => e.cat === c).reduce((s, e) => s + e.amount, 0);
                 if (!sum) return null;
                 const pct = total ? Math.round((sum / total) * 100) : 0;
                 return (
@@ -3437,7 +3442,7 @@ function ScreenBudget({ T, onBack }) {
 
           {tab === "expenses" && (
             <>
-              {expenses.map((e, i) => editingExpId === e.id ? (
+              {safeExpenses.map((e, i) => editingExpId === e.id ? (
                 /* INLINE EDIT MODE */
                 <div key={e.id} style={{
                   background: PB.orange.soft, border: `1px solid ${PB.orange.main}55`, borderRadius: 13,
@@ -3589,7 +3594,7 @@ function ScreenBudget({ T, onBack }) {
               <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginBottom: 4, padding: "0 4px", letterSpacing: 0.2 }}>
                 לחיצה על שם — הופכת ל"לא מגיעה". ✓ — שילמה.
               </div>
-              {participants.map(p => editingPartId === p.id ? (
+              {safeParticipants.map(p => editingPartId === p.id ? (
                 /* INLINE EDIT MODE */
                 <div key={p.id} style={{
                   display: "flex", alignItems: "center", gap: 6,
