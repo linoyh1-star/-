@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>חוגגות</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,12 +20,18 @@
   @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 
   input, select, button { font-family: inherit; }
-  input::placeholder { color: #A7A39F; font-weight: 500; }
+  input::placeholder, textarea::placeholder { color: #A7A39F; font-weight: 500; }
   ::-webkit-scrollbar { width: 0; height: 0; }
 
   /* Tighter Hebrew rhythm + nice tabular numbers */
   body { letter-spacing: -0.1px; }
   .num { font-variant-numeric: tabular-nums; }
+
+  /* iOS Safari fixes */
+  button { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-appearance: none; appearance: none; }
+  /* Prevent iOS font-size zoom on focus (requires 16px minimum) */
+  input, textarea { font-size: max(16px, 1em); }
 </style>
 </head>
 <body>
@@ -105,7 +111,7 @@ function usePersistedState(key, initialValue) {
   const [state, setState] = React.useState(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw) return JSON.parse(raw);
+      if (raw && raw !== "null") return JSON.parse(raw);
     } catch (e) {}
     return typeof initialValue === "function" ? initialValue() : initialValue;
   });
@@ -546,7 +552,9 @@ function Btn({ T, children, onClick, variant = "primary", icon, disabled = false
         boxShadow: v.shadow, letterSpacing: 0.1,
         transform: pressed && !disabled ? "translateY(1px)" : "none",
         transition: "transform 80ms, background-color 120ms",
-        opacity: disabled ? 0.8 : 1, ...style,
+        opacity: disabled ? 0.8 : 1,
+        touchAction: "manipulation", WebkitUserSelect: "none", userSelect: "none",
+        ...style,
       }}
     >{icon && <Icon name={icon} size={18} color={disabled ? T.muted : v.fg} w={1.6}/>}{children}</button>
   );
@@ -1529,7 +1537,7 @@ function ScreenParticipant({ T, code, onLeave }) {
     const q = session.questions?.[session.currentQi] || "";
     return (
       <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
-        <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", height: "100%" }}>
+        <div style={{ padding: "16px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
             שאלה {session.currentQi + 1} / {session.questions?.length || 0}
           </div>
@@ -1547,11 +1555,13 @@ function ScreenParticipant({ T, code, onLeave }) {
             <>
               <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)}
                 placeholder="התשובה שלך..." rows={3}
+                onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 350)}
                 style={{
                   width: "100%", padding: "14px 16px", borderRadius: 13,
                   background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${currentAnswer ? PB.pink.main : T.line}`,
                   border: "none", outline: "none", fontSize: 16, fontWeight: 500,
                   color: T.ink, fontFamily: T.font, resize: "none", lineHeight: 1.4,
+                  WebkitAppearance: "none",
                 }}/>
               <Btn T={T} onClick={submitAnswer} disabled={!currentAnswer.trim()} style={{ marginTop: 14 }}>
                 שליחת תשובה
@@ -1638,7 +1648,7 @@ function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, pa
 
   return (
     <ParticipantShell T={T} onLeave={onLeave} code={code} brideName={session.brideName} gameId={session.gameId}>
-      <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", height: "100%" }}>
+      <div style={{ padding: "16px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
           כרטיס {qi + 1} / {total}
         </div>
@@ -1673,7 +1683,7 @@ function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, pa
                         const isUsedByOther = Object.values(votes).includes(it.l) && !isSel;
                         return (
                           <button key={it.l} onClick={() => assign(idx, it.l)} disabled={isUsedByOther} style={{
-                            width: 34, height: 34, borderRadius: 8,
+                            width: 44, height: 44, borderRadius: 10,
                             background: isSel ? "#fff" : (isUsedByOther ? "rgba(0,0,0,0.05)" : "transparent"),
                             color: isSel ? it.c.main : (isUsedByOther ? "#A7A39F" : (assigned ? "rgba(255,255,255,0.7)" : it.c.main)),
                             border: isSel ? "none" : (isUsedByOther ? "1px solid rgba(0,0,0,0.08)" :
@@ -1705,14 +1715,31 @@ function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, pa
 function ParticipantShell({ T, children, code, brideName, onLeave, gameId }) {
   const titleByGame = { bridequiz: "חידון על הכלה", fmk: "Fuck Marry Kill" };
   const title = titleByGame[gameId] || "חוגגות";
+  const scrollRef = React.useRef(null);
+
+  // iOS Safari: when the soft keyboard appears, visualViewport shrinks.
+  // We resize the scrollable container so content above the keyboard is reachable.
+  React.useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv || !scrollRef.current) return;
+    const update = () => {
+      if (!scrollRef.current) return;
+      scrollRef.current.style.height = vv.height + "px";
+      scrollRef.current.style.top = vv.offsetTop + "px";
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => { vv.removeEventListener("resize", update); vv.removeEventListener("scroll", update); };
+  }, []);
+
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
+      <div ref={scrollRef} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", overflow: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain" }}>
         {/* Pink header showing what session you're in */}
         <div style={{
           background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
-          padding: "36px 22px 14px",
+          padding: "max(36px, env(safe-area-inset-top, 36px)) 22px 14px",
           borderRadius: "0 0 22px 22px",
           color: "#1A1A1A",
           boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
@@ -1888,9 +1915,10 @@ function ScreenGroomMode({ T, data, onSent }) {
                   width: "100%", padding: "11px 13px", borderRadius: T.radius,
                   border: `1px solid ${answers[i].trim() ? T.accent : T.lineStrong}`,
                   background: T.surface, color: T.ink,
-                  fontSize: 14, fontWeight: 500, fontFamily: T.font,
+                  fontSize: 16, fontWeight: 500, fontFamily: T.font,
                   outline: "none", resize: "vertical", minHeight: 50,
                   boxShadow: T.shadowSm, direction: "rtl",
+                  WebkitAppearance: "none",
                 }}/>
             </div>
           ))}
@@ -2036,6 +2064,20 @@ function MockupHome({ T }) {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* QR join strip */}
+      <div style={{ marginTop: 5, background: "#fff", border: T.border, borderRadius: 7,
+        padding: "5px 7px", display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 4.5, background: PB.ink.main, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="qr" size={9} color="#fff" w={1.5}/>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: -0.1 }}>צרפי חברות למשחק</div>
+          <div style={{ fontSize: 5.5, color: "#6B6764", fontWeight: 500 }}>ברקוד לסריקה מכל טלפון</div>
+        </div>
+        <Icon name="chevL" size={7} color="#9B9793" w={1.5}/>
       </div>
 
       {/* black tip bar */}
@@ -2651,6 +2693,26 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
               );
             })}
           </div>
+
+          {/* QR join strip — full-width below the 2×2 grid */}
+          <button onClick={() => onNav("games")} style={{
+            marginTop: 12, width: "100%",
+            background: T.surface, border: T.border, borderRadius: T.radiusLg,
+            padding: "13px 16px", boxShadow: T.shadowSm,
+            display: "flex", alignItems: "center", gap: 13,
+            cursor: "pointer", fontFamily: T.font, textAlign: "right",
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 11,
+              background: PB.ink.main, display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}><Icon name="qr" size={21} color="#fff" w={1.5}/></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>צרפי חברות למשחק</div>
+              <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500, marginTop: 2 }}>ברקוד לסריקה מכל טלפון</div>
+            </div>
+            <Icon name="chevL" size={16} color={T.inkSoft} w={1.5}/>
+          </button>
 
           {/* Bottom branded tip — black bar with orange accent */}
           <div style={{
@@ -5503,9 +5565,9 @@ function App() {
     // Per-feature state lives in its own localStorage keys — drop the cloud copy in
     // so the components hydrate from it on next mount.
     try {
-      if (cloud?.checklistItems !== undefined) localStorage.setItem("chogegot_checklist_items", JSON.stringify(cloud.checklistItems));
-      if (cloud?.budgetExpenses !== undefined) localStorage.setItem("chogegot_budget_expenses", JSON.stringify(cloud.budgetExpenses));
-      if (cloud?.budgetParticipants !== undefined) localStorage.setItem("chogegot_budget_participants", JSON.stringify(cloud.budgetParticipants));
+      if (Array.isArray(cloud?.checklistItems)) localStorage.setItem("chogegot_checklist_items", JSON.stringify(cloud.checklistItems));
+      if (Array.isArray(cloud?.budgetExpenses)) localStorage.setItem("chogegot_budget_expenses", JSON.stringify(cloud.budgetExpenses));
+      if (Array.isArray(cloud?.budgetParticipants)) localStorage.setItem("chogegot_budget_participants", JSON.stringify(cloud.budgetParticipants));
       if (cloud?.groomAnswers !== undefined && cloud.groomAnswers) localStorage.setItem(GROOM_STORAGE_KEY, JSON.stringify(cloud.groomAnswers));
     } catch (e) {}
 
