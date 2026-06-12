@@ -105,7 +105,7 @@ function usePersistedState(key, initialValue) {
   const [state, setState] = React.useState(() => {
     try {
       const raw = localStorage.getItem(key);
-      if (raw) return JSON.parse(raw);
+      if (raw && raw !== "null") return JSON.parse(raw);
     } catch (e) {}
     return typeof initialValue === "function" ? initialValue() : initialValue;
   });
@@ -2038,6 +2038,20 @@ function MockupHome({ T }) {
         ))}
       </div>
 
+      {/* QR join strip */}
+      <div style={{ marginTop: 5, background: "#fff", border: T.border, borderRadius: 7,
+        padding: "5px 7px", display: "flex", alignItems: "center", gap: 5 }}>
+        <div style={{ width: 16, height: 16, borderRadius: 4.5, background: PB.ink.main, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="qr" size={9} color="#fff" w={1.5}/>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: -0.1 }}>צרפי חברות למשחק</div>
+          <div style={{ fontSize: 5.5, color: "#6B6764", fontWeight: 500 }}>ברקוד לסריקה מכל טלפון</div>
+        </div>
+        <Icon name="chevL" size={7} color="#9B9793" w={1.5}/>
+      </div>
+
       {/* black tip bar */}
       <div style={{ marginTop: 5, padding: "4px 6px", background: "#1A1A1A", color: "#fff",
         borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
@@ -2651,6 +2665,26 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
               );
             })}
           </div>
+
+          {/* QR join strip — full-width below the 2×2 grid */}
+          <button onClick={() => onNav("games")} style={{
+            marginTop: 12, width: "100%",
+            background: T.surface, border: T.border, borderRadius: T.radiusLg,
+            padding: "13px 16px", boxShadow: T.shadowSm,
+            display: "flex", alignItems: "center", gap: 13,
+            cursor: "pointer", fontFamily: T.font, textAlign: "right",
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 11,
+              background: PB.ink.main, display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}><Icon name="qr" size={21} color="#fff" w={1.5}/></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>צרפי חברות למשחק</div>
+              <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500, marginTop: 2 }}>ברקוד לסריקה מכל טלפון</div>
+            </div>
+            <Icon name="chevL" size={16} color={T.inkSoft} w={1.5}/>
+          </button>
 
           {/* Bottom branded tip — black bar with orange accent */}
           <div style={{
@@ -5503,9 +5537,9 @@ function App() {
     // Per-feature state lives in its own localStorage keys — drop the cloud copy in
     // so the components hydrate from it on next mount.
     try {
-      if (cloud?.checklistItems !== undefined) localStorage.setItem("chogegot_checklist_items", JSON.stringify(cloud.checklistItems));
-      if (cloud?.budgetExpenses !== undefined) localStorage.setItem("chogegot_budget_expenses", JSON.stringify(cloud.budgetExpenses));
-      if (cloud?.budgetParticipants !== undefined) localStorage.setItem("chogegot_budget_participants", JSON.stringify(cloud.budgetParticipants));
+      if (Array.isArray(cloud?.checklistItems)) localStorage.setItem("chogegot_checklist_items", JSON.stringify(cloud.checklistItems));
+      if (Array.isArray(cloud?.budgetExpenses)) localStorage.setItem("chogegot_budget_expenses", JSON.stringify(cloud.budgetExpenses));
+      if (Array.isArray(cloud?.budgetParticipants)) localStorage.setItem("chogegot_budget_participants", JSON.stringify(cloud.budgetParticipants));
       if (cloud?.groomAnswers !== undefined && cloud.groomAnswers) localStorage.setItem(GROOM_STORAGE_KEY, JSON.stringify(cloud.groomAnswers));
     } catch (e) {}
 
