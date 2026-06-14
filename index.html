@@ -2108,20 +2108,6 @@ function MockupHome({ T }) {
         ))}
       </div>
 
-      {/* QR join strip */}
-      <div style={{ marginTop: 5, background: "#fff", border: T.border, borderRadius: 7,
-        padding: "5px 7px", display: "flex", alignItems: "center", gap: 5 }}>
-        <div style={{ width: 16, height: 16, borderRadius: 4.5, background: PB.ink.main, flexShrink: 0,
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="qr" size={9} color="#fff" w={1.5}/>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: -0.1 }}>צרפי חברות למשחק</div>
-          <div style={{ fontSize: 5.5, color: "#6B6764", fontWeight: 500 }}>ברקוד לסריקה מכל טלפון</div>
-        </div>
-        <Icon name="chevL" size={7} color="#9B9793" w={1.5}/>
-      </div>
-
       {/* black tip bar */}
       <div style={{ marginTop: 5, padding: "4px 6px", background: "#1A1A1A", color: "#fff",
         borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
@@ -2752,26 +2738,6 @@ function ScreenBachHome({ T, onNav, user, eventName }) {
             })}
           </div>
 
-          {/* QR join strip — full-width below the 2×2 grid */}
-          <button onClick={() => onNav("games")} style={{
-            marginTop: 12, width: "100%",
-            background: T.surface, border: T.border, borderRadius: T.radiusLg,
-            padding: "13px 16px", boxShadow: T.shadowSm,
-            display: "flex", alignItems: "center", gap: 13,
-            cursor: "pointer", fontFamily: T.font, textAlign: "right",
-          }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 11,
-              background: PB.ink.main, display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}><Icon name="qr" size={21} color="#fff" w={1.5}/></div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>צרפי חברות למשחק</div>
-              <div style={{ fontSize: 12, color: T.inkSoft, fontWeight: 500, marginTop: 2 }}>ברקוד לסריקה מכל טלפון</div>
-            </div>
-            <Icon name="chevL" size={16} color={T.inkSoft} w={1.5}/>
-          </button>
-
           {/* Bottom branded tip — black bar with orange accent */}
           <div style={{
             marginTop: 18, padding: "12px 14px",
@@ -2936,14 +2902,39 @@ function ScreenHelpCenter({ T, onBack }) {
             background: "#1A1A1A", color: "#fff",
             borderRadius: T.radius,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <div style={{ width: 4, height: 16, background: PB.orange.main, borderRadius: 2 }}/>
               <div style={{ fontSize: 12.5, fontWeight: 800, color: "#fff", letterSpacing: 0.3 }}>שאלות נפוצות</div>
             </div>
-            <div style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}>
-              • <b style={{ color: "#fff" }}>איך מצרפים חברות למשחק?</b> בתוך כל משחק יש כפתור "שלחי לינק להצטרפות".<br/>
-              • <b style={{ color: "#fff" }}>איך משדרים למסך גדול?</b> בכל משחק יש כפתור "הקרנה".<br/>
-              • <b style={{ color: "#fff" }}>לא הגיע SMS?</b> בדקי שיש קליטה ושהמספר נכון.
+
+            <div style={{ fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.78)", fontWeight: 500 }}>
+              <b style={{ color: "#fff" }}>איך אני מצרפת חברות למשחק?</b>
+              <div style={{ marginTop: 3 }}>
+                ישנם משחקים רלוונטיים שבהם תוכלי לצרף חברות שישתתפו אינטראקטיבית (חידון על הכלה ו-FMK). בתוך המשחק יופיע ברקוד לסריקה + קוד הצטרפות.
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <b style={{ color: "#fff" }}>איך מקרינים את המשחק על מסך גדול (טלוויזיה)?</b>
+                <div style={{ marginTop: 5, paddingInlineStart: 4 }}>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 11.5, letterSpacing: 0.3 }}>
+                    📱 אנדרואיד <span style={{ fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>(Samsung / Xiaomi / OnePlus וכו')</span>
+                  </div>
+                  <div style={{ marginTop: 2 }}>
+                    גללי את התפריט המהיר מלמעלה → חפשי "Smart View" / "שיקוף מסך" / "Cast" → בחרי את הטלוויזיה החכמה שלך.
+                  </div>
+
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 11.5, letterSpacing: 0.3, marginTop: 6 }}>
+                    🍎 אייפון <span style={{ fontWeight: 500, color: "rgba(255,255,255,0.6)" }}>(iPhone)</span>
+                  </div>
+                  <div style={{ marginTop: 2 }}>
+                    גללי את מרכז הבקרה מהפינה הימנית העליונה → לחצי על "Screen Mirroring" / "שיקוף מסך" → בחרי את הטלוויזיה (דורש Apple TV או טלוויזיה תואמת AirPlay).
+                  </div>
+
+                  <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                    טיפ: הטלפון והטלוויזיה צריכים להיות מחוברים לאותה רשת Wi-Fi.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3022,10 +3013,12 @@ const CHECKLIST_SECTIONS = [
     "נגן מוזיקה ומטען",
     "אם שכרתן מקום — וודאו שיש לכן סרטונים והנחיות לתפעול מהבעלים",
     "מתנות אם יש", "לשלוח מיקום בקבוצת הווטסאפ",
+    "בדיקת תקינות אפליקציית המשחקים",
   ]},
   { id: "day", t: "היום הגדול", sub: "נהנות", pop: "pink", items: [
     "הגעה מוקדמת לסידור המקום",
     "לשתות קפה ולקחת ציפרלקס",
+    "בדיקת תקינות אפליקציית המשחקים",
     "להינות",
   ]},
 ];
@@ -3864,7 +3857,7 @@ const TIMER_DECKS = {
       "שחקנית ב' רואה את המילה ומבטאת אותה בשפתיים בלבד.",
       "מותר להעביר בקול רם (לא מדי). אסור פנטומימה או מחוות שירמזו על המילה.",
       "2 דקות לכל סבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
       "במידה ולא ניתן להקרין, תני את הטלפון לשחקנית שמעבירה את המילים.",
     ],
     rounds: 2, secondsPerRound: 120,
@@ -3890,7 +3883,7 @@ const TIMER_DECKS = {
       "שחקנית ב' רואה את המילה ומציגה בפנטומימה בלבד.",
       "מותר: להגזים, להשתטות. אסור: לדבר, גם לא אפקטים קוליים.",
       "2 דקות לסבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
       "במידה ולא ניתן להקרין, תני את הטלפון לשחקנית שמעבירה את המילים.",
     ],
     rounds: 2, secondsPerRound: 120,
@@ -3917,7 +3910,7 @@ const CARD_DECKS = {
       "הכלה מנחשת מה החתן ענה. הצליחה? נקודה לכלה.",
       "פספסה? נקודה לחתן (=לגימה לכלה).",
       "בסוף המשחק רואים מי הכיר את מי טוב יותר.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
     ],
     prompts: [
       "מה עשיתם בדייט הראשון שלכם?",
@@ -3939,7 +3932,7 @@ const CARD_DECKS = {
       "כל אות מותרת רק פעם אחת בכרטיס.",
       "אין 'תשובה נכונה' — הספונטניות והשיחה מנצחות.",
       "ברגע שכולן סימנו, ממשיכות לכרטיס הבא. ניתן לדלג עם כפתור הבא.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
     ],
     prompts: [
       ["הארי פוטר", "דמבלדור", "רון וויזלי"],
@@ -3961,7 +3954,7 @@ const CARD_DECKS = {
       "בכל פעם תופיע אמירה 'אף פעם לא...'",
       "מי שאף פעם לא עשתה את זה — מרימה אצבע.",
       "מי שהגיעה ל-5 אצבעות — מרימה צ'ייסר ומתחילה לספור מחדש.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
     ],
     prompts: [
       "אף פעם לא שלחתי הודעה לאקס בלילה",
@@ -4006,7 +3999,7 @@ const QUIZ_DECKS = {
       "20 שניות לחשוב ולכתוב תשובה. ברגע שכולן ענו — הטיימר נעצר.",
       "אז הכלה עונה בקול — ורק אז ייחשפו התשובות המצחיקות של הבנות.",
       "מי שהכי קרוב למה שהכלה אמרה — מנצחת.",
-      "מומלץ להקרין את המילים על מסך גדול.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
     ],
     secondsPerQ: 20,
     questions: [
