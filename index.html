@@ -3487,15 +3487,48 @@ function ScreenBudget({ T, onBack }) {
 
         {/* Body */}
         <div style={{ flex: 1, overflow: "auto", padding: "14px 20px 14px", display: "flex", flexDirection: "column", gap: 9 }}>
-          {tab === "summary" && (
+          {tab === "summary" && (() => {
+            // Collect every category that has at least one expense — including any
+            // custom category the user typed in. Without this, custom 'תחבורה' rows
+            // were invisible in the summary even though they counted toward the total.
+            const allCats = Array.from(new Set([
+              ...EXPENSE_CATS,
+              ...safeExpenses.map(e => e.cat).filter(Boolean),
+            ]));
+            const fixedPerPerson = comingN > 0 ? safeExpenses
+              .filter(e => e.type === "fixed")
+              .reduce((s, e) => s + (Number(e.amount) || 0), 0) / comingN : 0;
+            const varPerPerson = safeExpenses
+              .filter(e => e.type === "variable")
+              .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            return (
             <>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+              {/* Per-person live breakdown — makes it obvious that perPerson is
+                  recalculated from the latest expenses + participant count */}
+              <div style={{
+                padding: "12px 14px", background: PB.orange.soft,
+                border: `1px solid ${PB.orange.main}33`, borderRadius: T.radius,
+                borderRight: `4px solid ${PB.orange.main}`,
+                marginBottom: 4,
+              }}>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: PB.orange.deep, letterSpacing: 0.4, textTransform: "uppercase" }}>
+                  כל משתתפת מעבירה
+                </div>
+                <div className="num" style={{ fontSize: 26, fontWeight: 800, color: PB.orange.deep, lineHeight: 1, marginTop: 2 }}>
+                  ₪{perPerson.toLocaleString()}
+                </div>
+                <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 6, fontWeight: 500 }}>
+                  ₪{Math.round(fixedPerPerson).toLocaleString()} מהקבועות (חלוקה ל-{comingN}) + ₪{varPerPerson.toLocaleString()} מהמשתנות
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4, marginTop: 6 }}>
                 <h3 style={{ fontSize: 14.5, fontWeight: 700, margin: 0, letterSpacing: -0.2 }}>פירוט לפי קטגוריה</h3>
                 <span style={{ fontSize: 12, color: T.muted, fontWeight: 600 }}>
-                  {EXPENSE_CATS.filter(c => safeExpenses.some(e => e.cat === c)).length} קטגוריות
+                  {allCats.filter(c => safeExpenses.some(e => e.cat === c)).length} קטגוריות
                 </span>
               </div>
-              {EXPENSE_CATS.map(c => {
+              {allCats.map(c => {
                 const sum = safeExpenses.filter(e => e.cat === c).reduce((s, e) => {
                   const amt = Number(e.amount) || 0;
                   return s + (e.type === "variable" ? amt * (comingN || 1) : amt);
@@ -3525,10 +3558,15 @@ function ScreenBudget({ T, onBack }) {
               </div>
               <div style={{ flex: 1, minHeight: 8 }}/>
               <Btn T={T} icon="send" onClick={() => {
+                // Each click reads the latest perPerson from the closure of the current
+                // render — so adding expenses or changing the headcount before tapping
+                // 'send' is always reflected in the message.
                 const msg = `היוש!!! האירוע של השנה קרב ובא! 🎉 כדי שנוכל להמשיך בסגירות אחרונות מזכירות להעביר תשלום של ₪${perPerson} 💛`;
                 openWhatsApp(msg);
-              }}>בקשי השלמת תשלום</Btn>
+              }}>בקשי השלמת תשלום של ₪{perPerson}</Btn>
             </>
+            );
+          })()}
           )}
 
           {tab === "expenses" && (
@@ -3826,6 +3864,8 @@ const TIMER_DECKS = {
       "שחקנית ב' רואה את המילה ומבטאת אותה בשפתיים בלבד.",
       "מותר להעביר בקול רם (לא מדי). אסור פנטומימה או מחוות שירמזו על המילה.",
       "2 דקות לכל סבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
+      "מומלץ להקרין את המילים על מסך גדול.",
+      "במידה ולא ניתן להקרין, תני את הטלפון לשחקנית שמעבירה את המילים.",
     ],
     rounds: 2, secondsPerRound: 120,
     prompts: [
@@ -3850,6 +3890,8 @@ const TIMER_DECKS = {
       "שחקנית ב' רואה את המילה ומציגה בפנטומימה בלבד.",
       "מותר: להגזים, להשתטות. אסור: לדבר, גם לא אפקטים קוליים.",
       "2 דקות לסבב. בנק המילים מתחדש בין סבב לסבב — לא חוזרות על מה שהיה.",
+      "מומלץ להקרין את המילים על מסך גדול.",
+      "במידה ולא ניתן להקרין, תני את הטלפון לשחקנית שמעבירה את המילים.",
     ],
     rounds: 2, secondsPerRound: 120,
     prompts: [
@@ -3875,6 +3917,7 @@ const CARD_DECKS = {
       "הכלה מנחשת מה החתן ענה. הצליחה? נקודה לכלה.",
       "פספסה? נקודה לחתן (=לגימה לכלה).",
       "בסוף המשחק רואים מי הכיר את מי טוב יותר.",
+      "מומלץ להקרין את המילים על מסך גדול.",
     ],
     prompts: [
       "מה עשיתם בדייט הראשון שלכם?",
@@ -3896,6 +3939,7 @@ const CARD_DECKS = {
       "כל אות מותרת רק פעם אחת בכרטיס.",
       "אין 'תשובה נכונה' — הספונטניות והשיחה מנצחות.",
       "ברגע שכולן סימנו, ממשיכות לכרטיס הבא. ניתן לדלג עם כפתור הבא.",
+      "מומלץ להקרין את המילים על מסך גדול.",
     ],
     prompts: [
       ["הארי פוטר", "דמבלדור", "רון וויזלי"],
@@ -3917,6 +3961,7 @@ const CARD_DECKS = {
       "בכל פעם תופיע אמירה 'אף פעם לא...'",
       "מי שאף פעם לא עשתה את זה — מרימה אצבע.",
       "מי שהגיעה ל-5 אצבעות — מרימה צ'ייסר ומתחילה לספור מחדש.",
+      "מומלץ להקרין את המילים על מסך גדול.",
     ],
     prompts: [
       "אף פעם לא שלחתי הודעה לאקס בלילה",
@@ -3961,6 +4006,7 @@ const QUIZ_DECKS = {
       "20 שניות לחשוב ולכתוב תשובה. ברגע שכולן ענו — הטיימר נעצר.",
       "אז הכלה עונה בקול — ורק אז ייחשפו התשובות המצחיקות של הבנות.",
       "מי שהכי קרוב למה שהכלה אמרה — מנצחת.",
+      "מומלץ להקרין את המילים על מסך גדול.",
     ],
     secondsPerQ: 20,
     questions: [
