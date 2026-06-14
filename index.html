@@ -3,17 +3,32 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <title>חוגגות</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; background: #F6F3F1;
+  html, body {
+    margin: 0; padding: 0;
+    /* iOS Safari URL bar fix — use dynamic viewport unit with 100% fallback */
+    height: 100%; min-height: 100vh; min-height: 100dvh;
+    background: #F6F3F1;
     font-family: "Assistant", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased; color: #1A1A1A;
+    overscroll-behavior-y: none; /* stop Safari rubber-band on the body */
   }
-  #root { width: 100%; min-height: 100vh; }
+  #root { width: 100%; min-height: 100vh; min-height: 100dvh; }
+
+  /* iOS notch / home-indicator safe area inside the PhoneShell */
+  .phone-shell-mobile {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 
   @keyframes screenIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   @keyframes cardIn { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
@@ -486,7 +501,7 @@ function PhoneShell({ children, T }) {
 
   if (isMobile) {
     return (
-      <div style={{
+      <div className="phone-shell-mobile" style={{
         position: "fixed", inset: 0, background: T.bg, direction: "rtl",
         fontFamily: T.font, color: T.ink, overflow: "hidden",
       }}>{children}</div>
@@ -795,107 +810,113 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
   return (
     <>
       <StatusBar T={T}/>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* Slim orange header */}
-        <div style={{
-          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
-          padding: "44px 22px 18px",
-          borderRadius: "0 0 22px 22px",
-          color: "#fff",
-          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
-          position: "relative", overflow: "hidden",
-        }}>
-          <div style={{
-            position: "absolute", top: -30, right: -40,
-            width: 110, height: 110, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
-          }}/>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.22)",
-              border: "1.5px solid rgba(255,255,255,0.45)",
-              display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="sparkle" size={17} color="#fff" w={1.7}/>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, color: "#fff" }}>חוגגות</div>
+      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 28px", display: "flex", flexDirection: "column" }}>
+        {/* Brand chip — matches the post-login flow's lightweight top */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: T.accent,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="sparkle" size={17} color={T.onAccent} w={1.7}/>
           </div>
-          <div style={{ position: "relative", marginTop: 14 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
-              ברוכ.ה הבא.ה
-            </h1>
-            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
-              הזיני את שם המשתמש והסיסמה שקיבלת במייל לאחר התשלום.
-            </p>
-          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3, color: T.ink }}>חוגגות</div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "22px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
-          {/* Username */}
-          <label style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
-            שם משתמש
-          </label>
-          <input
-            ref={userRef}
-            value={username}
-            onChange={e => { setUsername(e.target.value); setError(""); }}
-            onKeyDown={onKey}
-            placeholder="כפי שמופיע במייל"
-            autoComplete="username"
-            style={{
-              width: "100%", padding: "13px 16px", borderRadius: 13,
-              background: T.surfaceAlt,
-              boxShadow: `inset 0 0 0 1.5px ${error ? PB.orange.main : (username ? PB.orange.main : T.line)}`,
-              border: "none", outline: "none",
-              fontSize: 16, fontWeight: 700, color: T.ink,
-              unicodeBidi: "plaintext", textAlign: "center", fontFamily: T.font,
-            }}/>
+        <div style={{ marginTop: 22 }}>
+          <Eyebrow T={T}>ברוכ.ה הבא.ה</Eyebrow>
+          <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.12, margin: "12px 0 0", letterSpacing: -0.6 }}>
+            הזיני<br/>פרטי כניסה
+          </h1>
+          <p style={{ fontSize: 14.5, lineHeight: 1.6, color: T.inkSoft, marginTop: 12, fontWeight: 500 }}>
+            שם המשתמש והסיסמה הגיעו אלייך במייל אחרי התשלום.
+          </p>
+        </div>
 
-          {/* Password */}
-          <label style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginTop: 16, marginBottom: 8 }}>
-            סיסמה
-          </label>
-          <input
-            ref={passRef}
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError(""); }}
-            onKeyDown={onKey}
-            placeholder="הסיסמה מהמייל"
-            type="password"
-            autoComplete="current-password"
-            style={{
-              width: "100%", padding: "13px 16px", borderRadius: 13,
-              background: T.surfaceAlt,
-              boxShadow: `inset 0 0 0 1.5px ${error ? PB.orange.main : (password ? PB.orange.main : T.line)}`,
-              border: "none", outline: "none",
-              fontSize: 16, fontWeight: 700, color: T.ink,
-              direction: "ltr", textAlign: "left", fontFamily: T.font,
-            }}/>
+        <div style={{ marginTop: 22 }}>
+          {/* Username — same card-with-avatar style as ScreenUsername */}
+          <Card T={T} padding="14px 16px" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12,
+              background: T.accentSoft, color: T.accentDeep,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Icon name="users" size={20} color={T.accentDeep} w={1.5}/>
+            </div>
+            <input
+              ref={userRef}
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError(""); }}
+              onKeyDown={onKey}
+              placeholder="שם משתמש מהמייל"
+              autoComplete="username"
+              style={{
+                flex: 1, fontSize: 16.5, fontWeight: 600, color: T.ink,
+                background: "transparent", border: "none", outline: "none",
+                fontFamily: T.font, padding: 0, minWidth: 0,
+                unicodeBidi: "plaintext",
+              }}/>
+            {username.trim().length >= 3 && (
+              <div style={{ width: 22, height: 22, borderRadius: 999, background: T.ok,
+                display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon name="check" size={13} color="#fff" w={2}/>
+              </div>
+            )}
+          </Card>
+
+          {/* Password — same card style */}
+          <div style={{ marginTop: 12 }}>
+            <Card T={T} padding="14px 16px" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 12,
+                background: T.accentSoft, color: T.accentDeep,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Icon name="lock" size={20} color={T.accentDeep} w={1.5}/>
+              </div>
+              <input
+                ref={passRef}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(""); }}
+                onKeyDown={onKey}
+                placeholder="סיסמה מהמייל"
+                type="password"
+                autoComplete="current-password"
+                style={{
+                  flex: 1, fontSize: 16.5, fontWeight: 600, color: T.ink,
+                  background: "transparent", border: "none", outline: "none",
+                  fontFamily: T.font, padding: 0, minWidth: 0,
+                  direction: "ltr", textAlign: "right",
+                }}/>
+              {password.trim().length >= 4 && (
+                <div style={{ width: 22, height: 22, borderRadius: 999, background: T.ok,
+                  display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon name="check" size={13} color="#fff" w={2}/>
+                </div>
+              )}
+            </Card>
+          </div>
 
           {/* Error */}
           {error && (
-            <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10,
+            <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 12,
               background: "#FDEDE9", border: `1px solid ${PB.orange.main}55`,
               fontSize: 12.5, fontWeight: 700, color: PB.orange.deep }}>
               {error}
             </div>
           )}
+        </div>
 
-          <div style={{ flex: 1, minHeight: 18 }}/>
+        <div style={{ flex: 1 }}/>
 
-          {/* Submit */}
-          <Btn T={T} onClick={submit} disabled={!canSubmit || busy}>
-            {busy ? "מתחברת..." : "כניסה לחוגגות"}
-          </Btn>
+        <Btn T={T} onClick={submit} disabled={!canSubmit || busy}>
+          {busy ? "מתחברת..." : "כניסה לחוגגות"}
+        </Btn>
 
-          {/* Help note */}
-          <div style={{ marginTop: 14, padding: "11px 14px",
-            background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`,
-            borderRadius: 12, borderRight: `4px solid ${PB.orange.main}`,
-            display: "flex", alignItems: "flex-start", gap: 10 }}>
-            <Icon name="lock" size={16} color={PB.orange.deep} w={1.6}/>
-            <div style={{ fontSize: 11.5, lineHeight: 1.5, color: PB.orange.deep, fontWeight: 600 }}>
-              הפרטים אישיים — אל תעבירי אותם לאף אחת. כניסה ממכשיר אחר תינעל אוטומטית.
-            </div>
+        {/* Soft help note at the very bottom — matches the other onboarding screens' tone */}
+        <div style={{ marginTop: 12, padding: "10px 14px",
+          background: T.surfaceAlt, borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 10 }}>
+          <Icon name="lock" size={15} color={T.muted} w={1.6}/>
+          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: T.inkSoft, fontWeight: 500 }}>
+            הפרטים אישיים — לא להעביר לאף אחת. כניסה ממכשיר אחר תיחסם אוטומטית.
           </div>
         </div>
       </div>
@@ -2291,24 +2312,40 @@ function MockupPlaylist({ T }) {
             הפלייליסט של חוגגות
           </div>
           <div style={{ fontSize: 5.5, color: "rgba(255,255,255,0.78)", fontWeight: 600, marginTop: 1 }}>
-            לחיצה אחת ופותח בספוטיפיי
+            בספוטיפיי או באפל מיוזיק — לבחירתך
           </div>
         </div>
       </div>
 
       {/* Spotify big tap card */}
-      <div style={{ background: "#1DB954", borderRadius: 9, padding: 8, color: "#fff",
-        display: "flex", alignItems: "center", gap: 7,
+      <div style={{ background: "#1DB954", borderRadius: 9, padding: 7, color: "#fff",
+        display: "flex", alignItems: "center", gap: 6,
         boxShadow: "0 6px 14px -6px rgba(29,185,84,0.5)" }}>
-        <div style={{ width: 26, height: 26, borderRadius: 999, background: "#fff",
+        <div style={{ width: 24, height: 24, borderRadius: 999, background: "#fff",
           display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="spotify" size={18}/>
+          <Icon name="spotify" size={16}/>
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 5.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
-          <div style={{ fontSize: 9, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
+          <div style={{ fontSize: 8.5, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
         </div>
-        <Icon name="play" size={12} color="#fff"/>
+        <Icon name="play" size={11} color="#fff"/>
+      </div>
+
+      {/* Apple Music tap card */}
+      <div style={{ marginTop: 4, background: "linear-gradient(135deg, #FA243C 0%, #E61E4D 100%)",
+        borderRadius: 9, padding: 7, color: "#fff",
+        display: "flex", alignItems: "center", gap: 6,
+        boxShadow: "0 6px 14px -6px rgba(250,36,60,0.45)" }}>
+        <div style={{ width: 24, height: 24, borderRadius: 999, background: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="music" size={13} color="#FA243C" w={2}/>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 5.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Apple Music</div>
+          <div style={{ fontSize: 8.5, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
+        </div>
+        <Icon name="play" size={11} color="#fff"/>
       </div>
 
       {/* small orange info chip */}
@@ -2318,7 +2355,7 @@ function MockupPlaylist({ T }) {
         display: "flex", alignItems: "center", gap: 4 }}>
         <Icon name="music" size={9} color={PB.orange.deep} w={1.5}/>
         <div style={{ fontSize: 5.5, lineHeight: 1.35, color: PB.orange.deep, fontWeight: 600 }}>
-          פלייליסט יחיד ומשותף לכל המסיבה
+          בחרי את האפליקציה שלך — והשירים מוכנים
         </div>
       </div>
 
@@ -3172,10 +3209,14 @@ function ScreenChecklist({ T, onBack }) {
    PLAYLIST
    ────────────────────────────────────────────────────────────── */
 // TODO: replace with the real curated playlist URL
+// Public 'Bachelorette Bash' playlists — both placeholders the user will swap for her own
+// curated list once she's built it.
 const CHOGEGOT_PLAYLIST_URL = "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M";
+const CHOGEGOT_APPLE_PLAYLIST_URL = "https://music.apple.com/il/playlist/bachelorette-bash/pl.6cb1c5d3aaeb469cb3a3b8c19f56a8aa";
 
 function ScreenPlaylist({ T, onBack }) {
-  const open = () => window.open(CHOGEGOT_PLAYLIST_URL, "_blank", "noopener");
+  const openSpotify = () => window.open(CHOGEGOT_PLAYLIST_URL, "_blank", "noopener");
+  const openApple = () => window.open(CHOGEGOT_APPLE_PLAYLIST_URL, "_blank", "noopener");
   return (
     <>
       <StatusBar T={T}/>
@@ -3218,7 +3259,7 @@ function ScreenPlaylist({ T, onBack }) {
         {/* Content */}
         <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Spotify hero card */}
-          <button onClick={open} style={{
+          <button onClick={openSpotify} style={{
             display: "flex", alignItems: "center", gap: 14, width: "100%",
             padding: 18, borderRadius: T.radiusLg,
             background: "#1DB954", color: "#fff",
@@ -3236,6 +3277,25 @@ function ScreenPlaylist({ T, onBack }) {
             <Icon name="play" size={26} color="#fff"/>
           </button>
 
+          {/* Apple Music card */}
+          <button onClick={openApple} style={{
+            marginTop: 10, display: "flex", alignItems: "center", gap: 14, width: "100%",
+            padding: 16, borderRadius: T.radiusLg,
+            background: "linear-gradient(135deg, #FA243C 0%, #E61E4D 100%)", color: "#fff",
+            border: "none", cursor: "pointer", fontFamily: T.font, textAlign: "right",
+            boxShadow: "0 8px 22px -10px rgba(250,36,60,0.45)",
+          }}>
+            <div style={{ width: 52, height: 52, borderRadius: 999, background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon name="music" size={28} color="#FA243C" w={2}/>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Apple Music</div>
+              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2, letterSpacing: -0.3 }}>פתיחת הפלייליסט</div>
+            </div>
+            <Icon name="play" size={24} color="#fff"/>
+          </button>
+
           {/* Small info chip */}
           <div style={{
             marginTop: 12, padding: "10px 12px",
@@ -3245,7 +3305,7 @@ function ScreenPlaylist({ T, onBack }) {
           }}>
             <Icon name="music" size={18} color={PB.orange.deep} w={1.5}/>
             <div style={{ fontSize: 12, lineHeight: 1.45, color: PB.orange.deep, fontWeight: 600 }}>
-              פלייליסט יחיד ומשותף לכל המסיבה. אנחנו דואגות לו, את רק לוחצת.
+              שני הפלייליסטים בעולמות נפרדים — בחרי את האפליקציה שלך.
             </div>
           </div>
 
@@ -3264,7 +3324,7 @@ function ScreenPlaylist({ T, onBack }) {
               display: "flex", alignItems: "center", justifyContent: "center",
             }}><Icon name="sparkle" size={15} color="#fff" w={1.8}/></div>
             <div style={{ flex: 1, fontSize: 11.5, fontWeight: 500, color: "rgba(255,255,255,0.78)" }}>
-              <b style={{ color: "#fff" }}>טיפ:</b> צרי שאפל-מוזיק לקראת האירוע — נטעין אותו במקום הזה.
+              <b style={{ color: "#fff" }}>טיפ:</b> שני הפלייליסטים מותאמים למסיבת רווקות. בחרי את שלך.
             </div>
           </div>
         </div>
@@ -3613,17 +3673,22 @@ function ScreenBudget({ T, onBack }) {
                       color: T.ink, outline: "none", direction: "ltr", textAlign: "center",
                     }}/>
                 </div>
-                <button onClick={addExpense} disabled={!newExp.item.trim() || !newExp.amount} style={{
-                  width: "100%", padding: "11px 14px", borderRadius: 10,
-                  background: newExp.item.trim() && newExp.amount ? T.accent : T.surfaceAlt,
-                  color: newExp.item.trim() && newExp.amount ? T.onAccent : T.muted,
-                  border: "none", cursor: newExp.item.trim() && newExp.amount ? "pointer" : "default",
-                  fontFamily: T.font, fontSize: 14, fontWeight: 800,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-                  transition: "background 150ms",
-                }}>
-                  <Icon name="plus" size={16} color={newExp.item.trim() && newExp.amount ? T.onAccent : T.muted} w={2}/>
-                  הוסף הוצאה
+                {/* Explicit save button — '+' icon alone wasn't reading as 'save' for users.
+                    Feminine form (הוסיפי) matches the rest of the app's voice. */}
+                <button onClick={addExpense}
+                  disabled={!newExp.item.trim() || !newExp.amount}
+                  style={{
+                    marginTop: 4, width: "100%", padding: "12px 14px", borderRadius: 10,
+                    background: (!newExp.item.trim() || !newExp.amount) ? T.surfaceAlt : T.accent,
+                    color: (!newExp.item.trim() || !newExp.amount) ? T.muted : T.onAccent,
+                    border: "none",
+                    cursor: (!newExp.item.trim() || !newExp.amount) ? "not-allowed" : "pointer",
+                    fontFamily: T.font, fontSize: 14, fontWeight: 800,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    transition: "background 150ms",
+                  }}>
+                  <Icon name="plus" size={16} color={(!newExp.item.trim() || !newExp.amount) ? T.muted : T.onAccent} w={2}/>
+                  הוסיפי הוצאה
                 </button>
               </div>
             </>
@@ -3704,21 +3769,27 @@ function ScreenBudget({ T, onBack }) {
 
               <div style={{ marginTop: 8, padding: 10, background: T.surfaceAlt,
                 border: `1px dashed ${T.lineStrong}`, borderRadius: T.radius,
-                display: "flex", gap: 6 }}>
+                display: "flex", flexDirection: "column", gap: 8 }}>
                 <input value={newName} onChange={e => setNewName(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && addParticipant()}
                   placeholder="שם משתתפת חדשה..."
                   style={{
-                    flex: 1, padding: "11px 12px", borderRadius: 10,
+                    width: "100%", padding: "11px 12px", borderRadius: 10,
                     border: T.border, background: T.surface,
                     fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font,
                     color: T.ink, outline: "none", minWidth: 0,
                   }}/>
-                <button onClick={addParticipant} style={{
-                  width: 44, flexShrink: 0, borderRadius: 10, background: T.accent, color: T.onAccent,
-                  border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}><Icon name="plus" size={17} color={T.onAccent} w={2}/></button>
+                <button onClick={addParticipant} disabled={!newName.trim()} style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 10,
+                  background: !newName.trim() ? T.surface : T.accent,
+                  color: !newName.trim() ? T.muted : T.onAccent,
+                  border: "none", cursor: !newName.trim() ? "not-allowed" : "pointer",
+                  fontFamily: T.font, fontSize: 14, fontWeight: 800,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}>
+                  <Icon name="plus" size={16} color={!newName.trim() ? T.muted : T.onAccent} w={2}/>
+                  הוסיפי משתתפת
+                </button>
               </div>
             </>
           )}
@@ -4551,6 +4622,10 @@ function QuizGame({ T: parentT, game, onBack }) {
   if (phase === "lobby") {
     const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
+    const shareViaWhatsapp = () => {
+      const msg = `הצטרפי לחידון על הכלה 💍\n\nלינק: ${joinUrl}\nאו קוד: ${sessionCode}`;
+      openWhatsApp(msg);
+    };
     return (
       <>
         <StatusBar T={T}/>
@@ -4562,17 +4637,29 @@ function QuizGame({ T: parentT, game, onBack }) {
               הבנות מצטרפות
             </h1>
             <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
-              סרקי את ה-QR או הקלידי את הקוד באפליקציה.
+              סרקי את ה-QR, הקלידי את הקוד, או שתפי לינק בוואטסאפ.
             </p>
           </div>
 
           <div style={{ marginTop: 14, padding: 16, background: T.surface, borderRadius: T.radiusLg,
             border: T.border, boxShadow: T.shadow, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <img src={qrSrc} alt={`QR code for ${joinUrl}`}
-              style={{ width: 180, height: 180, borderRadius: 12, display: "block" }}/>
+              referrerPolicy="no-referrer"
+              style={{ width: 180, height: 180, borderRadius: 12, display: "block", background: "#fff" }}/>
             <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 800, color: T.muted, letterSpacing: 1.6, textTransform: "uppercase" }}>קוד הצטרפות</div>
             <div className="num" style={{ fontSize: 30, fontWeight: 800, color: T.ink, letterSpacing: 4, marginTop: 4 }}>{sessionCode}</div>
           </div>
+
+          {/* WhatsApp share — works even if guests can't scan the QR */}
+          <button onClick={shareViaWhatsapp} style={{
+            marginTop: 12, width: "100%", padding: "12px 14px", borderRadius: 12,
+            background: "#25D366", color: "#fff", border: "none", cursor: "pointer",
+            fontFamily: T.font, fontSize: 14, fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
+            <Icon name="share" size={16} color="#fff" w={1.8}/>
+            שיתוף לינק בוואטסאפ
+          </button>
 
           {/* Live participants list */}
           <div style={{ marginTop: 16 }}>
@@ -5042,6 +5129,10 @@ function CardGame({ T: parentT, game, onBack }) {
   if (phase === "lobby" && isFmk) {
     const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
+    const shareViaWhatsapp = () => {
+      const msg = `הצטרפי למשחק Fuck Marry Kill 💍\n\nלינק: ${joinUrl}\nאו קוד: ${sessionCode}`;
+      openWhatsApp(msg);
+    };
     return (
       <>
         <StatusBar T={T}/>
@@ -5053,17 +5144,29 @@ function CardGame({ T: parentT, game, onBack }) {
               הבנות מצטרפות
             </h1>
             <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
-              סרקי את ה-QR או הקלידי את הקוד באפליקציה.
+              סרקי את ה-QR, הקלידי את הקוד, או שתפי לינק בוואטסאפ.
             </p>
           </div>
 
           <div style={{ marginTop: 14, padding: 16, background: T.surface, borderRadius: T.radiusLg,
             border: T.border, boxShadow: T.shadow, display: "flex", flexDirection: "column", alignItems: "center" }}>
             <img src={qrSrc} alt={`QR code for ${joinUrl}`}
-              style={{ width: 180, height: 180, borderRadius: 12, display: "block" }}/>
+              referrerPolicy="no-referrer"
+              style={{ width: 180, height: 180, borderRadius: 12, display: "block", background: "#fff" }}/>
             <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 800, color: T.muted, letterSpacing: 1.6, textTransform: "uppercase" }}>קוד הצטרפות</div>
             <div className="num" style={{ fontSize: 30, fontWeight: 800, color: T.ink, letterSpacing: 4, marginTop: 4 }}>{sessionCode}</div>
           </div>
+
+          {/* WhatsApp share — backup path that works even if guests can't scan */}
+          <button onClick={shareViaWhatsapp} style={{
+            marginTop: 12, width: "100%", padding: "12px 14px", borderRadius: 12,
+            background: "#25D366", color: "#fff", border: "none", cursor: "pointer",
+            fontFamily: T.font, fontSize: 14, fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
+            <Icon name="share" size={16} color="#fff" w={1.8}/>
+            שיתוף לינק בוואטסאפ
+          </button>
 
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
