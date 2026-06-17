@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title data-text="meta.title">חוגגות</title>
+<meta name="description" data-text-attr="content" data-text="meta.description" content="" />
+<meta property="og:title" data-text-attr="content" data-text="meta.ogTitle" content="" />
+<meta property="og:description" data-text-attr="content" data-text="meta.ogDescription" content="" />
+
+<!--
+══════════════════════════════════════════════════════════════════
+  🎨 דף נחיתה — חוגגות
+  ══════════════════════════════════════════════════════════════════
+  הפרדה בין מבנה לתוכן:
+    • כל הטקסטים יושבים ב-landingText.json
+    • כל אלמנט עם data-text="path.to.key" מקבל את הטקסט מ-JSON
+    • לעריכת קופי: לערוך landingText.json בלבד
+    • לעריכת מבנה/עיצוב: לערוך landing.html
+
+  Mockups (סלולר) נשארים כ-HTML מובנה כי הם תצוגה מעוצבת של מסכי
+  האפליקציה, לא תוכן עריכה.
+══════════════════════════════════════════════════════════════════
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ───── Tokens (מסונכרן עם אפליקציית חוגגות) ───── */
+  :root {
+    --orange: #E8512A;
+    --orange-deep: #C73E1C;
+    --orange-soft: #FBE4DB;
+    --orange-tint: #FDF6F2;
+    --pink: #EAA0BA;
+    --pink-deep: #C75E82;
+    --pink-soft: #F9E8EE;
+    --pink-tint: #FCF5F7;
+
+    --ink: #0F0E0D;
+    --ink-2: #2A2622;
+    --ink-3: #6B6764;
+    --ink-4: #A7A39F;
+    --line: #ECE9E5;
+    --line-2: #F4F1ED;
+
+    --bg: #FFFFFF;
+    --bg-alt: #FBFAF8;
+
+    --shadow-sm: 0 1px 2px rgba(15,14,13,0.04), 0 4px 14px -8px rgba(15,14,13,0.08);
+    --shadow-md: 0 12px 32px -14px rgba(15,14,13,0.18);
+    --shadow-lg: 0 32px 70px -28px rgba(15,14,13,0.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    font-family: "Assistant", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.05px;
+  }
+  body { overflow-x: hidden; }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; text-decoration: none; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Display font */
+  h1, h2, h3, .display, .display-num, .price-num {
+    font-family: "Heebo", "Assistant", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -1.2px;
+    line-height: 1.05;
+  }
+
+  /* Loader-hide for elements waiting on JSON */
+  body.loading [data-text]:empty::before { content: "…"; opacity: 0.3; }
+
+  /* Layout */
+  .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .narrow    { max-width: 820px;  margin: 0 auto; padding: 0 24px; }
+
+  .eyebrow {
+    display: inline-block;
+    font-family: "Heebo", "Assistant", sans-serif;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--ink-3);
+    margin-bottom: 18px;
+  }
+  .eyebrow .dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange); margin-right: 8px;
+    vertical-align: middle; transform: translateY(-2px);
+  }
+
+  .h1 { font-size: clamp(40px, 6.5vw, 76px); margin: 0 0 22px; }
+  .h2 { font-size: clamp(30px, 4.4vw, 50px); margin: 0 0 18px; }
+  .h3 { font-size: 22px; font-weight: 800; margin: 0 0 8px; }
+  .lead {
+    font-size: clamp(17px, 1.6vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-3);
+    margin: 0 0 32px;
+    max-width: 580px;
+  }
+  .center { text-align: center; }
+  .center .lead { margin-left: auto; margin-right: auto; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 17px 32px; border-radius: 12px;
+    font-family: "Heebo", sans-serif; font-size: 17px; font-weight: 800;
+    letter-spacing: -0.2px;
+    border: none; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--ink); color: #FFF; box-shadow: 0 8px 20px -8px rgba(15,14,13,0.4); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -10px rgba(15,14,13,0.45); }
+  .btn-cta { background: var(--orange); color: #FFF; box-shadow: 0 10px 24px -10px rgba(232,81,42,0.55); }
+  .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -12px rgba(232,81,42,0.6); }
+  .btn-ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .btn-ghost:hover { background: var(--bg-alt); }
+  .btn-sm { padding: 11px 18px; font-size: 14.5px; border-radius: 10px; }
+  .btn-lg { padding: 20px 38px; font-size: 19px; border-radius: 14px; }
+
+  .micro-price { display: block; margin-top: 10px; font-size: 13.5px; color: var(--ink-3); font-weight: 600; }
+  .micro-price s { color: var(--ink-4); margin-left: 4px; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+  .nav.scrolled { border-bottom-color: var(--line); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; max-width: 1120px; margin: 0 auto; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    color: #FFF; font-weight: 800; font-size: 15px;
+    font-family: "Heebo", sans-serif;
+  }
+  .logo-name { font-family: "Heebo", sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+
+  /* Sections */
+  section { padding: 110px 0; position: relative; }
+  section.tight { padding: 80px 0; }
+  section.alt { background: var(--bg-alt); }
+  .section-head { text-align: center; margin-bottom: 56px; }
+  .section-head .lead { margin: 0 auto; max-width: 580px; }
+
+  /* Hero */
+  .hero { padding: 64px 0 90px; position: relative; overflow: hidden; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 92% 6%, rgba(234,160,186,0.10) 0%, transparent 40%),
+      radial-gradient(circle at 4% 90%, rgba(232,81,42,0.06) 0%, transparent 35%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; align-items: center; }
+  .hero-trust {
+    margin-top: 30px;
+    display: flex; align-items: center; gap: 14px;
+    color: var(--ink-3); font-size: 14.5px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+  .stars { color: var(--orange); font-size: 16px; letter-spacing: 2px; }
+  .hero-trust b { color: var(--ink); font-weight: 700; }
+
+  .price-flag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--orange-tint); color: var(--orange-deep);
+    font-size: 13px; font-weight: 800;
+    font-family: "Heebo", sans-serif;
+    letter-spacing: 0.2px;
+    margin-bottom: 20px;
+  }
+  .price-flag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+
+  .hero-cta-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+
+  /* Phone mockup chrome */
+  .phone-wrap { display: flex; justify-content: center; position: relative; }
+  .phone-wrap::after {
+    content: ""; position: absolute;
+    width: 350px; height: 350px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(234,160,186,0.18) 0%, transparent 60%);
+    z-index: -1; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .phone {
+    width: 290px; height: 560px;
+    border-radius: 38px; background: #FFFFFF;
+    box-shadow: 0 38px 84px -28px rgba(15,14,13,0.40), inset 0 0 0 9px #1A1A1A, inset 0 0 0 10.5px #2A2A2A;
+    position: relative; overflow: hidden;
+  }
+  .phone-status {
+    height: 30px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; direction: ltr; color: var(--ink); font-size: 12px; font-weight: 700;
+  }
+  .phone-status .signal { width: 16px; height: 8px; border-radius: 2px; background: currentColor; opacity: 0.85; }
+  .phone-status .batt { width: 19px; height: 9px; border-radius: 2.5px; border: 1.4px solid currentColor; }
+  .phone-body { padding: 6px 16px 24px; height: calc(100% - 30px); display: flex; flex-direction: column; overflow: hidden; }
+  .phone-home {
+    position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+    width: 86px; height: 4.5px; border-radius: 3px; background: rgba(15,14,13,0.55);
+  }
+
+  /* App screen styles (mockups) */
+  .scr-h-orange {
+    background: linear-gradient(160deg, var(--orange) 0%, #F0683E 70%, var(--orange) 100%);
+    color: #fff; padding: 11px 12px 13px; margin: -8px -8px 10px;
+    border-radius: 0 0 14px 14px; position: relative; overflow: hidden;
+  }
+  .scr-h-orange::after, .scr-h-pink::after, .scr-h-dark::after {
+    content: ""; position: absolute; top: -12px; right: -14px; width: 44px; height: 44px;
+    border-radius: 50%; background: rgba(255,255,255,0.12); pointer-events: none;
+  }
+  .scr-h-pink {
+    background: linear-gradient(160deg, var(--pink) 0%, #EAB0C2 60%, var(--pink-deep) 130%);
+    color: var(--ink); padding: 11px 12px 13px; margin: -8px -8px 10px;
+    border-radius: 0 0 14px 14px; position: relative; overflow: hidden;
+  }
+  .scr-h-pink::after { background: rgba(255,255,255,0.2); }
+  .scr-h-dark {
+    background: linear-gradient(160deg, #2A2A2A 0%, #1A1A1A 60%, #0F0F0F 100%);
+    color: #fff; padding: 11px 12px 13px; margin: -8px -8px 10px;
+    border-radius: 0 0 14px 14px; position: relative; overflow: hidden;
+  }
+  .scr-h-dark::after { background: rgba(234,160,186,0.2); }
+
+  .row    { display: flex; align-items: center; gap: 8px; position: relative; }
+  .row-sb { display: flex; align-items: center; justify-content: space-between; position: relative; }
+
+  .avatar-mini {
+    width: 28px; height: 28px; border-radius: 999px;
+    background: rgba(255,255,255,0.22); border: 1.5px solid rgba(255,255,255,0.45);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 13px;
+  }
+  .header-icon-btn {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .h-greeting { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.85); }
+  .h-event-name { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; color: #fff; }
+
+  .pink-note {
+    display: flex; align-items: center; gap: 6px; padding: 7px 10px;
+    background: var(--pink-soft); border: 1px solid rgba(234,160,186,0.4); border-radius: 9px;
+    border-right: 3px solid var(--pink); margin-top: 8px;
+  }
+  .pink-note-text { font-size: 11px; color: var(--pink-deep); font-weight: 600; line-height: 1.35; }
+
+  .toolbox-heading { display: flex; align-items: center; gap: 6px; margin-top: 12px; margin-bottom: 7px; }
+  .toolbox-stripe { width: 3px; height: 14px; border-radius: 2px; background: var(--orange); }
+  .toolbox-title  { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; }
+
+  .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; flex: 1; }
+  .tool-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 11px;
+    padding: 9px; display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden; min-height: 78px;
+  }
+  .tool-card .blob { position: absolute; bottom: -22px; left: -22px; width: 52px; height: 52px; border-radius: 50%; opacity: 0.6; }
+  .tool-icon-sm { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .tool-badge { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
+  .tool-title { font-size: 13px; font-weight: 800; letter-spacing: -0.2px; }
+  .tool-sub { font-size: 10px; color: var(--ink-3); font-weight: 600; }
+
+  .tip-bar { margin-top: 8px; padding: 8px 10px; background: var(--ink); color: #fff; border-radius: 10px; display: flex; align-items: center; gap: 8px; }
+  .tip-icon { width: 22px; height: 22px; border-radius: 6px; background: var(--orange); display: flex; align-items: center; justify-content: center; }
+  .tip-text { flex: 1; font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.78); line-height: 1.3; }
+  .tip-text b { color: #fff; }
+
+  .ic { display: block; flex-shrink: 0; }
+
+  /* Promise (before/after) */
+  .promise-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 980px; margin: 0 auto; }
+  .promise-card { padding: 32px 28px; border-radius: 22px; position: relative; }
+  .promise-before {
+    background: var(--bg-alt); border: 1px solid var(--line); color: var(--ink-3);
+  }
+  .promise-after {
+    background: var(--ink); color: #fff;
+    box-shadow: 0 26px 60px -28px rgba(15,14,13,0.35);
+  }
+  .promise-label {
+    display: inline-block; font-family: "Heebo", sans-serif;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.6px;
+    padding: 4px 12px; border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .promise-before .promise-label { background: #fff; color: var(--ink-3); border: 1px solid var(--line); }
+  .promise-after .promise-label { background: var(--orange); color: #fff; }
+  .promise-card p { font-size: 17px; line-height: 1.55; margin: 0; font-weight: 500; }
+  .promise-cta-wrap { text-align: center; margin-top: 40px; }
+  .trust-chips {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    margin-top: 22px; color: var(--ink-3); font-size: 13.5px; font-weight: 600;
+  }
+  .trust-chips span { display: inline-flex; align-items: center; gap: 6px; }
+  .trust-chips span::before {
+    content: "✓"; display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 999px;
+    background: var(--orange-tint); color: var(--orange-deep);
+    font-size: 11px; font-weight: 800;
+  }
+
+  /* Problem cards */
+  .pain-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 50px; }
+  .pain-card { background: #FFF; border: 1px solid var(--line); border-radius: 18px; padding: 28px 22px; text-align: right; position: relative; }
+  .pain-card .x {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--orange-tint); color: var(--orange-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; margin-bottom: 16px;
+    font-family: "Heebo", sans-serif;
+  }
+  .pain-card h4 { font-family: "Heebo", sans-serif; font-size: 17px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .pain-card p { color: var(--ink-3); font-size: 14.5px; line-height: 1.5; margin: 0; }
+  .pain-card .hours {
+    margin-top: 14px; display: inline-block;
+    font-size: 12px; font-weight: 700; color: var(--ink-4);
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--bg-alt); border: 1px solid var(--line-2);
+  }
+
+  /* Inline CTA bar */
+  .cta-bar {
+    background: var(--ink); color: #FFF;
+    padding: 28px 32px; border-radius: 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    max-width: 1080px; margin: 0 auto; flex-wrap: wrap;
+  }
+  .cta-bar-text { display: flex; flex-direction: column; }
+  .cta-bar-title { font-family: "Heebo", sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.3px; color: #FFF; }
+  .cta-bar-sub { font-size: 14.5px; color: rgba(255,255,255,0.75); margin-top: 4px; }
+  .cta-bar-sub s { color: rgba(255,255,255,0.4); margin-left: 4px; }
+  section.cta-wrap { padding: 30px 0; }
+
+  /* Stat bands */
+  .stat-band { padding: 100px 0; }
+  .stat-band.alt { background: var(--orange-tint); }
+  .stat-band.pink-alt { background: var(--pink-tint); }
+  .stat-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 60px; align-items: center; }
+  .stat-number {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(80px, 13vw, 160px); font-weight: 900;
+    letter-spacing: -5px; line-height: 0.95; color: var(--ink); display: block;
+  }
+  .stat-suffix {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(22px, 2.8vw, 32px); font-weight: 700;
+    color: var(--ink-3); margin-top: 6px; display: block; letter-spacing: -0.4px;
+  }
+
+  .compare-table { background: #FFF; border-radius: 18px; border: 1px solid var(--line); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .compare-row {
+    display: grid; grid-template-columns: 1.2fr 1fr 1fr;
+    align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line-2);
+  }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-row .label { font-weight: 700; font-size: 16px; color: var(--ink); font-family: "Heebo", sans-serif; }
+  .compare-row .before { color: var(--ink-4); font-size: 14.5px; text-decoration: line-through; font-weight: 600; }
+  .compare-row .after {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--orange-deep); font-size: 15px; font-weight: 800;
+    font-family: "Heebo", sans-serif;
+  }
+  .compare-foot { background: var(--ink); color: #FFF; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; }
+  .compare-foot .lab { font-size: 14px; color: rgba(255,255,255,0.75); font-weight: 700; }
+  .compare-foot .val { font-family: "Heebo", sans-serif; font-size: 28px; font-weight: 900; letter-spacing: -0.6px; }
+  .compare-foot .val .acc { color: var(--orange); }
+
+  /* Solution one-system */
+  .one-system { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+  .check-row-li { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line-2); }
+  .check-row-li:last-child { border-bottom: none; }
+  .check-icon {
+    width: 24px; height: 24px; border-radius: 7px;
+    background: var(--orange); color: #FFF;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .check-row-li .t { font-family: "Heebo", sans-serif; font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 2px; letter-spacing: -0.2px; }
+  .check-row-li .s { font-size: 14.5px; color: var(--ink-3); line-height: 1.5; }
+
+  /* About Linoy */
+  .about-inner {
+    display: grid; grid-template-columns: 1fr 1.2fr; gap: 60px; align-items: center;
+    max-width: 1040px; margin: 0 auto;
+  }
+  .about-portrait {
+    aspect-ratio: 4 / 5;
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 30% 25%, rgba(234,160,186,0.55) 0%, transparent 55%),
+      radial-gradient(circle at 75% 75%, rgba(232,81,42,0.45) 0%, transparent 55%),
+      linear-gradient(160deg, var(--pink-soft) 0%, var(--orange-soft) 100%);
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-md);
+    display: flex; align-items: flex-end; padding: 28px;
+  }
+  .about-portrait::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,255,255,0.45) 0%, transparent 35%);
+    pointer-events: none;
+  }
+  .about-portrait .sig {
+    position: relative;
+    font-family: "Heebo", sans-serif;
+    font-weight: 900; font-size: 28px;
+    color: var(--ink); letter-spacing: -0.8px;
+  }
+  .about-portrait .sig span { display: block; font-size: 14px; font-weight: 700; color: var(--ink-3); letter-spacing: 0; margin-top: 2px; }
+  /* Photo overlay — shown only when about.photo is a non-empty path */
+  .about-photo {
+    display: none;
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    border-radius: 24px;
+  }
+  .about-photo[src]:not([src=""]) { display: block; }
+  .about-body p {
+    font-size: 17px; line-height: 1.65; color: var(--ink-2);
+    margin: 0 0 18px;
+  }
+  .about-body p:last-of-type { margin-bottom: 0; }
+  .about-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; margin-bottom: 24px; }
+  .about-chips span {
+    display: inline-flex; align-items: center;
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--bg-alt); border: 1px solid var(--line);
+    font-size: 13.5px; font-weight: 700; color: var(--ink-2);
+    font-family: "Heebo", sans-serif;
+  }
+  .about-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--orange-deep); font-weight: 800;
+    font-family: "Heebo", sans-serif; font-size: 15px;
+  }
+
+  /* Features grid */
+  .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+  .feature {
+    background: #FFF; border-radius: 20px; padding: 32px;
+    border: 1px solid var(--line);
+    position: relative; overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .feature:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+  .feature-icon {
+    width: 50px; height: 50px; border-radius: 13px;
+    background: var(--bg-alt);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .feature-icon.accent { background: var(--orange-tint); color: var(--orange-deep); }
+  .feature h3 { font-family: "Heebo", sans-serif; font-size: 21px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.3px; }
+  .feature p { font-size: 15.5px; line-height: 1.55; color: var(--ink-3); margin: 0; }
+  .feature .micro {
+    margin-top: 18px;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700;
+    color: var(--orange-deep);
+    font-family: "Heebo", sans-serif;
+  }
+
+  /* What's inside */
+  .inside-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px;
+    max-width: 1040px; margin: 0 auto;
+  }
+  .inside-card {
+    background: #FFF; border: 1px solid var(--line); border-radius: 20px;
+    padding: 30px 28px;
+  }
+  .inside-card h3 {
+    font-family: "Heebo", sans-serif; font-size: 19px; font-weight: 800;
+    margin: 0 0 16px; letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .inside-card h3::before {
+    content: ""; display: inline-block;
+    width: 6px; height: 22px; border-radius: 3px;
+    background: var(--orange);
+  }
+  .inside-card ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .inside-card li {
+    position: relative; padding-right: 26px;
+    font-size: 15px; line-height: 1.5; color: var(--ink-2); font-weight: 500;
+  }
+  .inside-card li::before {
+    content: ""; position: absolute; right: 0; top: 6px;
+    width: 14px; height: 14px; border-radius: 4px;
+    background: var(--orange-tint);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C73E1C' stroke-width='3' stroke-linecap='round'><path d='M5 12.5l4.5 4.5L19 7.5'/></svg>");
+    background-size: 10px 10px; background-position: center; background-repeat: no-repeat;
+  }
+
+  /* Games */
+  .games-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 50px; }
+  .gcard {
+    background: #FFF; border: 1px solid var(--line); border-radius: 16px;
+    padding: 24px; transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .gcard:hover { border-color: var(--ink-4); transform: translateY(-2px); }
+  .gcard-num {
+    display: inline-block; font-family: "Heebo", sans-serif;
+    font-size: 13px; font-weight: 800; color: var(--ink-4);
+    margin-bottom: 12px; letter-spacing: 0.5px;
+  }
+  .gcard h3 { font-family: "Heebo", sans-serif; font-size: 19px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .gcard p { color: var(--ink-3); font-size: 14.5px; margin: 0; line-height: 1.5; }
+  .gcard .tag {
+    display: inline-block; margin-top: 14px;
+    padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+    background: var(--bg-alt); color: var(--ink-3);
+    font-family: "Heebo", sans-serif;
+  }
+
+  /* Steps */
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .step { text-align: right; }
+  .step-num {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--ink); color: #FFF;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Heebo", sans-serif; font-weight: 800; font-size: 18px;
+    margin-bottom: 16px;
+  }
+  .step h3 { font-family: "Heebo", sans-serif; font-size: 20px; font-weight: 800; margin: 0 0 8px; }
+  .step p { font-size: 15.5px; color: var(--ink-3); line-height: 1.55; margin: 0; }
+
+  /* Pricing */
+  .pricing-wrap { padding: 80px 0 110px; }
+  .price-card {
+    background: #FFF;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 56px 48px;
+    max-width: 620px; margin: 0 auto;
+    position: relative; overflow: hidden;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+  }
+  .price-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--orange), var(--pink)); }
+  .price-flag-big {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 999px;
+    background: var(--orange); color: #FFF;
+    font-family: "Heebo", sans-serif;
+    font-size: 13.5px; font-weight: 800;
+    letter-spacing: 0.4px; margin-bottom: 24px;
+  }
+  .price-row { display: flex; align-items: baseline; justify-content: center; gap: 16px; margin-bottom: 14px; }
+  .price-num { font-family: "Heebo", sans-serif; font-size: clamp(72px, 9vw, 110px); font-weight: 900; letter-spacing: -4px; line-height: 0.95; }
+  .price-currency { font-family: "Heebo", sans-serif; font-size: 36px; font-weight: 800; color: var(--ink-3); }
+  .price-old { font-family: "Heebo", sans-serif; text-decoration: line-through; color: var(--ink-4); font-size: 28px; font-weight: 700; }
+  .price-sub { color: var(--ink-3); font-size: 16px; margin-bottom: 28px; }
+  .price-sub b { color: var(--ink); font-weight: 800; }
+  .price-features { display: flex; flex-direction: column; gap: 12px; text-align: right; margin: 28px auto 32px; max-width: 380px; }
+  .price-features .row { display: flex; align-items: center; gap: 11px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .price-features .row .ck {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--orange-tint); color: var(--orange-deep);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .countdown { margin-top: 22px; padding: 12px 16px; background: var(--orange-tint); border-radius: 10px; color: var(--orange-deep); font-size: 13.5px; font-weight: 700; font-family: "Heebo", sans-serif; }
+
+  /* Guarantee */
+  .guarantee-card {
+    max-width: 760px; margin: 0 auto;
+    background: linear-gradient(180deg, var(--pink-tint) 0%, #FFF 100%);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 48px 44px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+  }
+  .guarantee-badge {
+    width: 64px; height: 64px; border-radius: 18px;
+    background: var(--ink); color: #FFF;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+    font-family: "Heebo", sans-serif; font-weight: 900; font-size: 22px;
+  }
+  .guarantee-card p { font-size: 16.5px; line-height: 1.65; color: var(--ink-2); margin: 0 auto 22px; max-width: 580px; }
+  .guarantee-sig { display: inline-block; font-family: "Heebo", sans-serif; font-weight: 800; color: var(--ink); font-size: 15px; }
+
+  /* FAQ */
+  .faq-list { max-width: 760px; margin: 50px auto 0; display: flex; flex-direction: column; gap: 8px; }
+  details.faq { background: #FFF; border: 1px solid var(--line); border-radius: 14px; padding: 4px 22px; transition: border-color 0.2s ease; }
+  details.faq[open] { border-color: var(--ink-4); }
+  details.faq summary {
+    cursor: pointer; padding: 18px 0;
+    font-family: "Heebo", sans-serif; font-size: 16.5px; font-weight: 700;
+    letter-spacing: -0.2px; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  details.faq summary::-webkit-details-marker { display: none; }
+  details.faq summary::after { content: "+"; font-size: 24px; font-weight: 400; color: var(--ink-3); transition: transform 0.2s ease; flex-shrink: 0; }
+  details.faq[open] summary::after { content: "−"; }
+  details.faq p { margin: 0 0 18px; color: var(--ink-3); font-size: 15.5px; line-height: 1.6; }
+
+  /* Final CTA */
+  .final-cta { background: var(--ink); color: #FFF; padding: 90px 32px; text-align: center; position: relative; overflow: hidden; }
+  .final-cta::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(234,160,186,0.16) 0%, transparent 50%),
+      radial-gradient(circle at 10% 90%, rgba(232,81,42,0.12) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .final-cta .h2 { color: #FFF; position: relative; }
+  .final-cta p { color: rgba(255,255,255,0.78); font-size: 18px; max-width: 600px; margin: 0 auto 32px; position: relative; }
+  .final-cta .btn { position: relative; }
+
+  /* Footer */
+  footer { padding: 40px 0 30px; background: var(--bg); font-size: 14px; color: var(--ink-3); }
+  .footer-inner { display: flex; gap: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  .footer-links a { font-weight: 600; color: var(--ink-3); transition: color 0.15s ease; }
+  .footer-links a:hover { color: var(--ink); }
+
+  /* Responsive */
+  @media (max-width: 920px) {
+    .hero-inner       { grid-template-columns: 1fr; gap: 60px; }
+    .pain-grid        { grid-template-columns: repeat(2, 1fr); }
+    .features-grid    { grid-template-columns: 1fr; }
+    .inside-grid      { grid-template-columns: 1fr; }
+    .games-grid       { grid-template-columns: 1fr; }
+    .steps-grid       { grid-template-columns: 1fr; }
+    .stat-grid        { grid-template-columns: 1fr; gap: 40px; }
+    .one-system       { grid-template-columns: 1fr; gap: 40px; }
+    .promise-inner    { grid-template-columns: 1fr; gap: 16px; }
+    .about-inner      { grid-template-columns: 1fr; gap: 36px; }
+    .about-portrait   { max-width: 380px; margin: 0 auto; width: 100%; }
+    section           { padding: 80px 0; }
+    .stat-band        { padding: 70px 0; }
+    .section-head     { margin-bottom: 40px; }
+    .cta-bar          { flex-direction: column; align-items: flex-start; padding: 24px; }
+    .cta-bar .btn     { width: 100%; }
+    .price-card       { padding: 44px 24px; }
+  }
+  @media (max-width: 520px) {
+    .hero          { padding: 36px 0 60px; }
+    .phone         { transform: scale(0.94); transform-origin: top center; }
+    .pain-grid     { grid-template-columns: 1fr; }
+    .feature       { padding: 26px 22px; }
+    .compare-row   { grid-template-columns: 1fr 1fr; padding: 16px 18px; }
+    .compare-row .before { display: none; }
+    .price-row     { gap: 8px; }
+    .guarantee-card { padding: 36px 24px; }
+  }
+</style>
+</head>
+<body class="loading">
+
+<!--
+══════════════════════════════════════════════════════════════════
+  📝 INLINE CONTENT — כל הטקסט של דף הנחיתה
+  ══════════════════════════════════════════════════════════════════
+  זו עותק מוטמע של landingText.json — קיים כאן כדי שהדף יציג מלל
+  גם כשפותחים את הקובץ ישירות בדפדפן (file://), בלי שרת.
+
+  לעריכת קופי: לערוך כאן. (הקובץ landingText.json הוא עותק זהה,
+  לשרת/פרודקשן — לעדכן בשני המקומות אם רוצים שהוא יהיה מסונכרן.)
+══════════════════════════════════════════════════════════════════
+-->
+<script id="landing-text" type="application/json">
+{
+  "meta": {
+    "title": "חוגגות — האפליקציה שמארגנת לך את המסיבה",
+    "description": "פאנל אחד שמלווה אותך מ-DAY 1 ועד ליום המסיבה. צ'קליסט, תקציב, פלייליסט ו-6 משחקים אינטראקטיביים — בלי DIY, בלי אקסל, בלי לשבור את הראש.",
+    "ogTitle": "חוגגות — האפליקציה שמארגנת לך את המסיבה",
+    "ogDescription": "פאנל חכם אחד לכל המסיבה. שקט נפשי, ארגון והפעלה."
+  },
+  "nav": { "logo": "חוגגות", "ctaShort": "להזמין" },
+  "hero": {
+    "priceFlag": "מבצע השקה!",
+    "title": "האפליקציה<br/>שמארגנת לך את המסיבה.",
+    "lead": "פאנל חכם אחד שמלווה אותך מ-DAY 1 ועד ליום המסיבה. צ'קליסט בנוי, תקציב חכם, פלייליסטים מוכנים לאווירה, ו-6 משחקים אינטראקטיביים מוכנים להפעלה. שקט נפשי, ארגון מקצועי, הפעלה — בלי DIY ובלי שעות של התעסקות.",
+    "ctaPrimary": "אני רוצה את זה!",
+    "ctaSecondary": "מה יש בפנים",
+    "trustQuote": "\"נכנסתי, סימנתי, גמרנו. חסך שבועות של כאב ראש.\"",
+    "trustWho": "— עדן, מלווה"
+  },
+  "promise": {
+    "eyebrow": "הוכתרת ל\"מלווה הרשמית\"? מזל טוב!",
+    "title": "עכשיו את גם מפיקה.<br/>גם גזברית. וגם מפעילה.",
+    "before": "סטודנטית עייפה או אמא טריה ועסוקה — כך או כך אין לך ימים להשקיע, לרדוף אחרי המשתתפות לשלם, לחפש קונספט ולג'נגל בין כל המשימות. ובכל זאת — הכל עלייך.",
+    "after": "חוגגות לוקחת ממך את שלושת התפקידים. הצ'קליסט מארגן, התקציב מחשב, והמשחקים מפעילים. את מקבלת סט כלים לארגון חלק וביום האירוע זוכה להינות בעצמך!",
+    "beforeLabel": "מה קורה עכשיו?",
+    "afterLabel": "מה יקרה בעזרת האפליקציה",
+    "ctaText": "להזמין את חוגגות",
+    "trustChips": ["תשלום חד-פעמי", "גישה מיידית במייל", "שימוש לכל מסיבה, לכל החיים"]
+  },
+  "problem": {
+    "eyebrow": "מי שאי פעם ארגנה — מבינה",
+    "title": "כולנו היינו לפחות במסיבה<br/>אחת כזאת בחיינו.",
+    "lead": "מסיבה מנומסת, משחקים שקוששו מפינטרסט, שיחות חולין שלא מחברות, וריבים על התקציב. המלווה מטורטרת חודשים, ובסוף — לא נהנית בעצמה. והכלה כנראה גם לא תגיד לך שהיא לא נהנתה. כי היא תרגיש אחראית."
+  },
+  "solution": {
+    "eyebrow": "בדיוק בגלל זה בניתי את חוגגות",
+    "title": "פאנל חכם אחד.<br/>כל המסיבה בפנים!",
+    "lead": "חוגגות מחליפה את הפתקים בטלפון של התקציב והצ'קליסט המאולתר, את 4 קבוצות הווטסאפ, את הספקים, ואת ה-DIY הסיזיפי — בלוח בקרה אחד שאת מנהלת ממנו את הכל. מ-DAY 1 ועד ליום המסיבה!",
+    "rows": [
+      { "title": "לא רודפת אחרי רעיונות למשחקים", "body": "6 משחקים אינטראקטיביים, קורעים מצחוק, מוכנים להפעלה — בלי DIY, בלי לקנות ערכות." },
+      { "title": "פלייליסטים מוכנים לאווירה אש", "body": "מגוון פלייליסטים מוכנים להשמעה בספוטיפיי או Apple Music." },
+      { "title": "חלוקה חכמה של התקציב", "body": "לא שוברים יותר את הראש, כל הוצאה מתחלקת אוטומטית בהתאם להוספה והסרה של הוצאות וגם של המשתתפות. רואה בזמן אמת מי שילמה, מי חייבת, וכמה חסר — בלי טעויות." },
+      { "title": "לא מתחילה צ'קליסט מאולתר מאפס", "body": "30 משימות מסודרות לפי לוח זמנים — מ-6 חודשים לפני ועד היום הגדול. את רק מסמנת." }
+    ]
+  },
+  "about": {
+    "eyebrow": "מי בנתה את זה",
+    "title": "אני לינוי ניסים ונפלאות. <br/>קומיקאית, סטנדאפיסטית, ומפעילה במסיבות.",
+    "paragraphs": [
+      "מגיל קטן הבנתי שהומור הוא הדרך הכי קצרה ויעילה לחבר בין אנשים. לאחר לימודי משחק ושנים של הופעות על מגוון במות הפכתי את הכישרון שלי לחבר בין אנשים לשליחות. מסיבת רווקות, ימי הולדת או ערבי צוות הם לא רק סימון וי. זה פוטנציאל אמיתי להתחבר, להכיר, לחוות וליצור זיכרונות. ואיך עושים את זה בצורה הכי מיטבית? בדיוק! הומור. מה נשאר אחר כך אם לא הרגעים האלה שהתגלגלנו מצחוק על הרצפה? לא הקייטרינג, לא הבלונים ולא המים של הבריכה.",
+      "אחרי שהפעלתי 100+ אירועים, הבנתי שרוב המסיבות והקצרים בין המשתתפים קורים בגלל תקציב וארגון מרושל. לכן יצרתי אפליקציה שמתכללת את כל הפונקציות שיעשו לכם חיים קלים ובמחיר נגיש לכל כיס. כל הידע שלי בהפעלת אירועים, כל האהבה שלי לסדר וארגון ומיטב ההברקות מהמוח הקומי שלי- כולם ארוזים באפליקציה אחת שתעשה לך את המסיבה."
+    ],
+    "credChips": ["קומיקאית וסטנדאפיסטית", "100+ מסיבות", "התמחות בחיבור דרך הומור", "רווקות · יומולדות · ימי גיבוש"],
+    "linkText": "האתר האישי שלי →",
+    "linkUrl": "https://www.linoynissim.co.il",
+    "photo": "linoy.jpg"
+  },
+  "features": {
+    "eyebrow": "ארבעת הכלים",
+    "title": "4 כלים שעובדים בשבילך.<br/>בלי שתעבדי בשבילם.",
+    "lead": "כל מה שמלווה צריכה — במסך אחד. בלי לעבור בין אפליקציות, בלי פתקים וקבוצות מתישות.",
+    "cards": [
+      { "title": "צ'קליסט שמלווה אותך מהיום הראשון", "body": "30 משימות מחולקות לציר זמן — מ-6 חודשים לפני ועד היום עצמו. בלי פתקים מפוזרים, בלי לשכוח, בלי שמשהו ייפול בין הכיסאות ברגע האחרון.", "micro": "חוסך לך 8 שעות בניית רשימה →" },
+      { "title": "תקציב דינמי שמתחלק לבד", "body": "מוסיפה הוצאה, האפליקציה תחלק בין המשתתפות. מוסיפה/מסירה משתתפת, האפליקציה מעדכנת את החלוקה. אין יותר אקסל או ניחושים גסים. אין יותר טעויות. אין יותר מתח עם החברות.", "micro": "חוסך ~700 ₪ בטעויות חישוב שתשלימי באוחר →" },
+      { "title": "פלייליסט מוכן בלחיצה", "body": "מספר פלייליסטים מוכנים להפעלה מספוטיפיי או Apple Music. את רק לוחצת פליי!", "micro": "חוסך 4 שעות בניית פלייליסט →" },
+      { "title": "6 משחקים אינטראקטיביים — קורעים מצחוק", "body": "פנטומימה, חידון על הכלה, שאלון עם החתן, מפה לאוזן, Never Have I Ever, Fuck Marry Kill ועוד — עם מצב הקרנה למסך גדול וחיבור חי של כל הבנות מהטלפון. בלי מפעילים חיצוניים, בלי ערכות, בלי משחקים גנארים שתצטרכי לגזור ימים שלמים.", "micro": "חוסך 1,800 ₪ על מפעיל/ה →" }
+    ]
+  },
+  "whatsInside": {
+    "eyebrow": "מה בדיוק יש לי בפאנל",
+    "title": "כל מה שאת מקבלת רק ב-297 ₪.",
+    "lead": "תשלום חד-פעמי. גישה מלאה לכל מסיבה שתארגני — עכשיו או בעוד שנה.",
+    "ctaText": "להזמין את חוגגות",
+    "groups": [
+      { "title": "ארגון ותכנון", "items": ["צ'קליסט עם 30 משימות מסודרות לפי ציר זמן", "חלוקה לקטגוריות: 6+ חודשים, 4–6 חודשים, חודש לפני, יום האירוע", "פס התקדמות חי + סימון משימות", "בלי לזכור — מה לעשות, מתי, ולמה זה חשוב"] },
+      { "title": "תקציב וכספים", "items": ["הוספת הוצאות בלחיצה — מתחלקות אוטומטית", "ניהול משתתפות + מי משלמת על מה", "תצוגת \"מי חייבת כמה\" בזמן אמת", "סך הוצאות, חסר לאסוף, וחלוקה מדויקת"] },
+      { "title": "אווירה וחיבור", "items": ["פלייליסטים מוכנים מספוטיפיי או Apple Music", "6 משחקים אינטראקטיביים בעברית", "מצב הקרנה למסך הגדול", "הבנות מצטרפות לחוויית המשחק בסריקת QR — בלי הרשמה"] },
+      { "title": "תמיכה ותפעול", "items": ["פועלת בדפדפן — בלי הורדה, בלי חנות אפליקציות", "4 סוגי אירוע: רווקות, יומולדת, יום גיבוש, דייט", "תמיכה ישירה בווטסאפ ממני, לינוי", "עברית מלאה, RTL מלא, גישה לכל החיים"] }
+    ]
+  },
+  "games": {
+    "eyebrow": "6 משחקים אינטראקטיביים",
+    "title": "פותחות, מקרינות, צוחקות.",
+    "lead": "כל משחק מוכן להקרנה למסך גדול. בחלקם הבנות מצטרפות מהטלפון בסריקת QR ועונות בזמן אמת — בלי הרשמה, בלי אפליקציה להוריד.",
+    "items": [
+      { "num": "01", "title": "מפה לאוזן", "body": "קריאת שפתיים בזוגות, עם טיימר וסבבים פתוחים. צחוקים מובטחים.", "tag": "⏱ טיימר" },
+      { "num": "02", "title": "בלי לומר מילה", "body": "פנטומימה על מילים — האנרגיה הכי גבוהה במסיבה.", "tag": "⏱ טיימר" },
+      { "num": "03", "title": "שאלון עם החתן", "body": "שולחת שאלות לחתן בווטסאפ, רואות אם הכלה מזהה.", "tag": "💬 משתף את החתן" },
+      { "num": "04", "title": "חידון על הכלה", "body": "הבנות עונות מהטלפון, 20 שניות לשאלה — הכי תחרותי.", "tag": "📱 חי עם הבנות" },
+      { "num": "05", "title": "Never Have I Ever", "body": "הקלאסיקה. עם או בלי אלכוהול — את מחליטה.", "tag": "🥂 שתייה" },
+      { "num": "06", "title": "Fuck Marry Kill", "body": "3 אופציות, הצבעה חיה, ותצוגת תוצאות בזמן אמת.", "tag": "📱 חי עם הבנות" }
+    ]
+  },
+  "ctaBar2": {
+    "title": "המסיבה הבאה כבר ביומן שלך. אל תפספסי.",
+    "sub": "מבצע השקה <b style=\"color:#fff;\">297 ₪</b> <s>350 ₪</s> · גישה מיידית במייל",
+    "button": "להזמין עכשיו"
+  },
+  "roi": {
+    "eyebrow": "השווי האמיתי",
+    "title": "בואי נחשב כמה חוגגות באמת חוסכת לך.",
+    "lead": "המחיר של חוגגות הוא 297 ₪. החיסכון הממוצע — שעות עבודה + לפחות 1,800 ₪ על מפעיל. הנה איך זה מתפרק.",
+    "timeSection": {
+      "eyebrow": "חיסכון בזמן",
+      "stat": "25",
+      "statSuffix": "שעות עבודה.<br/>שלא תצטרכי להשקיע.",
+      "body": "זה הזמן הממוצע שמלווה משקיעה בארגון מסיבת רווקות בלי האפליקציה. עם חוגגות, רוב העבודה <b style=\"color:var(--ink);\">כבר בנויה</b> — את רק מתאימה לאירוע שלך.",
+      "rows": [
+        { "label": "חיפוש משחקים ו-DIY", "before": "8 שעות", "after": "0 — מוכנים" },
+        { "label": "בניית פלייליסט", "before": "4 שעות", "after": "30 שניות" },
+        { "label": "חישוב תקציב וחלוקה", "before": "6 שעות", "after": "אוטומטי" },
+        { "label": "בניית צ'קליסט משימות", "before": "7 שעות", "after": "כבר בנוי" }
+      ],
+      "footLabel": "סה\"כ זמן חסך",
+      "footAccent": "25+",
+      "footUnit": "שעות"
+    },
+    "moneySection": {
+      "eyebrow": "חיסכון בכסף",
+      "statCurrency": "₪",
+      "stat": "1,800",
+      "statSuffix": "מינימום שנחסכים<br/>על מפעיל בלבד.",
+      "body": "מפעיל/ה לרווקות עולה 1,800 ₪ ומעלה. עם 6 המשחקים האינטראקטיביים — את המפעילה. וזה עוד לפני שדיברנו על חיסכון בערכות DIY וטעויות תקציב.",
+      "rows": [
+        { "label": "מפעיל/ה למסיבה", "before": "~1,800 ₪", "after": "0 — את מפעילה" },
+        { "label": "ערכות משחקים ו-DIY", "before": "~400 ₪", "after": "כלול" },
+        { "label": "טעויות בחישוב תקציב", "before": "~700 ₪", "after": "אוטומטי" }
+      ],
+      "footLabel": "חיסכון ממוצע",
+      "footAccent": "~2,900",
+      "footUnit": "₪"
+    }
+  },
+  "ctaBar3": {
+    "title": "חיסכון של 2,900 ₪ בממוצע. במחיר חד-פעמי של 297 ₪.",
+    "sub": "החזר השקעה תוך הוצאה אחת · מבצע השקה: <b style=\"color:#fff;\">297 ₪</b> <s>350 ₪</s>",
+    "button": "להזמין עכשיו"
+  },
+  "how": {
+    "eyebrow": "איך זה עובד",
+    "title": "משלוש דקות לתחילת השימוש.",
+    "steps": [
+      { "num": "1", "title": "מזמינה את האפליקציה", "body": "תשלום חד-פעמי באתר התשלומים. תוך דקה תקבלי מייל עם שם משתמש וסיסמה." },
+      { "num": "2", "title": "נכנסת מהקישור", "body": "פותחת בדפדפן הטלפון — בלי הורדות, בלי חנות אפליקציות. נכנסת עם הפרטים שקיבלת." },
+      { "num": "3", "title": "מארגנת ומשחקת", "body": "בוחרת סוג אירוע, מזמינה את החברות, ומקבלת צ'קליסט, תקציב, פלייליסט ו-6 משחקים מוכנים." }
+    ]
+  },
+  "pricing": {
+    "eyebrow": "המחיר",
+    "title": "תשלום חד-פעמי. גישה מלאה.",
+    "lead": "בלי מנוי חודשי. בלי תוספות. בלי כוכביות. מחיר אחד שכולל את כל הכלים ו-6 המשחקים — לכל מסיבה, לכל פעם.",
+    "flag": "מבצע השקה — לתקופה מוגבלת",
+    "priceOld": "350",
+    "priceNum": "297",
+    "priceCurrency": "₪",
+    "sub": "תשלום <b>חד-פעמי</b>. גישה מלאה. ללא מנוי.",
+    "features": [
+      "צ'קליסט עם 30 משימות לפי ציר זמן",
+      "תקציב דינמי + חלוקה אוטומטית",
+      "פלייליסט משותף בלחיצה",
+      "6 משחקים אינטראקטיביים מוכנים",
+      "מצב הקרנה למסך הגדול + QR לבנות",
+      "4 סוגי אירוע: רווקות / יומולדת / גיבוש / דייט",
+      "תמיכה בווטסאפ ישירות ממני",
+      "עברית מלאה · גישה לכל החיים"
+    ],
+    "buttonText": "להזמין את חוגגות ב-297 ₪",
+    "countdown": "⚡ חיסכון של 53 ₪ — מבצע ההשקה לזמן מוגבל"
+  },
+  "faq": {
+    "eyebrow": "שאלות נפוצות",
+    "title": "לפני שאת מזמינה.",
+    "items": [
+      { "q": "זה אפליקציה שצריך להוריד?", "a": "לא. חוגגות פועלת בדפדפן של הטלפון — אין הורדה, אין חנות אפליקציות, אין עדכונים. נכנסת עם לינק שאני שולחת לך במייל." },
+      { "q": "זה תשלום חודשי?", "a": "לא. תשלום חד-פעמי של 297 ₪ (במקום 350 ₪) — וזהו. את מקבלת גישה מלאה לכל הכלים ולכל 6 המשחקים, לכל המסיבות שתארגני, לכל החיים." },
+      { "q": "זה מתאים גם ליומולדת או לגיבוש?", "a": "בהחלט. לאחר ההרשמה את בוחרת את סוג האירוע— רווקות, יומולדת, יום גיבוש או דייט — והאפליקציה מתאימה את עצמה." },
+      { "q": "המשתתפות גם צריכות להירשם?", "a": "לא. רק את כמלווה. החברות פשוט סורקות קוד QR או לוחצות על לינק כדי להצטרף למשחקים מסויימים— בלי הרשמה, בלי חשבון, בלי לסבך." },
+      { "q": "אני לא מבינה בטכנולוגיה. אסתדר?", "a": "כן. בניתי את חוגגות בדיוק בשביל מי שאין לה כוח לתהליכים מסובכים. נכנסת עם שם וסיסמה, התפעול פשוט וברור. המשחקים מוכנים ומכילים הסברים מפורטים של תפעול המשחק." },
+      { "q": "איך אני מקבלת תמיכה אם משהו לא יעבוד?", "a": "ישירות בווטסאפ. בין אם מדובר בתקלה טכנית או שאלה תפעולית." },
+      { "q": "מתי כדאי להזמין?", "a": "כמה שיותר מוקדם. הצ'קליסט בנוי לליווי של 6 חודשים, אבל גם אם המסיבה בעוד שבועיים — חוגגות מקצרת לך זמנים וחוסכת לך כאב ראש משמעותי." }
+    ]
+  },
+  "finalCta": {
+    "title": "מוכנה לחיים קלים יותר?",
+    "body": "תשלום חד-פעמי, גישה מיידית, ערך של אלפי שקלים. חוויה שתישאר איתכן גם בחתונה שלהם!",
+    "buttonText": "להזמין ב-297 ₪",
+    "subline": "<s style=\"color:rgba(255,255,255,0.35);\">350 ₪</s> &nbsp;·&nbsp; חיסכון של 53 ₪ במבצע ההשקה"
+  },
+  "footer": {
+    "copy": "חוגגות &copy; 2026 · כל הזכויות שמורות ללינוי ניסים",
+    "whatsapp": "ווטסאפ",
+    "email": "מייל",
+    "instagram": "אינסטגרם",
+    "site": "האתר שלי",
+    "whatsappUrl": "https://wa.me/972509419988",
+    "emailUrl": "mailto:linoynissim@gmail.com",
+    "instagramUrl": "https://instagram.com/linoynissim",
+    "siteUrl": "https://www.linoynissim.co.il"
+  },
+  "links": {
+    "paymentUrl": "https://pay.grow.link/Nzc2MDM~9ff7e8caca6ddae85827c616a799ba36-MzUwMjcxMA",
+    "paymentWhatsappFallback": "https://wa.me/972509419988?text=%D7%94%D7%99%D7%99%20%D7%9C%D7%99%D7%A0%D7%95%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%94%D7%96%D7%9E%D7%99%D7%9F%20%D7%90%D7%AA%20%D7%97%D7%95%D7%92%D7%92%D7%95%D7%AA%20%D7%91%D7%9E%D7%91%D7%A6%D7%A2%20%D7%94%D7%94%D7%A9%D7%A7%D7%94%20%F0%9F%8E%89"
+  }
+}
+</script>
+
+<!-- ═══════════ NAV ═══════════ -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-mark">ח</div>
+      <div class="logo-name" data-text="nav.logo">חוגגות</div>
+    </a>
+    <a href="#pricing" class="btn btn-cta btn-sm" data-text="nav.ctaShort">להזמין</a>
+  </div>
+</nav>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div>
+      <div class="price-flag">
+        <span class="dot"></span>
+        <span data-text="hero.priceFlag"></span>
+      </div>
+      <h1 class="h1" data-text-html="true" data-text="hero.title"></h1>
+      <p class="lead" data-text="hero.lead"></p>
+
+      <div class="hero-cta-row">
+        <a href="#pricing" class="btn btn-cta btn-lg">
+          <span data-text="hero.ctaPrimary"></span>
+          <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
+        </a>
+        <a href="#how" class="btn btn-ghost btn-lg" data-text="hero.ctaSecondary"></a>
+      </div>
+      <div class="hero-trust">
+        <span class="stars">★★★★★</span>
+        <span><span data-text="hero.trustQuote"></span> <b data-text="hero.trustWho"></b></span>
+      </div>
+    </div>
+
+    <!-- Mockup: Home (mirrors MockupHome from app) -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-status">
+          <span>9:41</span>
+          <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
+        </div>
+        <div class="phone-body">
+          <div class="scr-h-orange">
+            <div class="row">
+              <div class="avatar-mini">מ</div>
+              <div style="flex:1;min-width:0;">
+                <div class="h-greeting">היי מאיה, מארחת</div>
+                <div class="h-event-name">הרווקות של מאיה</div>
+              </div>
+              <div style="display:flex;gap:5px;">
+                <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.7 2.7 0 0 1 5.4 0c0 1.6-2.7 2-2.7 3.6"/><circle cx="12" cy="17" r="0.9" fill="#fff" stroke="none"/></svg></div>
+                <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11l8.5-7.5L20.5 11M5.5 9.5V20h13V9.5"/></svg></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pink-note">
+            <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+            <div class="pink-note-text">הכלים האלה גלויים <b>רק לך כמארחת</b></div>
+          </div>
+
+          <div class="toolbox-heading">
+            <div class="toolbox-stripe"></div>
+            <div class="toolbox-title">ארגז הכלים שלך</div>
+          </div>
+
+          <div class="tools-grid">
+            <div class="tool-card">
+              <div class="blob" style="background: var(--orange-soft);"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                <div class="tool-icon-sm" style="background: var(--orange);">
+                  <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.5h11M9 12h11M9 17.5h7"/><circle cx="4.5" cy="6.5" r="1" fill="#fff" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="#fff" stroke="none"/><circle cx="4.5" cy="17.5" r="1" fill="#fff" stroke="none"/></svg>
+                </div>
+                <div class="tool-badge num" style="background: var(--orange-soft); color: var(--orange-deep);">5/30</div>
+              </div>
+              <div style="position:relative;">
+                <div class="tool-title">צ'קליסט</div>
+                <div class="tool-sub">ארגון המסיבה</div>
+              </div>
+            </div>
+            <div class="tool-card">
+              <div class="blob" style="background: var(--pink-soft);"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                <div class="tool-icon-sm" style="background: var(--pink);">
+                  <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5.5l10-2V15"/><circle cx="6.3" cy="17.2" r="2.7"/><circle cx="16.3" cy="14.8" r="2.7"/></svg>
+                </div>
+                <div class="tool-badge" style="background: var(--pink-soft); color: var(--pink-deep);">פעיל</div>
+              </div>
+              <div style="position:relative;">
+                <div class="tool-title">פלייליסט</div>
+                <div class="tool-sub">מחובר לספוטיפיי</div>
+              </div>
+            </div>
+            <div class="tool-card">
+              <div class="blob" style="background: var(--orange-soft);"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                <div class="tool-icon-sm" style="background: var(--orange);">
+                  <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.6"/><path d="M3.5 9.5h17"/></svg>
+                </div>
+                <div class="tool-badge num" style="background: var(--orange-soft); color: var(--orange-deep);">₪6,650</div>
+              </div>
+              <div style="position:relative;">
+                <div class="tool-title">תקציב</div>
+                <div class="tool-sub">מי חייבת כמה</div>
+              </div>
+            </div>
+            <div class="tool-card">
+              <div class="blob" style="background: var(--pink-soft);"></div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                <div class="tool-icon-sm" style="background: var(--pink);">
+                  <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 4.8L18.5 10.5 13.8 12.2 12 17l-1.8-4.8L5.5 10.5l4.7-1.7L12 4z"/></svg>
+                </div>
+                <div class="tool-badge" style="background: var(--pink-soft); color: var(--pink-deep);">6</div>
+              </div>
+              <div style="position:relative;">
+                <div class="tool-title">משחקים</div>
+                <div class="tool-sub">להקרנה לכולן</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tip-bar">
+            <div class="tip-icon">
+              <svg class="ic" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 4.8L18.5 10.5 13.8 12.2 12 17l-1.8-4.8L5.5 10.5l4.7-1.7L12 4z"/></svg>
+            </div>
+            <div class="tip-text"><b>טיפ:</b> סדרי את הצ'קליסט שבוע מראש</div>
+          </div>
+        </div>
+        <div class="phone-home"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PROMISE (transformation) ═══════════ -->
+<section class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="promise.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text-html="true" data-text="promise.title"></h2>
+    </div>
+
+    <div class="promise-inner">
+      <div class="promise-card promise-before">
+        <span class="promise-label" data-text="promise.beforeLabel"></span>
+        <p data-text="promise.before"></p>
+      </div>
+      <div class="promise-card promise-after">
+        <span class="promise-label" data-text="promise.afterLabel"></span>
+        <p data-text="promise.after"></p>
+      </div>
+    </div>
+
+    <div class="promise-cta-wrap">
+      <a href="#pricing" class="btn btn-cta btn-lg" data-text="promise.ctaText"></a>
+      <div class="trust-chips" data-list="promise.trustChips" data-tpl="chip"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PROBLEM ═══════════ -->
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="problem.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text-html="true" data-text="problem.title"></h2>
+      <p class="lead" data-text="problem.lead"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ SOLUTION ═══════════ -->
+<section class="alt">
+  <div class="container one-system">
+    <div>
+      <span class="eyebrow"><span data-text="solution.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text-html="true" data-text="solution.title"></h2>
+      <p class="lead" style="margin-bottom:18px;" data-text="solution.lead"></p>
+      <div data-list="solution.rows" data-tpl="checkRow"></div>
+    </div>
+
+    <!-- Mockup: Checklist -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-status">
+          <span>9:41</span>
+          <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
+        </div>
+        <div class="phone-body">
+          <div class="scr-h-pink">
+            <div class="row-sb">
+              <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+              <div style="font-size:12px;font-weight:800;color:#1A1A1A;">צ'קליסט המארגנת</div>
+              <div style="width:14px;"></div>
+            </div>
+            <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:flex-end;position:relative;">
+              <div>
+                <div style="font-size:9.5px;font-weight:700;color:rgba(26,26,26,0.78);letter-spacing:0.4px;">משימות לארגון</div>
+                <div class="num" style="font-size:24px;font-weight:800;color:#1A1A1A;line-height:1;margin-top:2px;">5<span style="opacity:0.55;font-size:15px;">/30</span></div>
+              </div>
+              <div style="padding:3px 10px;border-radius:999px;background:#1A1A1A;color:#fff;font-size:11px;font-weight:800;">17%</div>
+            </div>
+            <div style="margin-top:7px;height:4px;background:rgba(0,0,0,0.18);border-radius:999px;overflow:hidden;"><div style="width:17%;height:100%;background:#1A1A1A;border-radius:999px;"></div></div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--orange-soft);border-radius:9px;border-right:3px solid var(--orange);margin-top:4px;">
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--orange-deep);letter-spacing:-0.2px;">4–6 חודשים לפני</div>
+              <div style="font-size:9.5px;color:var(--orange-deep);font-weight:600;opacity:0.75;">מה עושות?</div>
+            </div>
+            <div style="font-size:10px;font-weight:800;color:#fff;background:var(--orange);padding:2.5px 8px;border-radius:999px;">2/6</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:7px;">
+            <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">פתיחת קבוצה של המלוות והכלה</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
+              <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">סיעור מוחות עם הכלה</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
+              <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">רשימת מוזמנות</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
+              <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">תקציב מוערך — סקר שוק</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
+              <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">אופציות לתאריכים מהכלה</div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ABOUT LINOY ═══════════ -->
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="about.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text-html="true" data-text="about.title"></h2>
+    </div>
+
+    <div class="about-inner">
+      <div class="about-portrait">
+        <!-- אם about.photo בקובץ ה-JSON מצביע על תמונה שקיימת — היא תופיע כאן.
+             אחרת ה-sig (השם הסטיילוסי) ייראה במקומה. -->
+        <img class="about-photo" alt="לינוי ניסים"
+             data-text-attr="src" data-text="about.photo"
+             onerror="this.removeAttribute('src')" />
+        <div class="sig">לינוי ניסים<span>קומיקאית · יוצרת חוגגות</span></div>
+      </div>
+      <div class="about-body">
+        <div data-list="about.paragraphs" data-tpl="paragraph"></div>
+        <div class="about-chips" data-list="about.credChips" data-tpl="chipPlain"></div>
+        <a class="about-link" data-text-attr="href" data-text="about.linkUrl" href="#">
+          <span data-text="about.linkText"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FEATURES ═══════════ -->
+<section class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="features.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text-html="true" data-text="features.title"></h2>
+      <p class="lead" data-text="features.lead"></p>
+    </div>
+    <div class="features-grid" data-list="features.cards" data-tpl="featureCard"></div>
+  </div>
+</section>
+
+<!-- ═══════════ WHAT'S INSIDE ═══════════ -->
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="whatsInside.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text="whatsInside.title"></h2>
+      <p class="lead" data-text="whatsInside.lead"></p>
+    </div>
+    <div class="inside-grid" data-list="whatsInside.groups" data-tpl="insideGroup"></div>
+  </div>
+</section>
+
+<!-- ═══════════ GAMES ═══════════ -->
+<section id="games">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="games.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text="games.title"></h2>
+      <p class="lead" data-text="games.lead"></p>
+    </div>
+    <div class="games-grid" data-list="games.items" data-tpl="gameCard"></div>
+  </div>
+</section>
+
+<!-- ═══════════ CTA BAR 2 ═══════════ -->
+<section class="cta-wrap">
+  <div class="container">
+    <div class="cta-bar">
+      <div class="cta-bar-text">
+        <span class="cta-bar-title" data-text="ctaBar2.title"></span>
+        <span class="cta-bar-sub" data-text-html="true" data-text="ctaBar2.sub"></span>
+      </div>
+      <a href="#pricing" class="btn btn-cta" data-text="ctaBar2.button"></a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ROI — TIME SAVED ═══════════ -->
+<section class="stat-band alt">
+  <div class="container stat-grid">
+    <div>
+      <span class="eyebrow"><span data-text="roi.timeSection.eyebrow"></span><span class="dot"></span></span>
+      <span class="stat-number num"><span data-text="roi.timeSection.stat"></span><span style="color:var(--orange);">+</span></span>
+      <span class="stat-suffix" data-text-html="true" data-text="roi.timeSection.statSuffix"></span>
+      <p style="margin-top:24px;color:var(--ink-3);font-size:16.5px;line-height:1.6;max-width:420px;" data-text-html="true" data-text="roi.timeSection.body"></p>
+    </div>
+    <div class="compare-table">
+      <div data-list="roi.timeSection.rows" data-tpl="compareRow"></div>
+      <div class="compare-foot">
+        <span class="lab" data-text="roi.timeSection.footLabel"></span>
+        <span class="val num"><span class="acc" data-text="roi.timeSection.footAccent"></span> <span data-text="roi.timeSection.footUnit"></span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ ROI — MONEY SAVED ═══════════ -->
+<section class="stat-band">
+  <div class="container stat-grid" style="grid-template-columns: 1.1fr 0.9fr;">
+    <div class="compare-table">
+      <div data-list="roi.moneySection.rows" data-tpl="compareRow"></div>
+      <div class="compare-foot">
+        <span class="lab" data-text="roi.moneySection.footLabel"></span>
+        <span class="val num"><span class="acc" data-text="roi.moneySection.footAccent"></span> <span data-text="roi.moneySection.footUnit"></span></span>
+      </div>
+    </div>
+    <div>
+      <span class="eyebrow"><span data-text="roi.moneySection.eyebrow"></span><span class="dot"></span></span>
+      <span class="stat-number num"><span style="color:var(--orange);" data-text="roi.moneySection.statCurrency"></span><span data-text="roi.moneySection.stat"></span></span>
+      <span class="stat-suffix" data-text-html="true" data-text="roi.moneySection.statSuffix"></span>
+      <p style="margin-top:24px;color:var(--ink-3);font-size:16.5px;line-height:1.6;max-width:420px;" data-text-html="true" data-text="roi.moneySection.body"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CTA BAR 3 ═══════════ -->
+<section class="cta-wrap">
+  <div class="container">
+    <div class="cta-bar">
+      <div class="cta-bar-text">
+        <span class="cta-bar-title" data-text="ctaBar3.title"></span>
+        <span class="cta-bar-sub" data-text-html="true" data-text="ctaBar3.sub"></span>
+      </div>
+      <a href="#pricing" class="btn btn-cta" data-text="ctaBar3.button"></a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ HOW IT WORKS ═══════════ -->
+<section id="how" class="alt">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="how.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text="how.title"></h2>
+    </div>
+    <div class="steps-grid" data-list="how.steps" data-tpl="stepCard"></div>
+  </div>
+</section>
+
+<!-- ═══════════ PRICING ═══════════ -->
+<section id="pricing" class="pricing-wrap">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="pricing.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text="pricing.title"></h2>
+      <p class="lead" data-text="pricing.lead"></p>
+    </div>
+
+    <div class="price-card">
+      <span class="price-flag-big">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#fff;"></span>
+        <span data-text="pricing.flag"></span>
+      </span>
+
+      <div class="price-row">
+        <span class="price-old num" data-text="pricing.priceOld"></span>
+        <span class="price-num num" data-text="pricing.priceNum"></span>
+        <span class="price-currency" data-text="pricing.priceCurrency"></span>
+      </div>
+      <div class="price-sub" data-text-html="true" data-text="pricing.sub"></div>
+
+      <div class="price-features" data-list="pricing.features" data-tpl="priceFeature"></div>
+
+      <a href="#" id="paymentBtn" class="btn btn-cta btn-lg" style="width:100%;">
+        <span data-text="pricing.buttonText"></span>
+        <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
+      </a>
+
+      <div class="countdown" data-text="pricing.countdown"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FAQ ═══════════ -->
+<section class="alt tight">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span data-text="faq.eyebrow"></span><span class="dot"></span></span>
+      <h2 class="h2" data-text="faq.title"></h2>
+    </div>
+    <div class="faq-list" data-list="faq.items" data-tpl="faqItem"></div>
+  </div>
+</section>
+
+<!-- ═══════════ FINAL CTA ═══════════ -->
+<div class="final-cta">
+  <h2 class="h2" data-text-html="true" data-text="finalCta.title"></h2>
+  <p data-text="finalCta.body"></p>
+  <a href="#pricing" class="btn btn-cta btn-lg">
+    <span data-text="finalCta.buttonText"></span>
+    <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
+  </a>
+  <div style="margin-top:20px;color:rgba(255,255,255,0.55);font-size:13.5px;font-weight:600;" data-text-html="true" data-text="finalCta.subline"></div>
+</div>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <div class="container footer-inner">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="logo-mark" style="width:28px;height:28px;font-size:13px;">ח</div>
+      <span data-text-html="true" data-text="footer.copy"></span>
+    </div>
+    <div class="footer-links">
+      <a data-text-attr="href" data-text="footer.whatsappUrl" target="_blank" rel="noopener" href="#"><span data-text="footer.whatsapp"></span></a>
+      <a data-text-attr="href" data-text="footer.emailUrl" href="#"><span data-text="footer.email"></span></a>
+      <a data-text-attr="href" data-text="footer.instagramUrl" target="_blank" rel="noopener" href="#"><span data-text="footer.instagram"></span></a>
+      <a data-text-attr="href" data-text="footer.siteUrl" target="_blank" rel="noopener" href="#"><span data-text="footer.site"></span></a>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════ CONTENT LOADER ═══════════ -->
+<script>
+  // ── Load landingText.json and bind to data-text / data-list nodes ─────────
+  (async function () {
+    const TPL = {
+      // List item templates (string of HTML). `${key}` is replaced from the item.
+      chip: function (item) {
+        return '<span>' + escape(item) + '</span>';
+      },
+      chipPlain: function (item) {
+        return '<span>' + escape(item) + '</span>';
+      },
+      paragraph: function (item) {
+        return '<p>' + escape(item) + '</p>';
+      },
+      painCard: function (item) {
+        return '' +
+          '<div class="pain-card">' +
+          '  <div class="x">×</div>' +
+          '  <h4>' + escape(item.title) + '</h4>' +
+          '  <p>' + escape(item.body) + '</p>' +
+          '  <span class="hours">' + escape(item.metric) + '</span>' +
+          '</div>';
+      },
+      checkRow: function (item) {
+        return '' +
+          '<div class="check-row-li">' +
+          '  <div class="check-icon"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
+          '  <div>' +
+          '    <div class="t">' + escape(item.title) + '</div>' +
+          '    <div class="s">' + escape(item.body) + '</div>' +
+          '  </div>' +
+          '</div>';
+      },
+      featureCard: function (item) {
+        const icons = [
+          // 0: list (checklist)
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.5h11M9 12h11M9 17.5h7"/><circle cx="4.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4.5" cy="17.5" r="1" fill="currentColor" stroke="none"/></svg>',
+          // 1: wallet (budget)
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.6"/><path d="M3.5 9.5h17"/></svg>',
+          // 2: music (playlist)
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5.5l10-2V15"/><circle cx="6.3" cy="17.2" r="2.7"/><circle cx="16.3" cy="14.8" r="2.7"/></svg>',
+          // 3: sparkle (games)
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 4.8L18.5 10.5 13.8 12.2 12 17l-1.8-4.8L5.5 10.5l4.7-1.7L12 4z"/></svg>'
+        ];
+        const i = item._index || 0;
+        return '' +
+          '<div class="feature">' +
+          '  <div class="feature-icon accent">' + icons[i % icons.length] + '</div>' +
+          '  <h3>' + escape(item.title) + '</h3>' +
+          '  <p>' + escape(item.body) + '</p>' +
+          '  <span class="micro">' + escape(item.micro) + '</span>' +
+          '</div>';
+      },
+      gameCard: function (item) {
+        return '' +
+          '<div class="gcard">' +
+          '  <span class="gcard-num">' + escape(item.num) + '</span>' +
+          '  <h3>' + escape(item.title) + '</h3>' +
+          '  <p>' + escape(item.body) + '</p>' +
+          '  <span class="tag">' + escape(item.tag) + '</span>' +
+          '</div>';
+      },
+      compareRow: function (item) {
+        return '' +
+          '<div class="compare-row">' +
+          '  <div class="label">' + escape(item.label) + '</div>' +
+          '  <div class="before num">' + escape(item.before) + '</div>' +
+          '  <div class="after num">' + escape(item.after) + '</div>' +
+          '</div>';
+      },
+      stepCard: function (item) {
+        return '' +
+          '<div class="step">' +
+          '  <div class="step-num">' + escape(item.num) + '</div>' +
+          '  <h3>' + escape(item.title) + '</h3>' +
+          '  <p>' + escape(item.body) + '</p>' +
+          '</div>';
+      },
+      priceFeature: function (item) {
+        return '' +
+          '<div class="row">' +
+          '  <span class="ck"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' +
+          '  ' + escape(item) +
+          '</div>';
+      },
+      faqItem: function (item) {
+        return '' +
+          '<details class="faq">' +
+          '  <summary>' + escape(item.q) + '</summary>' +
+          '  <p>' + escape(item.a) + '</p>' +
+          '</details>';
+      },
+      insideGroup: function (item) {
+        const items = Array.isArray(item.items) ? item.items : [];
+        const lis = items.map(function (li) { return '<li>' + escape(li) + '</li>'; }).join('');
+        return '' +
+          '<div class="inside-card">' +
+          '  <h3>' + escape(item.title) + '</h3>' +
+          '  <ul>' + lis + '</ul>' +
+          '</div>';
+      }
+    };
+
+    function escape(s) {
+      if (s == null) return '';
+      return String(s); // values come from our trusted JSON; we allow inline HTML markup we control
+    }
+
+    function getPath(obj, path) {
+      return path.split('.').reduce(function (acc, k) {
+        return acc == null ? undefined : acc[k];
+      }, obj);
+    }
+
+    function applyText(root, data) {
+      // 1) data-text → fills element text/HTML or attribute
+      root.querySelectorAll('[data-text]').forEach(function (el) {
+        const path = el.getAttribute('data-text');
+        const value = getPath(data, path);
+        if (value == null) return;
+        const attr = el.getAttribute('data-text-attr');
+        if (attr) {
+          el.setAttribute(attr, String(value));
+          return;
+        }
+        const asHtml = el.getAttribute('data-text-html') === 'true';
+        if (asHtml) el.innerHTML = String(value);
+        else el.textContent = String(value);
+      });
+
+      // 2) data-list → render a list of items using TPL[tplName]
+      root.querySelectorAll('[data-list]').forEach(function (el) {
+        const path = el.getAttribute('data-list');
+        const tplName = el.getAttribute('data-tpl');
+        const list = getPath(data, path);
+        const tpl = TPL[tplName];
+        if (!Array.isArray(list) || typeof tpl !== 'function') return;
+        el.innerHTML = list.map(function (item, idx) {
+          const enriched = (item && typeof item === 'object') ? Object.assign({ _index: idx }, item) : item;
+          return tpl(enriched);
+        }).join('');
+      });
+    }
+
+    function fallbackHero() {
+      // If JSON failed (e.g., opened from file:// without a server), at least show something readable.
+      const h1 = document.querySelector('[data-text="hero.title"]');
+      if (h1 && !h1.textContent.trim()) {
+        h1.innerHTML = 'חוגגות — האפליקציה שמארגנת את המסיבה';
+      }
+    }
+
+    function readInline() {
+      const node = document.getElementById('landing-text');
+      if (!node) return null;
+      try { return JSON.parse(node.textContent); }
+      catch (e) { console.warn('[landing] inline JSON parse failed:', e); return null; }
+    }
+
+    // Strategy: read inline JSON first (always works, even file://).
+    // Then, if loaded over http(s), try to fetch landingText.json and override —
+    // so when the page is served by a real server, edits to the external file
+    // take effect without touching the HTML.
+    try {
+      const inlineData = readInline();
+      if (inlineData) {
+        window.__landingText = inlineData;
+        applyText(document, inlineData);
+      }
+
+      const canFetch = /^https?:$/.test(window.location.protocol);
+      if (canFetch) {
+        try {
+          const res = await fetch('landingText.json', { cache: 'no-cache' });
+          if (res.ok) {
+            const data = await res.json();
+            window.__landingText = data;
+            applyText(document, data);
+          }
+        } catch (e) {
+          // External file optional — silently keep inline.
+        }
+      }
+
+      if (!window.__landingText) fallbackHero();
+    } catch (err) {
+      console.warn('[landing] content load error:', err);
+      fallbackHero();
+    } finally {
+      document.body.classList.remove('loading');
+    }
+  })();
+</script>
+
+<!-- ═══════════ NAV STICKY + SMOOTH SCROLL + PAYMENT LINK ═══════════ -->
+<script>
+  // Sticky nav border on scroll
+  const nav = document.getElementById('nav');
+  const onScroll = () => {
+    if (window.scrollY > 8) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Smooth scroll for in-page anchors
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      const id = a.getAttribute('href');
+      if (id === '#' || id.length < 2) return;
+      const el = document.querySelector(id);
+      if (el) {
+        e.preventDefault();
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Wire the payment button to the WhatsApp fallback link once content loads.
+  // When you switch to a real payment URL, replace links.paymentWhatsappFallback
+  // in landingText.json with the Grow/Cardcom URL.
+  const interval = setInterval(() => {
+    const data = window.__landingText;
+    if (!data) return;
+    clearInterval(interval);
+    // עדיפות: paymentUrl אמיתי (Grow/Cardcom וכו') → fallback לוואטסאפ → לעוגן המחיר.
+    // כשתהיה לך כתובת תשלום אמיתית — לשים אותה ב-links.paymentUrl ב-landingText.json.
+    const url = (data.links && (data.links.paymentUrl || data.links.paymentWhatsappFallback)) || '#pricing';
+    const btn = document.getElementById('paymentBtn');
+    if (btn) btn.setAttribute('href', url);
+  }, 80);
+</script>
+
+</body>
+</html>
