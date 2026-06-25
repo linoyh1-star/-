@@ -151,14 +151,14 @@
   .logo-name { font-family: "Heebo", sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
 
   /* Sections */
-  section { padding: 110px 0; position: relative; }
-  section.tight { padding: 80px 0; }
+  section { padding: 84px 0; position: relative; }
+  section.tight { padding: 60px 0; }
   section.alt { background: var(--bg-alt); }
-  .section-head { text-align: center; margin-bottom: 56px; }
+  .section-head { text-align: center; margin-bottom: 44px; }
   .section-head .lead { margin: 0 auto; max-width: 580px; }
 
   /* Hero */
-  .hero { padding: 64px 0 90px; position: relative; overflow: hidden; }
+  .hero { padding: 52px 0 68px; position: relative; overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: 0;
     background:
@@ -352,7 +352,7 @@
   section.cta-wrap { padding: 30px 0; }
 
   /* Stat bands */
-  .stat-band { padding: 100px 0; }
+  .stat-band { padding: 76px 0; }
   .stat-band.alt { background: var(--orange-tint); }
   .stat-band.pink-alt { background: var(--pink-tint); }
   .stat-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 60px; align-items: center; }
@@ -548,7 +548,7 @@
   .step p { font-size: 15.5px; color: var(--ink-3); line-height: 1.55; margin: 0; }
 
   /* Pricing */
-  .pricing-wrap { padding: 80px 0 110px; }
+  .pricing-wrap { padding: 60px 0 80px; }
   .price-card {
     background: #FFF;
     border: 1px solid var(--line);
@@ -620,7 +620,7 @@
   details.faq p { margin: 0 0 18px; color: var(--ink-3); font-size: 15.5px; line-height: 1.6; }
 
   /* Final CTA */
-  .final-cta { background: var(--ink); color: #FFF; padding: 90px 32px; text-align: center; position: relative; overflow: hidden; }
+  .final-cta { background: var(--ink); color: #FFF; padding: 70px 32px; text-align: center; position: relative; overflow: hidden; }
   .final-cta::before {
     content: ""; position: absolute; inset: 0;
     background:
@@ -641,33 +641,39 @@
 
   /* Responsive */
   @media (max-width: 920px) {
-    .hero-inner       { grid-template-columns: 1fr; gap: 60px; }
+    .hero-inner       { grid-template-columns: 1fr; gap: 44px; }
     .pain-grid        { grid-template-columns: repeat(2, 1fr); }
     .features-grid    { grid-template-columns: 1fr; }
     .inside-grid      { grid-template-columns: 1fr; }
     .games-grid       { grid-template-columns: 1fr; }
     .steps-grid       { grid-template-columns: 1fr; }
-    .stat-grid        { grid-template-columns: 1fr; gap: 40px; }
-    .one-system       { grid-template-columns: 1fr; gap: 40px; }
-    .promise-inner    { grid-template-columns: 1fr; gap: 16px; }
-    .about-inner      { grid-template-columns: 1fr; gap: 36px; }
-    .about-portrait   { max-width: 380px; margin: 0 auto; width: 100%; }
-    section           { padding: 80px 0; }
-    .stat-band        { padding: 70px 0; }
-    .section-head     { margin-bottom: 40px; }
-    .cta-bar          { flex-direction: column; align-items: flex-start; padding: 24px; }
+    .stat-grid        { grid-template-columns: 1fr; gap: 28px; }
+    .one-system       { grid-template-columns: 1fr; gap: 28px; text-align: center; }
+    .one-system .lead { margin-left: auto; margin-right: auto; }
+    .promise-inner    { grid-template-columns: 1fr; gap: 14px; }
+    .about-inner      { grid-template-columns: 1fr; gap: 28px; }
+    .about-portrait, .about-portrait-wrap   { max-width: 320px; margin: 0 auto; width: 100%; }
+    section           { padding: 60px 0; }
+    .stat-band        { padding: 52px 0; }
+    .roi-section-narrow { padding: 56px 0; }
+    .fun-section      { padding: 56px 0; }
+    .section-head     { margin-bottom: 30px; }
+    .cta-bar          { flex-direction: column; align-items: flex-start; padding: 22px; }
     .cta-bar .btn     { width: 100%; }
-    .price-card       { padding: 44px 24px; }
+    .price-card       { padding: 40px 22px; }
+    .final-cta        { padding: 64px 24px; }
   }
   @media (max-width: 520px) {
-    .hero          { padding: 36px 0 60px; }
+    .hero          { padding: 28px 0 48px; }
     .phone         { transform: scale(0.94); transform-origin: top center; }
     .pain-grid     { grid-template-columns: 1fr; }
-    .feature       { padding: 26px 22px; }
+    .feature       { padding: 24px 20px; }
     .compare-row   { grid-template-columns: 1fr 1fr; padding: 16px 18px; }
     .compare-row .before { display: none; }
     .price-row     { gap: 8px; }
     .guarantee-card { padding: 36px 24px; }
+    section        { padding: 52px 0; }
+    .stat-band, .fun-section, .roi-section-narrow { padding: 46px 0; }
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -986,7 +992,7 @@
   /* ═══════════════════════════════════════════════════════════════
      💎 ROI — twin stat (time + money) headline, centered
      ═══════════════════════════════════════════════════════════════ */
-  .roi-section-narrow { padding: 90px 0; }
+  .roi-section-narrow { padding: 72px 0; }
   .roi-inner {
     max-width: 760px;
     margin: 0 auto;
@@ -994,12 +1000,13 @@
   }
   .roi-inner .eyebrow { display: inline-block; margin-bottom: 22px; }
   .roi-twin {
-    display: flex; align-items: baseline; gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: flex; flex-direction: column;
+    align-items: center;
+    gap: 6px;
     margin: 0 auto 14px;
   }
-  .roi-stat { display: flex; align-items: baseline; gap: 8px; }
+  .roi-stat { display: flex; align-items: baseline; gap: 8px; line-height: 1; }
+  .roi-plus { display: none; }
   .roi-stat-num {
     font-family: "Heebo", sans-serif;
     font-size: clamp(60px, 9vw, 110px);
@@ -1048,7 +1055,7 @@
      🎉 Fun savings — simple list (not cards)
      ═══════════════════════════════════════════════════════════════ */
   .fun-section {
-    padding: 100px 0;
+    padding: 76px 0;
     background: linear-gradient(180deg, var(--pink-tint) 0%, var(--bg) 100%);
     position: relative; overflow: hidden;
   }
@@ -1957,13 +1964,12 @@
       <span class="eyebrow"><span data-text="roi.eyebrow"></span><span class="dot"></span></span>
       <div class="roi-twin">
         <div class="roi-stat">
-          <span class="roi-stat-num num"><span data-text="roi.statTime"></span></span>
-          <span class="roi-stat-unit" data-text="roi.statTimeUnit"></span>
-        </div>
-        <span class="roi-plus">+</span>
-        <div class="roi-stat">
           <span class="roi-stat-num num"><span data-text="roi.statMoney"></span></span>
           <span class="roi-stat-unit" data-text="roi.statMoneyUnit"></span>
+        </div>
+        <div class="roi-stat">
+          <span class="roi-stat-num num"><span data-text="roi.statTime"></span></span>
+          <span class="roi-stat-unit" data-text="roi.statTimeUnit"></span>
         </div>
       </div>
       <p class="roi-subtitle" data-text="roi.subtitle"></p>
