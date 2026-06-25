@@ -25,8 +25,31 @@
 
 ## 🔥 דברים שעדיין פתוחים (לא קריטיים)
 - **MAKE_LOGIN_URL** ב-index.html: כבר אמיתי ועובד (`https://hook.eu1.make.com/coi9bjj6dxny0g7j6edppcm7i2bpedjy`)
-- **CHOGEGOT_PLAYLIST_URL**: placeholder (Today's Top Hits) — לעדכן כשתיצור פלייליסט אמיתי
+- **CHOGEGOT_PLAYLIST_URL** ו-**CHOGEGOT_APPLE_PLAYLIST_URL**: placeholders — לעדכן כשתיצור פלייליסטים אמיתיים בשני הפלטפורמות
 - **שם משתמש = רק מספרים בבדיקת אדווה**: נוסחה ב-Make.com Tools — Cowork עזרה לתקן את ה-`to` field ב-Gmail, אבל הנוסחה של username אולי עדיין `first(split(...))` שלא מפצל. אם זה חוזר — נחליף ל-`{{substring(1.data.fullName; 0; indexOf(1.data.fullName; " "))}}{{floor(random * 9000 + 1000)}}`
+- **מייל לספאם**: ראי טיפים ב"באגים בלי תיקון" למטה
+
+## 🐛 באגים שתוקנו ב-Cowork (Friday 2026-06-12)
+- **safeItems** בצ'קליסט: removeItem ו-add מסתכלים ב-Array.isArray כדי לא לקרוס אם items=null אחרי sync
+- **Firestore error recovery**: submitAnswer/submitVotes תופסים שגיאות ומחזירים submitted=false להתאוששות
+- **join() error handling** ב-ScreenParticipant: catch + הודעה ידידותית
+- **iOS Safari zoom**: כל ה-inputs ב-budget/checklist עם `fontSize: "max(16px, Npx)"` כדי שלא יקפצו ל-zoom
+- **FMK nested array**: deck.prompts הוא array-of-arrays. Firestore דחה את זה ולכן ה-session לא נפתח. עכשיו כל שורה מצורפת ל-`"a|b|c"` בכתיבה ו-`split("|")` בקריאה.
+- **Variable expenses scale**: הוצאה משתנה היא ₪/אדם, מחושב לפי comingN
+
+## 🚀 דברים שאני הוספתי (כדי שהאפליקציה תהיה Launch-ready)
+- **iPhone Safari shell**: viewport-fit=cover + apple-mobile-web-app meta + 100dvh fallback + safe-area-insets ב-`.phone-shell-mobile`
+- **Budget save button**: "+" icon hidden → "הוסיפי הוצאה" / "הוסיפי משתתפת" כפתורים מלאי רוחב מודגשים
+- **Lobby WhatsApp share**: כפתור ירוק 25D366 שולח URL ו-קוד 6-תווים לכל וואטסאפ
+- **QR robustness**: `referrerPolicy="no-referrer"` + רקע לבן מפורש
+- **Login redesign**: סגנון תואם ל-ScreenUsername/ScreenNameEvent (brand chip + h1 גדול + Card קטן עם אייקון)
+- **Apple Music**: שני כפתורים (Spotify ירוק + Apple אדום) + עדכון MockupPlaylist
+
+## 📧 איך לטפל במייל שמגיע לספאם (טיפ לקוחות)
+- בהזמנה למוצר — לכתוב "**מומלץ לבדוק גם בספאם**" כדי שלא יחמיצו
+- ב-Make.com Gmail Subject — להמנע מ-EMOJIs בתחילה ומ-CAPS LOCK
+- להוסיף בחתימה: "ניתן להוסיף את האימייל הזה לאנשי קשר כדי שלא יסונן בעתיד"
+- האפליקציה עצמה לא נוגעת בעניין הזה — זה נושא של Gmail<->הלקוח
 
 ## בעלת המוצר
 - לינוי ניסים

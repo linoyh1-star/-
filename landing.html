@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title data-text="meta.title">חוגגות</title>
+<title data-text="meta.title">VibeIT</title>
 <meta name="description" data-text-attr="content" data-text="meta.description" content="" />
 <meta property="og:title" data-text-attr="content" data-text="meta.ogTitle" content="" />
 <meta property="og:description" data-text-attr="content" data-text="meta.ogDescription" content="" />
 
 <!--
 ══════════════════════════════════════════════════════════════════
-  🎨 דף נחיתה — חוגגות
+  🎨 דף נחיתה — VibeIT
   ══════════════════════════════════════════════════════════════════
   הפרדה בין מבנה לתוכן:
     • כל הטקסטים יושבים ב-landingText.json
@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=Heebo:wght@500;700;800;900&display=swap" rel="stylesheet">
 <style>
-  /* ───── Tokens (מסונכרן עם אפליקציית חוגגות) ───── */
+  /* ───── Tokens (מסונכרן עם אפליקציית VibeIT) ───── */
   :root {
     --orange: #E8512A;
     --orange-deep: #C73E1C;
@@ -200,9 +200,9 @@
     z-index: -1; top: 50%; left: 50%; transform: translate(-50%, -50%);
   }
   .phone {
-    width: 290px; height: 560px;
-    border-radius: 38px; background: #FFFFFF;
-    box-shadow: 0 38px 84px -28px rgba(15,14,13,0.40), inset 0 0 0 9px #1A1A1A, inset 0 0 0 10.5px #2A2A2A;
+    width: 256px; height: 500px;
+    border-radius: 34px; background: #FFFFFF;
+    box-shadow: 0 32px 72px -26px rgba(15,14,13,0.38), inset 0 0 0 8px #1A1A1A, inset 0 0 0 9.5px #2A2A2A;
     position: relative; overflow: hidden;
   }
   .phone-status {
@@ -427,15 +427,15 @@
     color: var(--ink); letter-spacing: -0.8px;
   }
   .about-portrait .sig span { display: block; font-size: 14px; font-weight: 700; color: var(--ink-3); letter-spacing: 0; margin-top: 2px; }
-  /* Photo overlay — shown only when about.photo is a non-empty path */
+  /* Linoy's portrait photo */
   .about-photo {
-    display: none;
+    display: block;
     position: absolute; inset: 0;
     width: 100%; height: 100%;
     object-fit: cover; object-position: center top;
     border-radius: 24px;
   }
-  .about-photo[src]:not([src=""]) { display: block; }
+  .about-photo:not([src]), .about-photo[src=""] { display: none; }
   .about-body p {
     font-size: 17px; line-height: 1.65; color: var(--ink-2);
     margin: 0 0 18px;
@@ -669,6 +669,452 @@
     .price-row     { gap: 8px; }
     .guarantee-card { padding: 36px 24px; }
   }
+
+  /* ═══════════════════════════════════════════════════════════════
+     🎉 SHIMMER & PARTY — confetti, tilt, slideshow, sparkle
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ───── Confetti (decorative, behind content) ───── */
+  .confetti {
+    position: absolute; inset: 0;
+    pointer-events: none; overflow: hidden;
+    z-index: 0;
+  }
+  .confetti-piece {
+    position: absolute; top: -24px;
+    left: var(--x, 50%);
+    width: 9px; height: 14px;
+    background: var(--c, var(--orange));
+    border-radius: 2px;
+    opacity: 0;
+    animation: confetti-fall var(--r, 15s) linear var(--d, 0s) infinite;
+    transform-origin: center;
+  }
+  .confetti-piece:nth-child(odd)  { width: 7px; height: 7px; border-radius: 50%; }
+  .confetti-piece:nth-child(3n)   { width: 12px; height: 4px; border-radius: 2px; }
+  .confetti-soft .confetti-piece  { opacity: 0; animation-duration: 18s; }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(-30px) rotate(0deg);   opacity: 0; }
+    8%   { opacity: 0.85; }
+    100% { transform: translateY(900px) rotate(720deg); opacity: 0; }
+  }
+  /* Sections that host confetti need position:relative so it anchors correctly */
+  .hero, .final-cta, .promise-section, .games-section { position: relative; }
+  .hero .container, .promise-section .container, .games-section .container { position: relative; z-index: 1; }
+
+  /* ───── Phone tilt + float ───── */
+  .phone-wrap-tilt { perspective: 1400px; }
+  .phone-tilt {
+    transform: rotateY(-14deg) rotateX(6deg) rotateZ(-5deg);
+    transform-style: preserve-3d;
+    box-shadow:
+      -28px 38px 70px -20px rgba(15,14,13,0.35),
+      0 38px 84px -28px rgba(15,14,13,0.30),
+      inset 0 0 0 9px #1A1A1A,
+      inset 0 0 0 10.5px #2A2A2A;
+  }
+  .phone-tilt-soft {
+    transform: rotateY(-6deg) rotateX(3deg) rotateZ(-2deg);
+    box-shadow:
+      -18px 28px 56px -18px rgba(15,14,13,0.30),
+      0 30px 72px -28px rgba(15,14,13,0.28),
+      inset 0 0 0 9px #1A1A1A,
+      inset 0 0 0 10.5px #2A2A2A;
+  }
+  .phone-float { animation: phone-float 7s ease-in-out infinite; }
+  @keyframes phone-float {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 -10px; }
+  }
+
+  /* ───── Slideshow (Solution mockup) ───── */
+  .phone-slideshow { position: relative; padding: 0; }
+  .phone-slideshow .slide-screen {
+    position: absolute; inset: 0;
+    padding: 6px 16px 24px; /* mirrors original .phone-body padding */
+    display: flex; flex-direction: column;
+    opacity: 0;
+    animation: slide-cycle 8s ease-in-out infinite;
+  }
+  .phone-slideshow .slide-screen:nth-child(1) { animation-delay: 0s; }
+  .phone-slideshow .slide-screen:nth-child(2) { animation-delay: 2s; }
+  .phone-slideshow .slide-screen:nth-child(3) { animation-delay: 4s; }
+  .phone-slideshow .slide-screen:nth-child(4) { animation-delay: 6s; }
+  @keyframes slide-cycle {
+    0%   { opacity: 0; transform: translateY(6px); }
+    4%   { opacity: 1; transform: translateY(0); }
+    25%  { opacity: 1; transform: translateY(0); }
+    29%  { opacity: 0; transform: translateY(-6px); }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
+  .slide-label {
+    margin-top: auto; padding-top: 8px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.4px;
+    color: var(--ink-3); text-align: center;
+    text-transform: none;
+  }
+
+  /* ───── Promise: subtitle + bullets ───── */
+  .promise-subtitle {
+    font-family: "Assistant", sans-serif;
+    font-size: 16px; font-weight: 600;
+    color: var(--ink-3);
+    margin: 8px auto 0;
+    max-width: 540px;
+  }
+  .promise-bullets {
+    list-style: none; padding: 0; margin: 14px 0 18px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .promise-bullets li {
+    position: relative; padding-right: 28px;
+    font-size: 16.5px; line-height: 1.5;
+    color: #fff; font-weight: 500;
+  }
+  .promise-bullets li b { color: var(--orange); font-weight: 800; }
+  .promise-bullets li::before {
+    content: ""; position: absolute; right: 0; top: 7px;
+    width: 16px; height: 16px; border-radius: 5px;
+    background: var(--orange);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'><path d='M5 12.5l4.5 4.5L19 7.5'/></svg>");
+    background-size: 11px 11px; background-position: center; background-repeat: no-repeat;
+  }
+  .promise-after-intro { margin: 0 0 4px !important; font-weight: 600; }
+  .promise-after-outro { margin: 0 !important; }
+
+  /* ───── About: sparkles around the portrait ───── */
+  .about-portrait-wrap { position: relative; }
+  .about-sparkle {
+    position: absolute; pointer-events: none;
+    font-size: 28px; color: var(--orange);
+    animation: sparkle 3.5s ease-in-out infinite;
+    text-shadow: 0 4px 18px rgba(232,81,42,0.35);
+    z-index: 3;
+  }
+  .about-sparkle-1 { top: -14px; right: -16px; animation-delay: 0s; }
+  .about-sparkle-2 { bottom: 18px; left: -12px; color: var(--pink-deep); animation-delay: 1.2s; font-size: 22px; }
+  @keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+    50%      { transform: scale(1.25) rotate(20deg); opacity: 1; }
+  }
+
+  /* ───── Games mockup wrap + caption ───── */
+  .games-mockup-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 22px;
+    margin-top: 30px;
+  }
+  .games-caption {
+    font-family: "Heebo", sans-serif;
+    font-size: 14.5px; font-weight: 700;
+    color: var(--ink-3);
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: var(--pink-soft);
+    border: 1px solid rgba(199,94,130,0.22);
+  }
+
+  /* ───── Tool-icon micro bounce (Hero mockup) ───── */
+  .phone .tool-icon-sm { animation: tool-pop 5s ease-in-out infinite; }
+  .phone .tool-card:nth-child(1) .tool-icon-sm { animation-delay: 0s; }
+  .phone .tool-card:nth-child(2) .tool-icon-sm { animation-delay: 0.6s; }
+  .phone .tool-card:nth-child(3) .tool-icon-sm { animation-delay: 1.2s; }
+  .phone .tool-card:nth-child(4) .tool-icon-sm { animation-delay: 1.8s; }
+  @keyframes tool-pop {
+    0%, 85%, 100% { transform: scale(1) rotate(0); }
+    90%           { transform: scale(1.12) rotate(-6deg); }
+    95%           { transform: scale(1.08) rotate(6deg); }
+  }
+
+  /* ───── CTA button arrow wiggle ───── */
+  .btn-wiggle .ic { animation: arrow-nudge 2.4s ease-in-out infinite; }
+  @keyframes arrow-nudge {
+    0%, 70%, 100% { transform: translateX(0); }
+    80%           { transform: translateX(-4px); }
+    90%           { transform: translateX(0); }
+  }
+
+  /* ───── Feature card icon — gentle wiggle on hover ───── */
+  .feature:hover .feature-icon svg { animation: wiggle 0.7s ease-in-out; }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0); }
+    25%      { transform: rotate(-8deg); }
+    75%      { transform: rotate(8deg); }
+  }
+
+  /* ───── Pink accent dot in section-head eyebrows ───── */
+  .promise-section .eyebrow .dot,
+  .games-section .eyebrow .dot { background: var(--pink-deep); }
+
+  /* ───── Final CTA confetti + party glow ───── */
+  .final-cta .confetti-piece { opacity: 0; }
+
+  /* ───── Reduced motion ───── */
+  @media (prefers-reduced-motion: reduce) {
+    .confetti-piece, .phone-float, .about-sparkle,
+    .phone .tool-icon-sm, .btn-wiggle .ic,
+    .phone-slideshow .slide-screen { animation: none !important; }
+    .phone-slideshow .slide-screen { opacity: 1; position: relative; inset: auto; }
+    .phone-slideshow .slide-screen + .slide-screen { display: none; }
+  }
+
+  /* ───── Responsive tweaks for new layout ───── */
+  @media (max-width: 920px) {
+    .phone-tilt, .phone-tilt-soft { transform: none; }
+    .games-mockup-wrap { gap: 18px; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     ✨ VibeIT brand mark + vibe accents
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* ───── Brand wordmark "VibeIT" inside titles ───── */
+  .brand-mark {
+    font-family: "Heebo", "Assistant", sans-serif;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    background: linear-gradient(110deg, var(--orange) 0%, var(--orange-deep) 40%, var(--pink-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+    position: relative;
+    padding: 0 4px;
+  }
+  .h1 .brand-mark {
+    font-size: clamp(56px, 9vw, 100px);
+    line-height: 0.95;
+    letter-spacing: -3px;
+  }
+  .h1 .brand-mark::after {
+    content: ""; position: absolute;
+    right: 0; left: 0; bottom: -2px;
+    height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--orange), var(--pink));
+    opacity: 0.18;
+    transform: scaleX(0.86);
+  }
+  .brand-mark-sm {
+    font-size: 1em;
+    letter-spacing: -0.4px;
+    padding: 0 2px;
+  }
+  .brand-mark-sm::after { display: none; }
+
+  /* ───── Logo mark "V" — gradient pill ───── */
+  .logo-mark.logo-vibe {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--pink-deep) 100%);
+    color: #fff;
+    font-family: "Heebo", sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    box-shadow: 0 6px 14px -6px rgba(199,62,28,0.45);
+    position: relative;
+  }
+  .logo-mark.logo-vibe::after {
+    content: "·";
+    position: absolute;
+    top: -3px; right: -2px;
+    color: var(--pink);
+    font-size: 22px;
+    line-height: 0.5;
+    animation: sparkle 3.5s ease-in-out infinite;
+  }
+
+  /* ───── Floating decorative blobs (vibe background) ───── */
+  .vibe-blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(40px);
+    opacity: 0.55;
+    animation: blob-drift 14s ease-in-out infinite;
+  }
+  .vibe-blob.b-orange { background: radial-gradient(circle, rgba(232,81,42,0.45), transparent 70%); }
+  .vibe-blob.b-pink   { background: radial-gradient(circle, rgba(234,160,186,0.55), transparent 70%); }
+  @keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -15px) scale(1.08); }
+    66%      { transform: translate(-15px, 12px) scale(0.94); }
+  }
+
+  /* ───── Promise subtitle: keep VibeIT bold-branded inline ───── */
+  .promise-subtitle b { color: var(--orange-deep); font-weight: 800; }
+
+  /* ───── Hero CTA: more flow — soft gradient instead of solid ───── */
+  .hero .btn-cta {
+    background: linear-gradient(120deg, var(--orange) 0%, #F26646 50%, var(--pink-deep) 100%);
+    background-size: 180% 180%;
+    animation: cta-shimmer 6s ease-in-out infinite;
+  }
+  @keyframes cta-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  /* ───── Section eyebrows: tint pink for variety ───── */
+  .promise-section .eyebrow,
+  .games-section .eyebrow { color: var(--pink-deep); }
+
+  /* ───── Reduced motion for new bits ───── */
+  @media (prefers-reduced-motion: reduce) {
+    .vibe-blob, .hero .btn-cta, .logo-mark.logo-vibe::after { animation: none !important; }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     🎯 Features bullets (merged from What's Inside)
+     ═══════════════════════════════════════════════════════════════ */
+  .feature-bullets {
+    list-style: none; padding: 0; margin: 18px 0 4px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .feature-bullets li {
+    position: relative; padding-right: 26px;
+    font-size: 14.5px; line-height: 1.5;
+    color: var(--ink-2); font-weight: 500;
+  }
+  .feature-bullets li::before {
+    content: ""; position: absolute; right: 0; top: 5px;
+    width: 16px; height: 16px; border-radius: 5px;
+    background: var(--orange-tint);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C73E1C' stroke-width='3' stroke-linecap='round'><path d='M5 12.5l4.5 4.5L19 7.5'/></svg>");
+    background-size: 11px 11px; background-position: center; background-repeat: no-repeat;
+  }
+  .feature .micro { margin-top: 18px; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     💎 ROI — twin stat (time + money) headline, centered
+     ═══════════════════════════════════════════════════════════════ */
+  .roi-section-narrow { padding: 90px 0; }
+  .roi-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .roi-inner .eyebrow { display: inline-block; margin-bottom: 22px; }
+  .roi-twin {
+    display: flex; align-items: baseline; gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .roi-stat { display: flex; align-items: baseline; gap: 8px; }
+  .roi-stat-num {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(60px, 9vw, 110px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -4px;
+    color: var(--ink);
+    background: linear-gradient(120deg, var(--orange) 0%, var(--pink-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .roi-stat-unit {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(16px, 1.6vw, 20px);
+    font-weight: 700;
+    color: var(--ink-3);
+    letter-spacing: -0.3px;
+  }
+  .roi-plus {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    color: var(--ink-4);
+    line-height: 1;
+  }
+  .roi-subtitle {
+    font-family: "Heebo", sans-serif;
+    font-size: clamp(17px, 1.9vw, 22px);
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    margin: 4px auto 18px;
+    line-height: 1.3;
+    max-width: 580px;
+  }
+  .roi-body {
+    color: var(--ink-3);
+    font-size: 16px; line-height: 1.6;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     🎉 Fun savings — simple list (not cards)
+     ═══════════════════════════════════════════════════════════════ */
+  .fun-section {
+    padding: 100px 0;
+    background: linear-gradient(180deg, var(--pink-tint) 0%, var(--bg) 100%);
+    position: relative; overflow: hidden;
+  }
+  .fun-section .container { position: relative; z-index: 1; }
+  .fun-section .section-head { margin-bottom: 36px; }
+
+  .fun-list {
+    list-style: none; padding: 0;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex; flex-direction: column;
+    gap: 2px;
+  }
+  .fun-row {
+    display: flex; align-items: center; gap: 18px;
+    padding: 16px 14px;
+    border-bottom: 1px dashed var(--line);
+    transition: padding-right 0.2s ease, background 0.2s ease;
+  }
+  .fun-row:last-child { border-bottom: none; }
+  .fun-row:hover {
+    padding-right: 22px;
+    background: rgba(255,255,255,0.5);
+  }
+  .fun-emoji {
+    font-size: 30px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 42px;
+    text-align: center;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.08));
+    animation: fun-bounce 4.5s ease-in-out infinite;
+  }
+  .fun-row:nth-child(2) .fun-emoji { animation-delay: 0.5s; }
+  .fun-row:nth-child(3) .fun-emoji { animation-delay: 1.0s; }
+  .fun-row:nth-child(4) .fun-emoji { animation-delay: 1.5s; }
+  .fun-row:nth-child(5) .fun-emoji { animation-delay: 2.0s; }
+  .fun-row:nth-child(6) .fun-emoji { animation-delay: 2.5s; }
+  @keyframes fun-bounce {
+    0%, 88%, 100% { transform: translateY(0) rotate(0); }
+    92%           { transform: translateY(-5px) rotate(-10deg); }
+    96%           { transform: translateY(-1px) rotate(8deg); }
+  }
+  .fun-text {
+    font-family: "Heebo", sans-serif;
+    font-size: 17px; font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.2px;
+    line-height: 1.3;
+  }
+  .fun-outro {
+    text-align: center;
+    margin: 36px auto 0;
+    max-width: 560px;
+    font-size: 17px; font-weight: 500;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+  .fun-outro b { color: var(--orange-deep); font-weight: 800; }
+
+  @media (max-width: 920px) {
+    .fun-section { padding: 70px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fun-emoji { animation: none !important; }
+  }
 </style>
 </head>
 <body class="loading">
@@ -687,44 +1133,66 @@
 <script id="landing-text" type="application/json">
 {
   "meta": {
-    "title": "חוגגות — האפליקציה שמארגנת לך את המסיבה",
-    "description": "פאנל אחד שמלווה אותך מ-DAY 1 ועד ליום המסיבה. צ'קליסט, תקציב, פלייליסט ו-6 משחקים אינטראקטיביים — בלי DIY, בלי אקסל, בלי לשבור את הראש.",
-    "ogTitle": "חוגגות — האפליקציה שמארגנת לך את המסיבה",
-    "ogDescription": "פאנל חכם אחד לכל המסיבה. שקט נפשי, ארגון והפעלה."
+    "title": "VibeIT — מארגנת לך את האירוע",
+    "description": "ממשק אחד שמלווה אתכם מ-DAY 1 ועד היום הגדול. צ'קליסט, תקציב, פלייליסט ו-6 משחקים אינטראקטיביים — לרווקות, יומולדת, ערב גיבוש או דייט.",
+    "ogTitle": "VibeIT — מארגנת לך את האירוע",
+    "ogDescription": "ממשק חכם אחד לכל אירוע. שקט נפשי, ארגון והפעלה."
   },
   "hero": {
     "priceFlag": "מבצע השקה!",
-    "title": "האפליקציה<br/>שמארגנת לך את המסיבה.",
-    "lead": "פאנל חכם אחד שמלווה אותך מ-DAY 1 ועד ליום המסיבה. צ'קליסט בנוי, תקציב חכם, פלייליסטים מוכנים לאווירה, ו-6 משחקים אינטראקטיביים מוכנים להפעלה. שקט נפשי, ארגון מקצועי, הפעלה — בלי DIY ובלי שעות של התעסקות.",
-    "ctaPrimary": "אני רוצה את זה!",
-    "ctaSecondary": "מה יש בפנים",
-    "trustQuote": "\"נכנסתי, סימנתי, גמרנו. חסך שבועות של כאב ראש.\"",
-    "trustWho": "— עדן, מלווה"
+    "title": "<span class=\"brand-mark\">VibeIT</span><br/>מארגנת לך את האירוע.",
+    "lead": "ממשק חכם אחד שמלווה אתכם מ-DAY 1 ועד היום הגדול. צ'קליסט מפורט, תקציב חכם, פלייליסטים מוכנים, ו-6 משחקים אינטראקטיביים — לרווקות, יומולדת, ערב גיבוש או דייט. <b style=\"color:var(--ink);\">שקט נפשי, ארגון מקצועי, הפעלה — בלי DIY ובלי שעות של התעסקות.</b>",
+    "ctaPrimary": "אני בעניין!",
+    "trustQuote": "\"פשוט. כיף. ומגבש, חסך לי המון כאב ראש.\"",
+    "trustWho": "— מירי, ערב גיבוש"
   },
   "promise": {
-    "eyebrow": "הוכתרת ל\"מלווה הרשמית\"? מזל טוב!",
-    "title": "עכשיו את גם מפיקה.<br/>גם גזברית. וגם מפעילה.",
-    "before": "סטודנטית עייפה או אמא טריה ועסוקה — כך או כך אין לך ימים להשקיע, לרדוף אחרי המשתתפות לשלם, לחפש קונספט ולג'נגל בין כל המשימות. ובכל זאת — הכל עלייך.",
-    "after": "חוגגות לוקחת ממך את שלושת התפקידים. הצ'קליסט מארגן, התקציב מחשב, והמשחקים מפעילים. את מקבלת סט כלים לארגון חלק וביום האירוע זוכה להינות בעצמך!",
+    "eyebrow": "מארגנים אירוע? מזל טוב — תרתי משמע",
+    "title": "עכשיו אתם מפיקים.<br/>גזברים. וגם מפעילים.",
+    "subtitle": "אבל אל דאגה — בשביל זה יש את <b>VibeIT</b>.",
+    "before": "מלווה עייפה, הורה טרי ועסוק, מנהל שגויס לתכנן ערב גיבוש, או חבר שמתנדב להפעלה ליומולדת מפתיעה —עכשיו אתם צריכים לרדוף אחרי רעיונות, ספקים, שיתוף פעולה מהמשתתפים ולג'נגל בין כל המשימות. ",
+    "afterIntro": "וויבאיט כאן כדי להציל את המצב ולהקל עליכם:",
+    "afterBullets": [
+      "<b>הצ'קליסט</b> מארגן",
+      "<b>התקציב</b> מחושב",
+      "<b>המשחקים</b> מפעילים"
+    ],
+    "afterOutro": "אתם מקבלים סט כלים לארגון חלק, וביום האירוע — זוכים להינות בעצמכם!",
     "beforeLabel": "מה קורה עכשיו?",
     "afterLabel": "מה יקרה בעזרת האפליקציה",
-    "ctaText": "להזמין את חוגגות",
-    "trustChips": ["תשלום חד-פעמי", "גישה מיידית במייל", "שימוש לכל מסיבה, לכל החיים"]
+    "ctaText": "להזמין את VibeIT",
+    "trustChips": [
+      "תשלום חד-פעמי",
+      "גישה מיידית במייל",
+      "שימוש לכל אירוע, לכל החיים"
+    ]
   },
   "problem": {
-    "eyebrow": "מי שאי פעם ארגנה — מבינה",
-    "title": "כולנו היינו לפחות במסיבה<br/>אחת כזאת בחיינו.",
-    "lead": "מסיבה מנומסת, משחקים שקוששו מפינטרסט, שיחות חולין שלא מחברות, וריבים על התקציב. המלווה מטורטרת חודשים, ובסוף — לא נהנית בעצמה. והכלה כנראה גם לא תגיד לך שהיא לא נהנתה. כי היא תרגיש אחראית."
+    "eyebrow": "מי שאי פעם ארגן — מבין",
+    "title": "כולנו היינו לפחות באירוע<br/>אחד כזה בחיינו.",
+    "lead": "אירוע מנומס שאף אחד לא יזכור. משחקים שקוששו מפינטרסט, שיחות חולין שלא מחברות או ריבים על התקציב. לא משנה אם זו מסיבת רווקות, יומולדת 50, ערב גיבוש בעבודה או דייט מיוחד — מי שמארגן עובר חודשים של טירוף, ובסוף לא נהנה בעצמו. כי תמיד הכל עליכם."
   },
   "solution": {
-    "eyebrow": "בדיוק בגלל זה בניתי את חוגגות",
-    "title": "פאנל חכם אחד.<br/>כל המסיבה בפנים!",
-    "lead": "חוגגות מחליפה את הפתקים בטלפון של התקציב והצ'קליסט המאולתר, את 4 קבוצות הווטסאפ, את הספקים, ואת ה-DIY הסיזיפי — בלוח בקרה אחד שאת מנהלת ממנו את הכל. מ-DAY 1 ועד ליום המסיבה!",
+    "eyebrow": "בדיוק בגלל זה בניתי את VibeIT",
+    "title": "ממשק חכם אחד.<br/>כל האירוע בפנים!",
+    "lead": "וויבאיט מחליפה את הפתקים בטלפון, את הצ'קליסט המאולתר, את 4 קבוצות הווטסאפ, את הספקים, ואת ה-DIY הסיזיפי — בלוח בקרה אחד שאתם מנהלים ממנו את הכל. רווקות, יומולדת, ערב גיבוש או דייט — מ-DAY 1 ועד הערב הגדול!",
     "rows": [
-      { "title": "לא רודפת אחרי רעיונות למשחקים", "body": "6 משחקים אינטראקטיביים, קורעים מצחוק, מוכנים להפעלה — בלי DIY, בלי לקנות ערכות." },
-      { "title": "פלייליסטים מוכנים לאווירה אש", "body": "מגוון פלייליסטים מוכנים להשמעה בספוטיפיי או Apple Music." },
-      { "title": "חלוקה חכמה של התקציב", "body": "לא שוברים יותר את הראש, כל הוצאה מתחלקת אוטומטית בהתאם להוספה והסרה של הוצאות וגם של המשתתפות. רואה בזמן אמת מי שילמה, מי חייבת, וכמה חסר — בלי טעויות." },
-      { "title": "לא מתחילה צ'קליסט מאולתר מאפס", "body": "30 משימות מסודרות לפי לוח זמנים — מ-6 חודשים לפני ועד היום הגדול. את רק מסמנת." }
+      {
+        "title": "לא רודפים אחרי רעיונות למשחקים",
+        "body": "6 משחקים אינטראקטיביים, קורעים מצחוק, מוכנים להפעלה — בלי DIY, בלי לקנות ערכות."
+      },
+      {
+        "title": "פלייליסטים מוכנים לאווירה אש",
+        "body": "מגוון פלייליסטים מוכנים להשמעה בספוטיפיי או Apple Music — לכל סוג של אירוע, לכל מצב רוח."
+      },
+      {
+        "title": "חלוקה חכמה של התקציב",
+        "body": "כל הוצאה מתחלקת אוטומטית בהתאם להוספה והסרה של הוצאות ושל המשתתפים. רואים בזמן אמת מי שילם, מי חייב, וכמה חסר — בלי טעויות."
+      },
+      {
+        "title": "לא מתחילים צ'קליסט מאולתר מאפס",
+        "body": "עשרות משימות מסודרות לפי לוח זמנים — מ-6 חודשים לפני ועד היום הגדול. אתם רק מסמנים."
+      }
     ]
   },
   "about": {
@@ -732,109 +1200,141 @@
     "title": "אני לינוי ניסים ונפלאות. <br/>קומיקאית, סטנדאפיסטית, ומפעילה במסיבות.",
     "paragraphs": [
       "מגיל קטן הבנתי שהומור הוא הדרך הכי קצרה ויעילה לחבר בין אנשים. לאחר לימודי משחק ושנים של הופעות על מגוון במות הפכתי את הכישרון שלי לחבר בין אנשים לשליחות. מסיבת רווקות, ימי הולדת או ערבי צוות הם לא רק סימון וי. זה פוטנציאל אמיתי להתחבר, להכיר, לחוות וליצור זיכרונות. ואיך עושים את זה בצורה הכי מיטבית? בדיוק! הומור. מה נשאר אחר כך אם לא הרגעים האלה שהתגלגלנו מצחוק על הרצפה? לא הקייטרינג, לא הבלונים ולא המים של הבריכה.",
-      "אחרי שהפעלתי 100+ אירועים, הבנתי שרוב המסיבות והקצרים בין המשתתפים קורים בגלל תקציב וארגון מרושל. לכן יצרתי אפליקציה שמתכללת את כל הפונקציות שיעשו לכם חיים קלים ובמחיר נגיש לכל כיס. כל הידע שלי בהפעלת אירועים, כל האהבה שלי לסדר וארגון ומיטב ההברקות מהמוח הקומי שלי- כולם ארוזים באפליקציה אחת שתעשה לך את המסיבה."
+      "אחרי שהפעלתי 100+ אירועים, הבנתי שרוב המסיבות והקצרים בין המשתתפים קורים בגלל תקציב וארגון מרושל. לכן יצרתי אפליקציה שמתכללת את כל הפונקציות שיעשו לכם חיים קלים ובמחיר נגיש לכל כיס. כל הידע שלי בהפעלת אירועים, כל האהבה שלי לסדר וארגון ומיטב ההברקות מהמוח הקומי שלי — כולם ארוזים באפליקציה אחת שתעשה לכם את האירוע."
     ],
-    "credChips": ["קומיקאית וסטנדאפיסטית", "100+ מסיבות", "התמחות בחיבור דרך הומור", "רווקות · יומולדות · ימי גיבוש"],
-    "linkText": "האתר האישי שלי →",
+    "linkText": "לאתר של לינוי ניסים ונפלאות →",
     "linkUrl": "https://www.linoynissim.co.il",
     "photo": "linoy.jpg"
   },
   "features": {
     "eyebrow": "ארבעת הכלים",
-    "title": "4 כלים שעובדים בשבילך.<br/>בלי שתעבדי בשבילם.",
-    "lead": "כל מה שמלווה צריכה — במסך אחד. בלי לעבור בין אפליקציות, בלי פתקים וקבוצות מתישות.",
+    "title": "4 כלים שעובדים בשבילכם.<br/>",
+    "lead": "כל מה שמארגן.ת צריך.ה — במסך אחד. בלי לעבור בין אפליקציות, בלי פתקים וקבוצות מתישות.",
     "cards": [
-      { "title": "צ'קליסט שמלווה אותך מהיום הראשון", "body": "30 משימות מחולקות לציר זמן — מ-6 חודשים לפני ועד היום עצמו. בלי פתקים מפוזרים, בלי לשכוח, בלי שמשהו ייפול בין הכיסאות ברגע האחרון.", "micro": "חוסך לך 8 שעות בניית רשימה →" },
-      { "title": "תקציב דינמי שמתחלק לבד", "body": "מוסיפה הוצאה, האפליקציה תחלק בין המשתתפות. מוסיפה/מסירה משתתפת, האפליקציה מעדכנת את החלוקה. אין יותר אקסל או ניחושים גסים. אין יותר טעויות. אין יותר מתח עם החברות.", "micro": "חוסך ~700 ₪ בטעויות חישוב שתשלימי באוחר →" },
-      { "title": "פלייליסט מוכן בלחיצה", "body": "מספר פלייליסטים מוכנים להפעלה מספוטיפיי או Apple Music. את רק לוחצת פליי!", "micro": "חוסך 4 שעות בניית פלייליסט →" },
-      { "title": "6 משחקים אינטראקטיביים — קורעים מצחוק", "body": "6 משחקים עם מצב הקרנה למסך גדול וחיבור חי של כל הבנות מהטלפון. בלי מפעילים חיצוניים, בלי ערכות, בלי משחקים גנארים שתצטרכי לגזור ימים שלמים.", "micro": "חוסך 1,800 ₪ על הפעלה חיצונית →" }
-    ]
-  },
-  "whatsInside": {
-    "eyebrow": "מה בדיוק יש לי בפאנל",
-    "title": "כל מה שאת מקבלת רק ב-297 ₪.",
-    "lead": "תשלום חד-פעמי. גישה מלאה לכל מסיבה שתארגני — עכשיו או בעוד שנה.",
-    "ctaText": "להזמין את חוגגות",
-    "groups": [
-      { "title": "ארגון ותכנון", "items": ["צ'קליסט עם 30 משימות מסודרות לפי ציר זמן", "חלוקה לקטגוריות: 6+ חודשים, 4–6 חודשים, חודש לפני, יום האירוע", "פס התקדמות חי + סימון משימות", "בלי לזכור — מה לעשות, מתי, ולמה זה חשוב"] },
-      { "title": "תקציב וכספים", "items": ["הוספת הוצאות בלחיצה — מתחלקות אוטומטית", "ניהול משתתפות + מי משלמת על מה", "תצוגת \"מי חייבת כמה\" בזמן אמת", "סך הוצאות, חסר לאסוף, וחלוקה מדויקת"] },
-      { "title": "אווירה וחיבור", "items": ["פלייליסטים מוכנים מספוטיפיי או Apple Music", "6 משחקים אינטראקטיביים בעברית", "מצב הקרנה למסך הגדול", "הבנות מצטרפות לחוויית המשחק בסריקת QR — בלי הרשמה"] },
-      { "title": "תמיכה ותפעול", "items": ["פועלת בדפדפן — בלי הורדה, בלי חנות אפליקציות", "4 סוגי אירוע: רווקות, יומולדת, יום גיבוש, דייט", "תמיכה ישירה בווטסאפ ממני, לינוי", "עברית מלאה, RTL מלא, גישה לכל החיים"] }
+      {
+        "title": "צ'קליסט שמלווה אתכם מהיום הראשון",
+        "body": "עשרות משימות מחולקות לציר זמן — מ-6 חודשים לפני ועד היום עצמו. בלי פתקים מפוזרים, בלי לשכוח, בלי שמשהו ייפול בין הכיסאות ברגע האחרון.",
+        "bullets": [
+          "חלוקה לקטגוריות: 6+ חודשים, 4–6, חודש לפני, יום האירוע",
+          "פס התקדמות חי + סימון משימות בלחיצה",
+          "מתאים אוטומטית לסוג האירוע שבחרתם"
+        ],
+        "micro": "חוסך לכם 8 שעות בניית רשימה →"
+      },
+      {
+        "title": "תקציב דינמי שמתחלק לבד",
+        "body": "מוסיפים הוצאה, האפליקציה מחלקת בין המשתתפים. מוסיפים/מסירים משתתף, האפליקציה מעדכנת את החלוקה. אין יותר אקסל. אין יותר טעויות. אין יותר מתח עם החברים.",
+        "bullets": [
+          "ניהול משתתפים + מי משלם על מה",
+          "תצוגת \"מי חייב כמה\" בזמן אמת",
+          "סך הוצאות, חסר לאסוף וחלוקה מדויקת"
+        ],
+        "micro": "חוסך ~700 ₪ בטעויות חישוב →"
+      },
+      {
+        "title": "פלייליסט מוכן בלחיצה",
+        "body": "מספר פלייליסטים מוכנים להפעלה מספוטיפיי או Apple Music. אתם רק לוחצים פליי!",
+        "bullets": [
+          "ספוטיפיי + Apple Music",
+          "מותאם לאווירת האירוע (רווקות / גיבוש / יומולדת / דייט)",
+          "בלחיצה אחת — מתנגן בכל מקום"
+        ],
+        "micro": "חוסך 4 שעות בניית פלייליסט →"
+      },
+      {
+        "title": "6 משחקים אינטראקטיביים — קורעים מצחוק",
+        "body": "6 משחקים עם מצב הקרנה למסך גדול וחיבור חי של כל המשתתפים מהטלפון. בלי מפעילים חיצוניים, בלי קופסאות שיתקעו בבוידעם.",
+        "bullets": [
+          "מצב הקרנה למסך הגדול",
+          "המשתתפים מצטרפים בסריקת QR — בלי הרשמה",
+          "הסברים מפורטים על תפעול כל משחק"
+        ],
+        "micro": "חוסך לפחות 1,800 ₪ על הפעלה חיצונית →"
+      }
     ]
   },
   "games": {
     "eyebrow": "6 משחקים אינטראקטיביים",
-    "title": "פותחות, מקרינות, צוחקות.",
-    "lead": "כל משחק מוכן להקרנה למסך גדול. בחלקם הבנות מצטרפות מהטלפון בסריקת QR ועונות בזמן אמת — בלי הרשמה, בלי אפליקציה להוריד.",
-    "items": [
-      { "num": "01", "title": "מפה לאוזן", "body": "קריאת שפתיים בזוגות, עם טיימר וסבבים פתוחים. צחוקים מובטחים.", "tag": "⏱ טיימר" },
-      { "num": "02", "title": "בלי לומר מילה", "body": "פנטומימה על מילים — האנרגיה הכי גבוהה במסיבה.", "tag": "⏱ טיימר" },
-      { "num": "03", "title": "שאלון עם החתן", "body": "שולחת שאלות לחתן בווטסאפ, רואות אם הכלה מזהה.", "tag": "💬 משתף את החתן" },
-      { "num": "04", "title": "חידון על הכלה", "body": "הבנות עונות מהטלפון, 20 שניות לשאלה — הכי תחרותי.", "tag": "📱 חי עם הבנות" },
-      { "num": "05", "title": "Never Have I Ever", "body": "הקלאסיקה. עם או בלי אלכוהול — את מחליטה.", "tag": "🥂 שתייה" },
-      { "num": "06", "title": "Fuck Marry Kill", "body": "3 אופציות, הצבעה חיה, ותצוגת תוצאות בזמן אמת.", "tag": "📱 חי עם הבנות" }
-    ]
+    "title": "פותחים, מקרינים, צוחקים.",
+    "lead": "כל משחק מוכן להקרנה למסך גדול. בחלקם המשתתפים מצטרפים מהטלפון בסריקת QR ועונים בזמן אמת — בלי הרשמה, בלי אפליקציה להוריד.",
+    "caption": "דוגמא מתוך תצוגת משחקים למסיבת רווקות"
   },
   "ctaBar2": {
-    "title": "המסיבה הבאה כבר ביומן שלך. אל תפספסי.",
-    "sub": "מבצע השקה <b style=\"color:#fff;\">297 ₪</b> <s>350 ₪</s> · גישה מיידית במייל",
+    "title": "האירוע הבא כבר ביומן שלכם. אל תפספסו.",
+    "sub": "מבצע השקה <b style=\"color:#fff;\">297 ₪</b> <s>397 ₪</s> · גישה מיידית במייל",
     "button": "להזמין עכשיו"
   },
   "roi": {
     "eyebrow": "השווי האמיתי",
-    "title": "בואי נחשב כמה חוגגות באמת חוסכת לך.",
-    "lead": "המחיר של חוגגות הוא 297 ₪. החיסכון הממוצע — שעות עבודה + לפחות 1,800 ₪ על מפעיל. הנה איך זה מתפרק.",
-    "timeSection": {
-      "eyebrow": "חיסכון בזמן",
-      "stat": "25",
-      "statSuffix": "שעות עבודה.<br/>שלא תצטרכי להשקיע.",
-      "body": "זה הזמן הממוצע שמלווה משקיעה בארגון מסיבת רווקות בלי האפליקציה. עם חוגגות, רוב העבודה <b style=\"color:var(--ink);\">כבר בנויה</b> — את רק מתאימה לאירוע שלך.",
-      "rows": [
-        { "label": "חיפוש משחקים ו-DIY", "before": "8 שעות", "after": "0 — מוכנים" },
-        { "label": "בניית פלייליסט", "before": "4 שעות", "after": "30 שניות" },
-        { "label": "חישוב תקציב וחלוקה", "before": "6 שעות", "after": "אוטומטי" },
-        { "label": "בניית צ'קליסט משימות", "before": "7 שעות", "after": "כבר בנוי" }
-      ],
-      "footLabel": "סה\"כ זמן שנחסך",
-      "footAccent": "25+",
-      "footUnit": "שעות"
-    },
-    "moneySection": {
-      "eyebrow": "חיסכון בכסף",
-      "statCurrency": "₪",
-      "stat": "1,800",
-      "statSuffix": "מינימום שנחסכים<br/>על הפעלה בלבד.",
-      "body": " הפעלה לרווקות עולה 1,800 ₪ ומעלה. עם 6 המשחקים האינטראקטיביים — את המפעילה. וזה עוד לפני שדיברנו על חיסכון בערכות DIY וטעויות תקציב.",
-      "rows": [
-        { "label": "מפעיל/ה למסיבה", "before": "~1,800 ₪", "after": "0 — את מפעילה" },
-        { "label": "ערכות משחקים ו-DIY", "before": "~400 ₪", "after": "כלול" },
-        { "label": "טעויות בחישוב תקציב", "before": "~700 ₪", "after": "אוטומטי" }
-      ],
-      "footLabel": "חיסכון ממוצע",
-      "footAccent": "~2,900",
-      "footUnit": "₪"
-    }
+    "statTime": "25+",
+    "statTimeUnit": "שעות עבודה",
+    "statMoney": "~2,900",
+    "statMoneyUnit": "₪",
+    "subtitle": "שלא תצטרכו להשקיע.",
+    "body": "הפעלה באלפי שקלים, טעויות בחישוב שגוררות הוצאות מהכיס האישי שלכם, שעות על גבי שעות שנחסכו מכם על אילתור וחיפוש וניחוש"
+  },
+  "funSavings": {
+    "title": "<br/>מה תוכלו לעשות עם כל הזמן והכסף הזה?",
+    "lead": "אל תדאגו, גם על זה חשבנו בשבילכם:",
+    "items": [
+      {
+        "emoji": "✈️",
+        "text": "בטן-גב בקפריסין"
+      },
+      {
+        "emoji": "🛌",
+        "text": "לילה במלון בראשית"
+      },
+      {
+        "emoji": "🥙",
+        "text": "1,000 מנות פלאפל"
+      },
+      {
+        "emoji": "🤖",
+        "text": "שואב אבק רובוטי"
+      },
+      {
+        "emoji": "💸",
+        "text": "טיפ מוגזם למלצר"
+      },
+      {
+        "emoji": "🅿️",
+        "text": "יממת חניה בתל אביב"
+      }
+    ]
   },
   "ctaBar3": {
     "title": "חיסכון של 2,900 ₪ בממוצע. במחיר חד-פעמי של 297 ₪.",
-    "sub": "החזר השקעה תוך הוצאה אחת · מבצע השקה: <b style=\"color:#fff;\">297 ₪</b> <s>350 ₪</s>",
+    "sub": " · מבצע השקה: <b style=\"color:#fff;\">297 ₪</b> <s>397 ₪</s>",
     "button": "להזמין עכשיו"
   },
   "how": {
     "eyebrow": "איך זה עובד",
-    "title": "משלוש דקות לתחילת השימוש.",
+    "title": "מרגע הרכישה ועד לרגע ההפעלה.",
     "steps": [
-      { "num": "1", "title": "מזמינה את האפליקציה", "body": "תשלום חד-פעמי באתר התשלומים. תוך דקה תקבלי מייל עם שם משתמש וסיסמה." },
-      { "num": "2", "title": "נכנסת מהקישור", "body": "פותחת בדפדפן הטלפון — בלי הורדות, בלי חנות אפליקציות. נכנסת עם הפרטים שקיבלת." },
-      { "num": "3", "title": "מארגנת ומשחקת", "body": "בוחרת סוג אירוע, מזמינה את החברות, ומקבלת צ'קליסט, תקציב, פלייליסט ו-6 משחקים מוכנים." }
+      {
+        "num": "1",
+        "title": "מזמינים את האפליקציה",
+        "body": "תשלום חד-פעמי באתר התשלומים. תוך דקה תקבלו מייל עם שם משתמש וסיסמה."
+      },
+      {
+        "num": "2",
+        "title": "נכנסים מהקישור",
+        "body": "פותחים בדפדפן הטלפון — בלי הורדות, בלי חנות אפליקציות. נכנסים עם הפרטים שקיבלתם."
+      },
+      {
+        "num": "3",
+        "title": "מארגנים ומשחקים",
+        "body": "בוחרים סוג אירוע, מזמינים את החברים, ומקבלים צ'קליסט, תקציב, פלייליסט ו-6 משחקים מוכנים."
+      }
     ]
   },
   "pricing": {
     "eyebrow": "המחיר",
     "title": "תשלום חד-פעמי. גישה מלאה.",
-    "lead": "בלי מנוי חודשי. בלי תוספות. בלי כוכביות. מחיר אחד שכולל את כל הכלים ו-6 המשחקים — לכל מסיבה, לכל פעם.",
+    "lead": "בלי מנוי חודשי. בלי תוספות. בלי כוכביות. מחיר אחד שכולל את כל הכלים ו-6 המשחקים — לכל אירוע, לכל פעם.",
     "flag": "מבצע השקה — לתקופה מוגבלת",
-    "priceOld": "350",
+    "priceOld": "397",
     "priceNum": "297",
     "priceCurrency": "₪",
     "sub": "תשלום <b>חד-פעמי</b>. גישה מלאה. ללא מנוי.",
@@ -843,34 +1343,55 @@
       "תקציב דינמי + חלוקה אוטומטית",
       "פלייליסט משותף בלחיצה",
       "6 משחקים אינטראקטיביים מוכנים",
-      "מצב הקרנה למסך הגדול + QR לבנות",
-      "תמיכה בווטסאפ ",
+      "מצב הקרנה למסך הגדול + QR למשתתפים",
+      "תמיכה בווטסאפ",
       "עברית מלאה · גישה לכל החיים"
     ],
-    "buttonText": "להזמין את חוגגות ב-297 ₪",
-    "countdown": "⚡ חיסכון של 53 ₪ — מבצע ההשקה לזמן מוגבל"
+    "buttonText": "להזמין את VibeIT ב-297 ₪",
+    "countdown": "⚡ חיסכון של 100 ₪ — מבצע ההשקה לזמן מוגבל"
   },
   "faq": {
     "eyebrow": "שאלות נפוצות",
-    "title": "לפני שאת מזמינה.",
+    "title": "לפני שאתם מזמינים.",
     "items": [
-      { "q": "זה אפליקציה שצריך להוריד?", "a": "לא. חוגגות פועלת בדפדפן של הטלפון — אין הורדה, אין חנות אפליקציות, אין עדכונים. נכנסת עם לינק שאני שולחת לך במייל." },
-      { "q": "זה תשלום חודשי?", "a": "לא. תשלום חד-פעמי של 297 ₪ (במקום 350 ₪) — וזהו. את מקבלת גישה מלאה לכל הכלים ולכל 6 המשחקים, לכל המסיבות שתארגני, לכל החיים." },
-      { "q": "זה מתאים גם ליומולדת או לגיבוש?", "a": "בהחלט. לאחר ההרשמה את בוחרת את סוג האירוע— רווקות, יומולדת, יום גיבוש או דייט — והאפליקציה מתאימה את עצמה." },
-      { "q": "המשתתפות גם צריכות להירשם?", "a": "לא. רק את כמלווה. החברות פשוט סורקות קוד QR או לוחצות על לינק כדי להצטרף למשחקים מסויימים— בלי הרשמה, בלי חשבון, בלי לסבך." },
-      { "q": "אני לא מבינה בטכנולוגיה. אסתדר?", "a": "כן. בניתי את חוגגות בדיוק בשביל מי שאין לה כוח לתהליכים מסובכים. נכנסת עם שם וסיסמה, התפעול פשוט וברור. המשחקים מוכנים ומכילים הסברים מפורטים של תפעול המשחק." },
-      { "q": "איך אני מקבלת תמיכה אם משהו לא יעבוד?", "a": "ישירות בווטסאפ. בין אם מדובר בתקלה טכנית או שאלה תפעולית." },
-      { "q": "מתי כדאי להזמין?", "a": "כמה שיותר מוקדם. הצ'קליסט בנוי לליווי של 6 חודשים, אבל גם אם המסיבה בעוד שבועיים — חוגגות מקצרת לך זמנים וחוסכת לך כאב ראש משמעותי." }
+      {
+        "q": "זה אפליקציה שצריך להוריד?",
+        "a": "לא. וויבאיט פועלת בדפדפן של הטלפון — אין הורדה, אין חנות אפליקציות, אין עדכונים. נכנסים עם לינק שאני שולחת לכם במייל."
+      },
+      {
+        "q": "זה תשלום חודשי?",
+        "a": "לא. תשלום חד-פעמי של 297 ₪ (במקום 397 ₪) — וזהו. אתם מקבלים גישה מלאה לכל הכלים ולכל 6 המשחקים, לכל האירועים שתארגנו, לכל החיים."
+      },
+      {
+        "q": "לאיזה סוגי אירועים האפליקציה מתאימה?",
+        "a": "מסיבת רווקות, ימי הולדת למבוגרים, ערב צוות, קבוצה מאורגנת שנפגשת לערב כיפי או אפילו זוג בדייט. לאחר ההרשמה אתם בוחרים את סוג האירוע והאפליקציה מתאימה את עצמה לסוג האירוע."
+      },
+      {
+        "q": "המשתתפים גם צריכים להירשם?",
+        "a": "לא. רק אתם כמארגנים. המשתתפים פשוט סורקים קוד QR או לוחצים על לינק כדי להצטרף למשחקים מסוימים — בלי הרשמה, בלי חשבון, בלי לסבך."
+      },
+      {
+        "q": "אנחנו לא מבינים בטכנולוגיה. נסתדר?",
+        "a": "בטח. בניתי את וויבאיט בדיוק בשביל מי שאין לו כוח לתהליכים מסובכים. נכנסים עם שם וסיסמה, התפעול פשוט וברור. המשחקים מוכנים ומכילים הסברים מפורטים של תפעול המשחק."
+      },
+      {
+        "q": "איך מקבלים תמיכה אם משהו לא עובד?",
+        "a": "ישירות בווטסאפ. בין אם מדובר בתקלה טכנית או שאלה תפעולית."
+      },
+      {
+        "q": "מתי כדאי להזמין?",
+        "a": "כמה שיותר מוקדם. הצ'קליסט בנוי לליווי של 6 חודשים, אבל גם אם האירוע בעוד שבועיים — וויבאיט מקצרת לכם זמנים וחוסכת לכם כאב ראש משמעותי."
+      }
     ]
   },
   "finalCta": {
-    "title": "מוכנה לחיים קלים יותר?",
-    "body": "תשלום חד-פעמי, גישה מיידית, ערך של אלפי שקלים. חוויה שתישאר איתכן גם בחתונה שלהם!",
+    "title": "מוכנים לחיים קלים יותר?",
+    "body": "תשלום חד-פעמי, גישה מיידית, ערך של אלפי שקלים. חוויה שתישאר אתכם — כל אירוע, פעם אחר פעם.",
     "buttonText": "להזמין ב-297 ₪",
-    "subline": "<s style=\"color:rgba(255,255,255,0.35);\">350 ₪</s> &nbsp;·&nbsp; חיסכון של 53 ₪ במבצע ההשקה"
+    "subline": "<s style=\"color:rgba(255,255,255,0.35);\">397 ₪</s> &nbsp;·&nbsp; חיסכון של 100 ₪ במבצע ההשקה"
   },
   "footer": {
-    "copy": "חוגגות &copy; 2026 · כל הזכויות שמורות ללינוי ניסים",
+    "copy": "VibeIT &copy; 2026 · כל הזכויות שמורות ללינוי ניסים",
     "whatsapp": "ווטסאפ",
     "email": "מייל",
     "instagram": "אינסטגרם",
@@ -882,13 +1403,23 @@
   },
   "links": {
     "paymentUrl": "https://pay.grow.link/Nzc2MDM~9ff7e8caca6ddae85827c616a799ba36-MzUwMjcxMA",
-    "paymentWhatsappFallback": "https://wa.me/972509419988?text=%D7%94%D7%99%D7%99%20%D7%9C%D7%99%D7%A0%D7%95%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%94%D7%96%D7%9E%D7%99%D7%9F%20%D7%90%D7%AA%20%D7%97%D7%95%D7%92%D7%92%D7%95%D7%AA%20%D7%91%D7%9E%D7%91%D7%A6%D7%A2%20%D7%94%D7%94%D7%A9%D7%A7%D7%94%20%F0%9F%8E%89"
+    "paymentWhatsappFallback": "https://wa.me/972509419988?text=%D7%94%D7%99%D7%99%20%D7%9C%D7%99%D7%A0%D7%95%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%94%D7%96%D7%9E%D7%99%D7%9F%20%D7%90%D7%AA%20VibeIT%20%D7%91%D7%9E%D7%91%D7%A6%D7%A2%20%D7%94%D7%94%D7%A9%D7%A7%D7%94%20%F0%9F%8E%89"
   }
 }
 </script>
 
 <!-- ═══════════ HERO ═══════════ -->
 <section class="hero">
+  <div class="confetti" aria-hidden="true">
+    <span class="confetti-piece" style="--c:var(--orange); --x:8%;  --d:0s;   --r:14s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink);   --x:18%; --d:2.4s; --r:16s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange-deep); --x:31%; --d:5s; --r:13s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink-deep);  --x:44%; --d:1.2s; --r:18s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange); --x:58%; --d:7s;  --r:15s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink);   --x:72%; --d:3.6s; --r:17s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange-deep); --x:84%; --d:6s; --r:14s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink-deep);  --x:93%; --d:9s; --r:16s;"></span>
+  </div>
   <div class="container hero-inner">
     <div>
       <div class="price-flag">
@@ -896,14 +1427,13 @@
         <span data-text="hero.priceFlag"></span>
       </div>
       <h1 class="h1" data-text-html="true" data-text="hero.title"></h1>
-      <p class="lead" data-text="hero.lead"></p>
+      <p class="lead" data-text-html="true" data-text="hero.lead"></p>
 
       <div class="hero-cta-row">
-        <a href="#pricing" class="btn btn-cta btn-lg">
+        <a href="#pricing" class="btn btn-cta btn-lg btn-wiggle">
           <span data-text="hero.ctaPrimary"></span>
           <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
         </a>
-        <a href="#how" class="btn btn-ghost btn-lg" data-text="hero.ctaSecondary"></a>
       </div>
       <div class="hero-trust">
         <span class="stars">★★★★★</span>
@@ -912,8 +1442,8 @@
     </div>
 
     <!-- Mockup: Home (mirrors MockupHome from app) -->
-    <div class="phone-wrap">
-      <div class="phone">
+    <div class="phone-wrap phone-wrap-tilt">
+      <div class="phone phone-tilt phone-float">
         <div class="phone-status">
           <span>9:41</span>
           <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
@@ -1012,11 +1542,12 @@
 </section>
 
 <!-- ═══════════ PROMISE (transformation) ═══════════ -->
-<section class="alt">
+<section class="alt promise-section">
   <div class="container">
     <div class="section-head">
       <span class="eyebrow"><span data-text="promise.eyebrow"></span><span class="dot"></span></span>
       <h2 class="h2" data-text-html="true" data-text="promise.title"></h2>
+      <p class="promise-subtitle" data-text-html="true" data-text="promise.subtitle"></p>
     </div>
 
     <div class="promise-inner">
@@ -1026,7 +1557,9 @@
       </div>
       <div class="promise-card promise-after">
         <span class="promise-label" data-text="promise.afterLabel"></span>
-        <p data-text="promise.after"></p>
+        <p class="promise-after-intro" data-text="promise.afterIntro"></p>
+        <ul class="promise-bullets" data-list="promise.afterBullets" data-tpl="promiseBullet"></ul>
+        <p class="promise-after-outro" data-text="promise.afterOutro"></p>
       </div>
     </div>
 
@@ -1058,15 +1591,74 @@
       <div data-list="solution.rows" data-tpl="checkRow"></div>
     </div>
 
-    <!-- Mockup: Checklist -->
-    <div class="phone-wrap">
-      <div class="phone">
+    <!-- Mockup: Slideshow of 4 app screens (Home → Checklist → Budget → Games), 2s each -->
+    <div class="phone-wrap phone-wrap-tilt">
+      <div class="phone phone-tilt phone-float">
         <div class="phone-status">
           <span>9:41</span>
           <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
         </div>
-        <div class="phone-body">
-          <div class="scr-h-pink">
+        <div class="phone-body phone-slideshow">
+
+          <!-- SLIDE 1 — Home / Tools -->
+          <div class="slide-screen">
+            <div class="scr-h-orange">
+              <div class="row">
+                <div class="avatar-mini">מ</div>
+                <div style="flex:1;min-width:0;">
+                  <div class="h-greeting">היי מאיה, מארחת</div>
+                  <div class="h-event-name">הרווקות של מאיה</div>
+                </div>
+                <div style="display:flex;gap:5px;">
+                  <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.7 2.7 0 0 1 5.4 0c0 1.6-2.7 2-2.7 3.6"/><circle cx="12" cy="17" r="0.9" fill="#fff" stroke="none"/></svg></div>
+                  <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11l8.5-7.5L20.5 11M5.5 9.5V20h13V9.5"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbox-heading" style="margin-top:8px;">
+              <div class="toolbox-stripe"></div>
+              <div class="toolbox-title">ארגז הכלים שלך</div>
+            </div>
+            <div class="tools-grid">
+              <div class="tool-card">
+                <div class="blob" style="background: var(--orange-soft);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                  <div class="tool-icon-sm" style="background: var(--orange);"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6.5h11M9 12h11M9 17.5h7"/><circle cx="4.5" cy="6.5" r="1" fill="#fff" stroke="none"/><circle cx="4.5" cy="12" r="1" fill="#fff" stroke="none"/><circle cx="4.5" cy="17.5" r="1" fill="#fff" stroke="none"/></svg></div>
+                  <div class="tool-badge num" style="background: var(--orange-soft); color: var(--orange-deep);">5/30</div>
+                </div>
+                <div style="position:relative;"><div class="tool-title">צ'קליסט</div><div class="tool-sub">ארגון המסיבה</div></div>
+              </div>
+              <div class="tool-card">
+                <div class="blob" style="background: var(--pink-soft);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                  <div class="tool-icon-sm" style="background: var(--pink);"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5.5l10-2V15"/><circle cx="6.3" cy="17.2" r="2.7"/><circle cx="16.3" cy="14.8" r="2.7"/></svg></div>
+                  <div class="tool-badge" style="background: var(--pink-soft); color: var(--pink-deep);">פעיל</div>
+                </div>
+                <div style="position:relative;"><div class="tool-title">פלייליסט</div><div class="tool-sub">מחובר לספוטיפיי</div></div>
+              </div>
+              <div class="tool-card">
+                <div class="blob" style="background: var(--orange-soft);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                  <div class="tool-icon-sm" style="background: var(--orange);"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="17" height="13" rx="2.6"/><path d="M3.5 9.5h17"/></svg></div>
+                  <div class="tool-badge num" style="background: var(--orange-soft); color: var(--orange-deep);">₪6,650</div>
+                </div>
+                <div style="position:relative;"><div class="tool-title">תקציב</div><div class="tool-sub">מי חייבת כמה</div></div>
+              </div>
+              <div class="tool-card">
+                <div class="blob" style="background: var(--pink-soft);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;">
+                  <div class="tool-icon-sm" style="background: var(--pink);"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 4.8L18.5 10.5 13.8 12.2 12 17l-1.8-4.8L5.5 10.5l4.7-1.7L12 4z"/></svg></div>
+                  <div class="tool-badge" style="background: var(--pink-soft); color: var(--pink-deep);">6</div>
+                </div>
+                <div style="position:relative;"><div class="tool-title">משחקים</div><div class="tool-sub">להקרנה לכולן</div></div>
+              </div>
+            </div>
+            <div class="slide-label">בית · ארגז הכלים</div>
+          </div>
+
+          <!-- SLIDE 2 — Checklist -->
+          <div class="slide-screen">
+            <div class="scr-h-pink">
             <div class="row-sb">
               <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
               <div style="font-size:12px;font-weight:800;color:#1A1A1A;">צ'קליסט המארגנת</div>
@@ -1093,11 +1685,11 @@
           <div style="display:flex;flex-direction:column;gap:5px;margin-top:7px;">
             <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">פתיחת קבוצה של המלוות והכלה</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">פתיחת קבוצה של המארגנות והחוגגת</div>
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">סיעור מוחות עם הכלה</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">סיעור מוחות עם החוגגת</div>
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
@@ -1109,9 +1701,104 @@
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">אופציות לתאריכים מהכלה</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">אופציות לתאריכים מהחוגגת</div>
             </div>
           </div>
+            <div class="slide-label">צ'קליסט</div>
+          </div>
+
+          <!-- SLIDE 3 — Budget -->
+          <div class="slide-screen">
+            <div class="scr-h-orange">
+              <div class="row-sb">
+                <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+                <div style="font-size:12px;font-weight:800;color:#fff;">תקציב המסיבה</div>
+                <div style="width:14px;"></div>
+              </div>
+              <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                  <div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.88);letter-spacing:0.4px;">סך הוצאות</div>
+                  <div class="num" style="font-size:24px;font-weight:800;color:#fff;line-height:1;margin-top:2px;">₪6,650</div>
+                </div>
+                <div style="padding:3px 10px;border-radius:999px;background:#1A1A1A;color:#fff;font-size:11px;font-weight:800;">8 משתתפות</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:12px;font-weight:800;">צילום</div>
+                  <div style="font-size:10px;color:var(--ink-3);">דנה הוסיפה</div>
+                </div>
+                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪1,200</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:12px;font-weight:800;">קייטרינג</div>
+                  <div style="font-size:10px;color:var(--ink-3);">משתנה — ₪/אדם</div>
+                </div>
+                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪3,200</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:12px;font-weight:800;">עיצוב + ערכות</div>
+                  <div style="font-size:10px;color:var(--ink-3);">קבוע</div>
+                </div>
+                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪900</div>
+              </div>
+            </div>
+            <div style="margin-top:9px;background:var(--orange);color:#fff;border-radius:10px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:11px;font-weight:700;opacity:0.95;">לאסוף מכל משתתפת</div>
+              <div class="num" style="font-size:15px;font-weight:900;">₪831</div>
+            </div>
+            <div class="slide-label">תקציב חי</div>
+          </div>
+
+          <!-- SLIDE 4 — Games -->
+          <div class="slide-screen">
+            <div class="scr-h-orange">
+              <div class="row-sb">
+                <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+                <div style="font-size:12px;font-weight:800;color:#fff;">המשחקים שלך</div>
+                <div style="width:14px;"></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+              <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">01</div>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:800;">מפה לאוזן</div>
+                  <div style="font-size:10px;color:var(--ink-3);">קריאת שפתיים בזוגות</div>
+                </div>
+                <div style="font-size:11px;font-weight:800;color:var(--orange-deep);background:#fff;padding:3px 7px;border-radius:999px;">⏱</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#1A1A1A;font-weight:800;font-size:11px;">02</div>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:800;">בלי לומר מילה</div>
+                  <div style="font-size:10px;color:var(--ink-3);">פנטומימה — אנרגיה גבוהה</div>
+                </div>
+                <div style="font-size:11px;font-weight:800;color:var(--pink-deep);background:var(--pink-soft);padding:3px 7px;border-radius:999px;">⏱</div>
+              </div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">03</div>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:800;">שאלון עם החתן</div>
+                  <div style="font-size:10px;color:var(--ink-3);">משתף את החתן בווטסאפ</div>
+                </div>
+                <div style="font-size:11px;font-weight:800;color:#fff;background:var(--ink);padding:3px 7px;border-radius:999px;">💬</div>
+              </div>
+              <div style="background:var(--pink-soft);border:1px solid rgba(199,94,130,0.25);border-right:3px solid var(--pink);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">04</div>
+                <div style="flex:1;">
+                  <div style="font-size:12px;font-weight:800;">חידון על החוגגת</div>
+                  <div style="font-size:10px;color:var(--pink-deep);">חי עם הבנות מהטלפון</div>
+                </div>
+                <div style="font-size:11px;font-weight:800;color:#fff;background:var(--pink-deep);padding:3px 7px;border-radius:999px;">📱</div>
+              </div>
+            </div>
+            <div class="slide-label">משחקים</div>
+          </div>
+
         </div>
         <div class="phone-home"></div>
       </div>
@@ -1128,17 +1815,17 @@
     </div>
 
     <div class="about-inner">
-      <div class="about-portrait">
-        <!-- אם about.photo בקובץ ה-JSON מצביע על תמונה שקיימת — היא תופיע כאן.
-             אחרת ה-sig (השם הסטיילוסי) ייראה במקומה. -->
-        <img class="about-photo" alt="לינוי ניסים"
-             data-text-attr="src" data-text="about.photo"
-             onerror="this.removeAttribute('src')" />
-        <div class="sig">לינוי ניסים<span>קומיקאית · יוצרת חוגגות</span></div>
+      <div class="about-portrait-wrap">
+        <span class="about-sparkle about-sparkle-1" aria-hidden="true">✦</span>
+        <span class="about-sparkle about-sparkle-2" aria-hidden="true">✦</span>
+        <div class="about-portrait">
+          <img class="about-photo" alt="לינוי ניסים"
+               data-text-attr="src" data-text="about.photo"
+               onerror="this.removeAttribute('src')" />
+        </div>
       </div>
       <div class="about-body">
         <div data-list="about.paragraphs" data-tpl="paragraph"></div>
-        <div class="about-chips" data-list="about.credChips" data-tpl="chipPlain"></div>
         <a class="about-link" data-text-attr="href" data-text="about.linkUrl" href="#">
           <span data-text="about.linkText"></span>
         </a>
@@ -1159,27 +1846,94 @@
   </div>
 </section>
 
-<!-- ═══════════ WHAT'S INSIDE ═══════════ -->
-<section>
-  <div class="container">
-    <div class="section-head">
-      <span class="eyebrow"><span data-text="whatsInside.eyebrow"></span><span class="dot"></span></span>
-      <h2 class="h2" data-text="whatsInside.title"></h2>
-      <p class="lead" data-text="whatsInside.lead"></p>
-    </div>
-    <div class="inside-grid" data-list="whatsInside.groups" data-tpl="insideGroup"></div>
-  </div>
-</section>
-
 <!-- ═══════════ GAMES ═══════════ -->
-<section id="games">
+<section id="games" class="games-section">
+  <div class="confetti confetti-soft" aria-hidden="true">
+    <span class="confetti-piece" style="--c:var(--pink); --x:6%;  --d:1.4s; --r:15s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange); --x:22%; --d:3.2s; --r:17s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink-deep); --x:48%; --d:0s; --r:14s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange-deep); --x:72%; --d:5s; --r:16s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink); --x:88%; --d:2.5s; --r:18s;"></span>
+  </div>
   <div class="container">
     <div class="section-head">
       <span class="eyebrow"><span data-text="games.eyebrow"></span><span class="dot"></span></span>
       <h2 class="h2" data-text="games.title"></h2>
       <p class="lead" data-text="games.lead"></p>
     </div>
-    <div class="games-grid" data-list="games.items" data-tpl="gameCard"></div>
+
+    <div class="games-mockup-wrap">
+      <div class="phone phone-tilt-soft phone-float">
+        <div class="phone-status">
+          <span>9:41</span>
+          <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
+        </div>
+        <div class="phone-body">
+          <div class="scr-h-orange">
+            <div class="row-sb">
+              <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+              <div style="font-size:12px;font-weight:800;color:#fff;">בחירת משחק</div>
+              <div style="width:14px;"></div>
+            </div>
+            <div style="margin-top:4px;font-size:10px;color:rgba(255,255,255,0.85);font-weight:600;">הרווקות של מאיה · 6 משחקים מוכנים</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+            <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.22);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">01</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">מפה לאוזן</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">קריאת שפתיים · טיימר</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:var(--orange-deep);background:#fff;padding:3px 7px;border-radius:999px;">⏱ 60ש'</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#1A1A1A;font-weight:900;font-size:11px;">02</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">בלי לומר מילה</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">פנטומימה · אנרגיה גבוהה</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:var(--pink-deep);background:var(--pink-soft);padding:3px 7px;border-radius:999px;">⏱ 45ש'</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">03</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">שאלון עם החתן</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">משתף את החתן בווטסאפ</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--ink);padding:3px 7px;border-radius:999px;">💬</div>
+            </div>
+            <div style="background:var(--pink-soft);border:1px solid rgba(199,94,130,0.25);border-right:3px solid var(--pink);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">04</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">חידון על החוגגת</div>
+                <div style="font-size:9.5px;color:var(--pink-deep);">חי · 20ש' לשאלה</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--pink-deep);padding:3px 7px;border-radius:999px;">📱</div>
+            </div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">05</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">Never Have I Ever</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">הקלאסיקה · עם/בלי שתייה</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--orange-deep);padding:3px 7px;border-radius:999px;">🥂</div>
+            </div>
+            <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.22);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">06</div>
+              <div style="flex:1;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">Fuck Marry Kill</div>
+                <div style="font-size:9.5px;color:var(--orange-deep);">הצבעה חיה · תוצאות בזמן אמת</div>
+              </div>
+              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--orange);padding:3px 7px;border-radius:999px;">📱</div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-home"></div>
+      </div>
+
+      <div class="games-caption" data-text="games.caption"></div>
+    </div>
   </div>
 </section>
 
@@ -1196,41 +1950,43 @@
   </div>
 </section>
 
-<!-- ═══════════ ROI — TIME SAVED ═══════════ -->
-<section class="stat-band alt">
-  <div class="container stat-grid">
-    <div>
-      <span class="eyebrow"><span data-text="roi.timeSection.eyebrow"></span><span class="dot"></span></span>
-      <span class="stat-number num"><span data-text="roi.timeSection.stat"></span><span style="color:var(--orange);">+</span></span>
-      <span class="stat-suffix" data-text-html="true" data-text="roi.timeSection.statSuffix"></span>
-      <p style="margin-top:24px;color:var(--ink-3);font-size:16.5px;line-height:1.6;max-width:420px;" data-text-html="true" data-text="roi.timeSection.body"></p>
-    </div>
-    <div class="compare-table">
-      <div data-list="roi.timeSection.rows" data-tpl="compareRow"></div>
-      <div class="compare-foot">
-        <span class="lab" data-text="roi.timeSection.footLabel"></span>
-        <span class="val num"><span class="acc" data-text="roi.timeSection.footAccent"></span> <span data-text="roi.timeSection.footUnit"></span></span>
+<!-- ═══════════ ROI — UNIFIED headline only (table removed by request) ═══════════ -->
+<section class="stat-band alt roi-section roi-section-narrow">
+  <div class="container">
+    <div class="roi-inner">
+      <span class="eyebrow"><span data-text="roi.eyebrow"></span><span class="dot"></span></span>
+      <div class="roi-twin">
+        <div class="roi-stat">
+          <span class="roi-stat-num num"><span data-text="roi.statTime"></span></span>
+          <span class="roi-stat-unit" data-text="roi.statTimeUnit"></span>
+        </div>
+        <span class="roi-plus">+</span>
+        <div class="roi-stat">
+          <span class="roi-stat-num num"><span data-text="roi.statMoney"></span></span>
+          <span class="roi-stat-unit" data-text="roi.statMoneyUnit"></span>
+        </div>
       </div>
+      <p class="roi-subtitle" data-text="roi.subtitle"></p>
+      <p class="roi-body" data-text-html="true" data-text="roi.body"></p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ ROI — MONEY SAVED ═══════════ -->
-<section class="stat-band">
-  <div class="container stat-grid" style="grid-template-columns: 1.1fr 0.9fr;">
-    <div class="compare-table">
-      <div data-list="roi.moneySection.rows" data-tpl="compareRow"></div>
-      <div class="compare-foot">
-        <span class="lab" data-text="roi.moneySection.footLabel"></span>
-        <span class="val num"><span class="acc" data-text="roi.moneySection.footAccent"></span> <span data-text="roi.moneySection.footUnit"></span></span>
-      </div>
+<!-- ═══════════ FUN SAVINGS — what to do with the saved time+money ═══════════ -->
+<section class="fun-section">
+  <div class="confetti confetti-soft" aria-hidden="true">
+    <span class="confetti-piece" style="--c:var(--orange); --x:8%;  --d:0.8s; --r:14s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink);   --x:24%; --d:3.5s; --r:16s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink-deep); --x:46%; --d:1.6s; --r:15s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange-deep); --x:68%; --d:5.4s; --r:13s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink); --x:88%; --d:2.4s; --r:17s;"></span>
+  </div>
+  <div class="container">
+    <div class="section-head">
+      <h2 class="h2" data-text-html="true" data-text="funSavings.title"></h2>
+      <p class="lead" data-text="funSavings.lead"></p>
     </div>
-    <div>
-      <span class="eyebrow"><span data-text="roi.moneySection.eyebrow"></span><span class="dot"></span></span>
-      <span class="stat-number num"><span style="color:var(--orange);" data-text="roi.moneySection.statCurrency"></span><span data-text="roi.moneySection.stat"></span></span>
-      <span class="stat-suffix" data-text-html="true" data-text="roi.moneySection.statSuffix"></span>
-      <p style="margin-top:24px;color:var(--ink-3);font-size:16.5px;line-height:1.6;max-width:420px;" data-text-html="true" data-text="roi.moneySection.body"></p>
-    </div>
+    <ul class="fun-list" data-list="funSavings.items" data-tpl="funItem"></ul>
   </div>
 </section>
 
@@ -1305,6 +2061,15 @@
 
 <!-- ═══════════ FINAL CTA ═══════════ -->
 <div class="final-cta">
+  <div class="confetti" aria-hidden="true">
+    <span class="confetti-piece" style="--c:var(--orange); --x:10%; --d:0s;   --r:13s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink);   --x:24%; --d:2s;   --r:15s;"></span>
+    <span class="confetti-piece" style="--c:#FFD9C7;       --x:38%; --d:4.2s; --r:14s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink-deep); --x:52%; --d:1s;  --r:16s;"></span>
+    <span class="confetti-piece" style="--c:var(--orange); --x:66%; --d:6s;   --r:13s;"></span>
+    <span class="confetti-piece" style="--c:var(--pink);   --x:80%; --d:3s;   --r:17s;"></span>
+    <span class="confetti-piece" style="--c:#FFD9C7;       --x:92%; --d:7s;   --r:15s;"></span>
+  </div>
   <h2 class="h2" data-text-html="true" data-text="finalCta.title"></h2>
   <p data-text="finalCta.body"></p>
   <a href="#pricing" class="btn btn-cta btn-lg">
@@ -1318,7 +2083,7 @@
 <footer>
   <div class="container footer-inner">
     <div style="display:flex;align-items:center;gap:12px;">
-      <div class="logo-mark" style="width:28px;height:28px;font-size:13px;">ח</div>
+      <div class="logo-mark logo-vibe" style="width:30px;height:30px;font-size:15px;">V</div>
       <span data-text-html="true" data-text="footer.copy"></span>
     </div>
     <div class="footer-links">
@@ -1341,6 +2106,9 @@
       },
       chipPlain: function (item) {
         return '<span>' + escape(item) + '</span>';
+      },
+      promiseBullet: function (item) {
+        return '<li>' + escape(item) + '</li>';
       },
       paragraph: function (item) {
         return '<p>' + escape(item) + '</p>';
@@ -1376,13 +2144,25 @@
           '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l1.8 4.8L18.5 10.5 13.8 12.2 12 17l-1.8-4.8L5.5 10.5l4.7-1.7L12 4z"/></svg>'
         ];
         const i = item._index || 0;
+        const bullets = Array.isArray(item.bullets) ? item.bullets : [];
+        const ul = bullets.length
+          ? '<ul class="feature-bullets">' + bullets.map(function (b) { return '<li>' + escape(b) + '</li>'; }).join('') + '</ul>'
+          : '';
         return '' +
           '<div class="feature">' +
           '  <div class="feature-icon accent">' + icons[i % icons.length] + '</div>' +
           '  <h3>' + escape(item.title) + '</h3>' +
           '  <p>' + escape(item.body) + '</p>' +
+          ul +
           '  <span class="micro">' + escape(item.micro) + '</span>' +
           '</div>';
+      },
+      funItem: function (item) {
+        return '' +
+          '<li class="fun-row">' +
+          '  <span class="fun-emoji">' + escape(item.emoji) + '</span>' +
+          '  <span class="fun-text">' + escape(item.text) + '</span>' +
+          '</li>';
       },
       gameCard: function (item) {
         return '' +
@@ -1479,7 +2259,7 @@
       // If JSON failed (e.g., opened from file:// without a server), at least show something readable.
       const h1 = document.querySelector('[data-text="hero.title"]');
       if (h1 && !h1.textContent.trim()) {
-        h1.innerHTML = 'חוגגות — האפליקציה שמארגנת את המסיבה';
+        h1.innerHTML = 'VibeIT — האפליקציה שמארגנת את האירוע';
       }
     }
 
