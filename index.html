@@ -383,6 +383,32 @@ const fbSubmitParticipantVotes = async (code, participantId, qi, votes) => {
   } catch (e) { console.error("[FS] submit votes failed:", e); }
 };
 
+// True-Lie: each participant submits a true and a false story (text). Host cycles through
+// them and the rest of the room votes which is which.
+const fbSubmitParticipantStories = async (code, participantId, trueStory, falseStory) => {
+  if (!FB || !code || !participantId) return false;
+  try {
+    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+    await ref.set({
+      trueStory: String(trueStory || "").trim(),
+      falseStory: String(falseStory || "").trim(),
+      storiesSubmitted: true,
+      lastSubmitAt: Date.now(),
+    }, { merge: true });
+    return true;
+  } catch (e) { console.error("[FS] submit stories failed:", e); return false; }
+};
+
+// True-Lie: cast a vote for a specific round. `vote` is "A" or "B" (the displayed order).
+const fbCastTrueLieVote = async (code, participantId, roundIdx, vote) => {
+  if (!FB || !code || !participantId) return false;
+  try {
+    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+    await ref.set({ tlVotes: { [roundIdx]: vote }, lastSubmitAt: Date.now() }, { merge: true });
+    return true;
+  } catch (e) { console.error("[FS] truelie vote failed:", e); return false; }
+};
+
 // Pending users (pre-auth) — written by Make.com when customer pays
 const fbLoadPendingUser = async (token) => {
   if (!FB || !token) return null;
@@ -439,22 +465,25 @@ const PB = {
   orange: { main: "#E8512A", deep: "#C73E1C", soft: "#FBE4DB", on: "#FFFFFF" },
   pink:   { main: "#EAA0BA", deep: "#C75E82", soft: "#F9E8EE", on: "#1A1A1A" },
   ink:    { main: "#1A1A1A", deep: "#000000", soft: "#ECEAE8", on: "#FFFFFF" },
-  // Per-event secondary accents (used in EVENT_PALETTE below)
-  purple: { main: "#7A3FA3", deep: "#5D2A82", soft: "#EFE5F7", on: "#FFFFFF" },
-  gold:   { main: "#C9A035", deep: "#9B7A1F", soft: "#FAF1DA", on: "#1A1A1A" },
-  navy:   { main: "#1F3A6B", deep: "#142849", soft: "#E2E8F1", on: "#FFFFFF" },
-  mint:   { main: "#5FD3B4", deep: "#2FA68A", soft: "#E1F6EF", on: "#0E2E2A" },
-  wine:   { main: "#8B2C3A", deep: "#671923", soft: "#F4DDE0", on: "#FFFFFF" },
-  rose:   { main: "#E8B4A0", deep: "#C68574", soft: "#FBEDE6", on: "#3A1A1A" },
+  // Per-event accents (used in EVENT_PALETTE below)
+  // bday — hot magenta + sunshine yellow
+  magenta:  { main: "#E63988", deep: "#A41E60", soft: "#FDE4EF", on: "#FFFFFF" },
+  sun:      { main: "#FFD93D", deep: "#C9A800", soft: "#FFF7CC", on: "#3D3000" },
+  // team — pastel sky + pastel mint (deep variant darkened for white-on-gradient contrast)
+  sky:      { main: "#7DC8E8", deep: "#2D7BA8", soft: "#E4F3FA", on: "#FFFFFF" },
+  sage:     { main: "#A8E6CF", deep: "#4FA889", soft: "#ECFAF3", on: "#0F3328" },
+  // date — warm coral red + bright pink
+  red:      { main: "#FF4757", deep: "#C82836", soft: "#FFE2E6", on: "#FFFFFF" },
+  blush:    { main: "#FFB3C1", deep: "#E08A9A", soft: "#FFEEF1", on: "#5A1A22" },
 };
 
 // EVENT_PALETTE — primary + secondary color + role label + icon + tone, per event type.
 // "tone" affects copy: "fs" = feminine singular (current bach style), "mp" = masculine plural.
 const EVENT_PALETTE = {
-  bach: { primary: PB.orange, secondary: PB.pink,   label: "מסיבת רווקות", icon: "ring",   tone: "fs", greeting: "היי",        role: "מארחת" },
-  bday: { primary: PB.purple, secondary: PB.gold,   label: "יום הולדת",    icon: "cake",   tone: "mp", greeting: "ברוכים הבאים", role: "מארגנים" },
-  team: { primary: PB.navy,   secondary: PB.mint,   label: "ערב גיבוש",    icon: "rocket", tone: "mp", greeting: "שלום",        role: "מנהלי גיבוש" },
-  date: { primary: PB.wine,   secondary: PB.rose,   label: "ערב זוגי",     icon: "heart",  tone: "mp", greeting: "ערב טוב",     role: "זוגיות" },
+  bach: { primary: PB.orange,  secondary: PB.pink,  label: "מסיבת רווקות", icon: "ring",   tone: "fs", greeting: "היי",         role: "מארחת" },
+  bday: { primary: PB.magenta, secondary: PB.sun,   label: "יום הולדת",    icon: "cake",   tone: "mp", greeting: "ברוכים הבאים", role: "מארגנים" },
+  team: { primary: PB.sky,     secondary: PB.sage,  label: "ערב גיבוש",    icon: "rocket", tone: "mp", greeting: "שלום",         role: "מנהלי גיבוש" },
+  date: { primary: PB.red,     secondary: PB.blush, label: "ערב זוגי",     icon: "heart",  tone: "mp", greeting: "ערב טוב",      role: "זוגיות" },
 };
 const getEventPalette = (eventId) => EVENT_PALETTE[eventId] || EVENT_PALETTE.bach;
 
@@ -708,6 +737,134 @@ function TopBar({ T, onBack, title, step, right, dark = false }) {
       {step ? <StepRail T={T} step={step}/> : (right || <div style={{ width: 40 }}/>)}
     </div>
   );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   BOTTOM NAV — floating pill bar at the bottom of the phone shell.
+   Used on all main app screens (home, sub-screens). RTL order:
+   right = back, center = home, left = help.
+   ────────────────────────────────────────────────────────────── */
+function BottomNav({ T, current = "home", onBack, onHome, onHelp, canGoBack = true }) {
+  const items = [
+    { key: "back", icon: "chevR", label: "חזור", onClick: onBack, disabled: !canGoBack, active: false },
+    { key: "home", icon: "home",  label: "בית",  onClick: onHome, disabled: false,       active: current === "home" },
+    { key: "help", icon: "help",  label: "עזרה", onClick: onHelp, disabled: false,       active: current === "help" },
+  ];
+  return (
+    <div style={{
+      position: "absolute", bottom: 22, left: 14, right: 14,
+      background: "#fff", borderRadius: 18,
+      boxShadow: "0 12px 32px -10px rgba(15,14,13,0.22), 0 4px 12px -4px rgba(15,14,13,0.08)",
+      border: "1px solid rgba(15,14,13,0.06)",
+      display: "flex", alignItems: "stretch",
+      zIndex: 45, padding: 5,
+    }}>
+      {items.map(item => (
+        <button key={item.key} onClick={item.onClick} disabled={item.disabled}
+          style={{
+            flex: 1, padding: "8px 4px", border: "none",
+            background: item.active ? T.surfaceAlt : "transparent",
+            borderRadius: 14,
+            cursor: item.disabled ? "default" : "pointer",
+            opacity: item.disabled ? 0.32 : 1,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            fontFamily: T.font,
+            transition: "background 150ms",
+          }}>
+          <Icon name={item.icon} size={20} color={item.active ? T.accent : T.ink} w={item.active ? 2 : 1.6}/>
+          <span style={{ fontSize: 10.5, fontWeight: item.active ? 800 : 700,
+            color: item.active ? T.accent : T.ink, letterSpacing: -0.1 }}>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   USER MENU — dropdown anchored to the user icon in the home header.
+   Shows host name, purchased product, links to buy/switch, and logout.
+   ────────────────────────────────────────────────────────────── */
+function UserMenu({ T, hostName, eventId, products = [], onSwitchProduct, onBuyMore, onLogout, onClose }) {
+  const currentPal = getEventPalette(eventId);
+  const productLabel = currentPal.label;
+  const hasMultiple = products.length > 1;
+  return (
+    <div onClick={(e) => e.stopPropagation()} style={{
+      position: "absolute", top: 46, left: 0,
+      background: "#fff", borderRadius: 16,
+      boxShadow: "0 18px 44px -12px rgba(15,14,13,0.35), 0 4px 12px -4px rgba(15,14,13,0.12)",
+      border: "1px solid rgba(15,14,13,0.08)",
+      minWidth: 240, padding: 6, zIndex: 60,
+      animation: "screenIn 160ms ease-out",
+    }}>
+      {/* Profile header */}
+      <div style={{ padding: "12px 12px 10px", display: "flex", alignItems: "center", gap: 11 }}>
+        <div style={{
+          width: 38, height: 38, borderRadius: 999,
+          background: `linear-gradient(135deg, ${currentPal.primary.main}, ${currentPal.primary.deep})`,
+          color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 900, fontSize: 16,
+        }}>{(hostName || "?")[0]}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.ink, letterSpacing: -0.2,
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hostName || "—"}</div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 3,
+            padding: "2px 8px", borderRadius: 999,
+            background: currentPal.primary.soft, color: currentPal.primary.deep,
+            fontSize: 10.5, fontWeight: 800, letterSpacing: 0.2 }}>
+            <Icon name={currentPal.icon} size={11} color={currentPal.primary.deep} w={1.8}/>
+            {productLabel}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: T.line, margin: "4px 8px" }}/>
+
+      {/* Switch product — only meaningful when user owns more than one */}
+      <button onClick={() => { onClose?.(); onSwitchProduct?.(); }}
+        disabled={!hasMultiple}
+        style={menuItemStyle(T, { disabled: !hasMultiple })}
+        title={hasMultiple ? "" : "פעיל רק מוצר אחד"}>
+        <Icon name="dots" size={17} color={hasMultiple ? T.inkSoft : T.muted} w={1.6}/>
+        <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>החלפת מוצר</div>
+          <div style={{ fontSize: 10.5, fontWeight: 500, color: T.muted, marginTop: 1 }}>
+            {hasMultiple ? `${products.length} מוצרים פעילים` : "רק מוצר אחד פעיל"}
+          </div>
+        </div>
+      </button>
+
+      {/* Buy another event */}
+      <button onClick={() => { onClose?.(); onBuyMore?.(); }} style={menuItemStyle(T)}>
+        <Icon name="plus" size={17} color={T.inkSoft} w={1.7}/>
+        <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>רכישה לאירוע נוסף</div>
+          <div style={{ fontSize: 10.5, fontWeight: 500, color: T.muted, marginTop: 1 }}>הוספת מוצר חדש לחשבון</div>
+        </div>
+      </button>
+
+      <div style={{ height: 1, background: T.line, margin: "4px 8px" }}/>
+
+      {/* Logout */}
+      <button onClick={() => { onClose?.(); onLogout?.(); }} style={menuItemStyle(T, { danger: true })}>
+        <Icon name="chevR" size={17} color="#C73E1C" w={1.7}/>
+        <div style={{ flex: 1, textAlign: "right", fontSize: 13.5, fontWeight: 800, color: "#C73E1C" }}>התנתקות</div>
+      </button>
+    </div>
+  );
+}
+
+// Shared button style for items inside the UserMenu
+function menuItemStyle(T, { disabled = false, danger = false } = {}) {
+  return {
+    display: "flex", alignItems: "center", gap: 10, width: "100%",
+    padding: "10px 12px", borderRadius: 11,
+    background: "transparent", border: "none",
+    cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+    fontFamily: T.font, textAlign: "right",
+    color: danger ? "#C73E1C" : T.ink,
+  };
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -1297,13 +1454,13 @@ const EVENT_OPTS = [
   { id: "bach", t: "מסיבת רווקות", s: "פרידה מהרווקות בסטייל", icon: "ring", pop: "pink",
     nameTitle: "תני שם\nלמסיבה", nameHint: "איך נקרא לחגיגה? זה יופיע לכל המשתתפות.",
     placeholder: "הרווקות של מאיה", samples: ["הרווקות של מאיה", "Last Dance", "מאיה נשארת איתנו"] },
-  { id: "bday", t: "יום הולדת", s: "מתחילים את החגיגה", icon: "cake", pop: "purple",
+  { id: "bday", t: "יום הולדת", s: "מתחילים את החגיגה", icon: "cake", pop: "magenta",
     nameTitle: "תנו שם\nלאירוע", nameHint: "שם החגיגה שיראו כל האורחים.",
     placeholder: "היומולדת של דניאל", samples: ["היומולדת של דניאל", "דני בן 30", "מסיבת הפתעה"] },
-  { id: "team", t: "ערב גיבוש", s: "שוברים את הקרח בעבודה", icon: "rocket", pop: "navy",
+  { id: "team", t: "ערב גיבוש", s: "שוברים את הקרח בעבודה", icon: "rocket", pop: "sky",
     nameTitle: "תנו שם\nלגיבוש", nameHint: "שם האירוע שיראו כל חברי הצוות.",
     placeholder: "גיבוש צוות פיתוח", samples: ["גיבוש צוות פיתוח", "Team Offsite 2026", "יום כיף חברה"] },
-  { id: "date", t: "ערב זוגי", s: "רק שניכם, בלי הסחות", icon: "heart", pop: "wine",
+  { id: "date", t: "ערב זוגי", s: "רק שניכם, בלי הסחות", icon: "heart", pop: "red",
     nameTitle: "תנו שם\nלערב", nameHint: "שם קטן ומתוק לערב שלכם.",
     placeholder: "ערב של נועה ויואב", samples: ["דייט נייט", "נועה ויואב", "ערב בלי טלפונים"] },
 ];
@@ -1520,6 +1677,11 @@ function ScreenParticipant({ T, code, onLeave }) {
   const [joinError, setJoinError] = React.useState(false);
   const [currentAnswer, setCurrentAnswer] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
+  // True-Lie specific state
+  const [tlTrueStory, setTlTrueStory] = React.useState("");
+  const [tlFalseStory, setTlFalseStory] = React.useState("");
+  const [tlStoriesSubmitted, setTlStoriesSubmitted] = React.useState(false);
+  const [tlVoting, setTlVoting] = React.useState(false);
 
   // Subscribe to session updates as soon as we have a code
   React.useEffect(() => {
@@ -1562,6 +1724,23 @@ function ScreenParticipant({ T, code, onLeave }) {
       setSubmitted(false);
     }
   };
+
+  // True-Lie: submit my two stories
+  const submitTrueLieStories = async () => {
+    if (!tlTrueStory.trim() || !tlFalseStory.trim() || !participantId || tlStoriesSubmitted) return;
+    setTlStoriesSubmitted(true);
+    const ok = await fbSubmitParticipantStories(code, participantId, tlTrueStory.trim(), tlFalseStory.trim());
+    if (!ok) setTlStoriesSubmitted(false);
+  };
+  // True-Lie: cast vote for current round
+  const castTrueLieVote = async (choice) => {
+    if (!participantId || tlVoting) return;
+    setTlVoting(true);
+    const ok = await fbCastTrueLieVote(code, participantId, session.currentPi || 0, choice);
+    if (!ok) setTlVoting(false);
+  };
+  // Reset voting flag when round changes
+  React.useEffect(() => { setTlVoting(false); }, [session?.currentPi, session?.state]);
 
   // ── Loading ───────────────────────────────────────────────
   if (sessionLoading) return (
@@ -1627,11 +1806,196 @@ function ScreenParticipant({ T, code, onLeave }) {
         <div style={{ fontSize: 38, marginBottom: 6 }}>👯</div>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px", letterSpacing: -0.4 }}>היי {name}!</h1>
         <p style={{ fontSize: 14, color: T.inkSoft, lineHeight: 1.55 }}>
-          את כבר בפנים. ברגע שהמארחת מתחילה, השאלה הראשונה תופיע כאן.
+          {session.gameId === "bridequiz"
+            ? "את כבר בפנים. ברגע שהמארחת מתחילה, השאלה הראשונה תופיע כאן."
+            : "את/ה כבר בפנים. ברגע שהמארגן מתחיל, התוכן הראשון יופיע כאן."}
         </p>
       </ParticipantCenter>
     </ParticipantShell>
   );
+
+  // ── TRUE-LIE branches ────────────────────────────────────
+  if (session.gameId === "truelie") {
+    // Submitting phase — show form to enter 2 stories
+    if (session.state === "submitting") {
+      if (tlStoriesSubmitted) {
+        return (
+          <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+            <ParticipantCenter>
+              <Icon name="check" size={32} color={PB.pink.deep} w={2}/>
+              <h1 style={{ fontSize: 22, fontWeight: 800, margin: "10px 0 6px" }}>הסיפורים נשלחו!</h1>
+              <p style={{ fontSize: 13, color: T.inkSoft, lineHeight: 1.5 }}>
+                ממתינים שכולם יזינו ואז המארגן יתחיל את ההצבעות.
+              </p>
+            </ParticipantCenter>
+          </ParticipantShell>
+        );
+      }
+      const canSend = tlTrueStory.trim().length >= 5 && tlFalseStory.trim().length >= 5;
+      return (
+        <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+          <div style={{ padding: "16px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
+              שלב 1 · הזנת סיפורים
+            </div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 6px", letterSpacing: -0.3 }}>
+              שני סיפורים, אחד אמת ואחד שקר
+            </h1>
+            <p style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, lineHeight: 1.5, marginBottom: 18 }}>
+              נסו לא להקל על המנחשים. סיפור מצחיק שקרה לכם באמת מנצח כל פעם.
+            </p>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: 7, background: PB.pink.main, color: PB.pink.on,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900 }}>✓</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>הסיפור האמיתי</div>
+              </div>
+              <textarea value={tlTrueStory} onChange={e => setTlTrueStory(e.target.value)}
+                placeholder="משהו שקרה לי באמת..." rows={3}
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 12,
+                  background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${tlTrueStory ? PB.pink.main : T.line}`,
+                  border: "none", outline: "none", fontSize: 15, fontWeight: 500,
+                  color: T.ink, fontFamily: T.font, resize: "none", lineHeight: 1.4,
+                  WebkitAppearance: "none",
+                }}/>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: 7, background: T.surfaceInk, color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900 }}>✗</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: T.ink }}>הסיפור השקרי</div>
+              </div>
+              <textarea value={tlFalseStory} onChange={e => setTlFalseStory(e.target.value)}
+                placeholder="משהו שלא ממש קרה (אבל יכל)..." rows={3}
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 12,
+                  background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${tlFalseStory ? T.surfaceInk : T.line}`,
+                  border: "none", outline: "none", fontSize: 15, fontWeight: 500,
+                  color: T.ink, fontFamily: T.font, resize: "none", lineHeight: 1.4,
+                  WebkitAppearance: "none",
+                }}/>
+            </div>
+
+            <div style={{ flex: 1, minHeight: 8 }}/>
+            <Btn T={T} onClick={submitTrueLieStories} disabled={!canSend}>
+              {canSend ? "שלחו את שני הסיפורים" : "מלאו את שני הסיפורים"}
+            </Btn>
+          </div>
+        </ParticipantShell>
+      );
+    }
+
+    // Voting / Reveal phase
+    if (session.state === "voting" || session.state === "reveal") {
+      const pi = session.currentPi || 0;
+      // We need to know who the storyteller is — but the participant doc list isn't
+      // directly available here. We'll just trust the host's selection: show stories from
+      // session if mirrored, or fall back gracefully. To keep it simple we skip the
+      // "you're the storyteller" detection in the participant view and just say "you can't
+      // vote on your own stories" if we receive the vote and reject locally. Simpler: the
+      // host tells the participant via UI which round is whose. For now we'll show stories
+      // only when the host pushes them via session.tlRoundStories[pi] (optional).
+      // Since the host already has the stories synced via Firestore participants subcollection,
+      // we mirror the displayed stories into the session doc per round to simplify.
+      const order = session.displayOrders?.[String(pi)] || "TF";
+      const targetName = session.tlRoundTarget?.[String(pi)] || "אחד מהחבורה";
+      const storyA = session.tlRoundStoryA?.[String(pi)] || "";
+      const storyB = session.tlRoundStoryB?.[String(pi)] || "";
+      const myVote = tlVoting ? "pending" : null;
+      const alreadyVoted = false; // simplified — server doesn't echo back individual vote
+      const isStoryteller = targetName === name;
+      const correctSlot = order[0] === "T" ? "A" : "B";
+
+      if (session.state === "reveal") {
+        return (
+          <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+            <ParticipantCenter>
+              <Eyebrow T={T}>סבב {pi + 1}</Eyebrow>
+              <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 14px", letterSpacing: -0.3 }}>
+                {correctSlot === "A" ? "סיפור א' היה האמת" : "סיפור ב' היה האמת"}
+              </h1>
+              <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>ממתינים לסבב הבא...</p>
+            </ParticipantCenter>
+          </ParticipantShell>
+        );
+      }
+
+      if (isStoryteller) {
+        return (
+          <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+            <ParticipantCenter>
+              <div style={{ fontSize: 32, marginBottom: 6 }}>🤐</div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, margin: "8px 0 8px", letterSpacing: -0.3 }}>
+                אלה הסיפורים שלך
+              </h1>
+              <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, lineHeight: 1.5 }}>
+                החבורה מצביעה עכשיו על מה אמת ומה שקר.<br/>אל תגלו עד שיחשפו!
+              </p>
+            </ParticipantCenter>
+          </ParticipantShell>
+        );
+      }
+
+      return (
+        <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+          <div style={{ padding: "16px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 0.8, textTransform: "uppercase" }}>
+              סבב {pi + 1} · הסיפורים של {targetName}
+            </div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, margin: "8px 0 14px", letterSpacing: -0.3, lineHeight: 1.25 }}>
+              איזה אמיתי?
+            </h1>
+
+            <button onClick={() => castTrueLieVote("A")} disabled={tlVoting}
+              style={{
+                marginBottom: 10, padding: "14px 16px", borderRadius: 13,
+                background: T.surface, border: T.border, boxShadow: T.shadowSm,
+                cursor: tlVoting ? "wait" : "pointer", fontFamily: T.font, textAlign: "right",
+                opacity: tlVoting ? 0.6 : 1,
+              }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: PB.pink.deep, marginBottom: 4 }}>סיפור א'</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>{storyA || "—"}</div>
+            </button>
+
+            <button onClick={() => castTrueLieVote("B")} disabled={tlVoting}
+              style={{
+                padding: "14px 16px", borderRadius: 13,
+                background: T.surface, border: T.border, boxShadow: T.shadowSm,
+                cursor: tlVoting ? "wait" : "pointer", fontFamily: T.font, textAlign: "right",
+                opacity: tlVoting ? 0.6 : 1,
+              }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: PB.pink.deep, marginBottom: 4 }}>סיפור ב'</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.ink, lineHeight: 1.4 }}>{storyB || "—"}</div>
+            </button>
+
+            <div style={{ flex: 1, minHeight: 8 }}/>
+            {tlVoting && (
+              <div style={{ padding: "10px 14px", background: PB.pink.soft, borderRadius: 12,
+                fontSize: 12.5, fontWeight: 700, color: PB.pink.deep, textAlign: "center" }}>
+                הצבעתם! ממתינים לחבורה.
+              </div>
+            )}
+          </div>
+        </ParticipantShell>
+      );
+    }
+
+    // Done — game finished
+    if (session.state === "done") {
+      return (
+        <ParticipantShell T={T} onLeave={onLeave} code={code} gameId={session.gameId}>
+          <ParticipantCenter>
+            <div style={{ fontSize: 38, marginBottom: 6 }}>🎉</div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 6px", letterSpacing: -0.3 }}>סיימנו!</h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500 }}>תראו את הסיכום על המסך של המארגן.</p>
+          </ParticipantCenter>
+        </ParticipantShell>
+      );
+    }
+  }
 
   // ── Playing — show current question + input ──────────────
   if (session.state === "playing") {
@@ -1660,7 +2024,7 @@ function ScreenParticipant({ T, code, onLeave }) {
               border: `1px solid ${PB.pink.main}55`, textAlign: "center" }}>
               <Icon name="check" size={28} color={PB.pink.deep} w={2}/>
               <div style={{ fontSize: 14.5, fontWeight: 800, color: PB.pink.deep, marginTop: 6 }}>נשלח!</div>
-              <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 4 }}>מחכות לשאר הבנות...</div>
+              <div style={{ fontSize: 12.5, color: T.inkSoft, marginTop: 4 }}>{session.gameId === "bridequiz" ? "מחכות לשאר הבנות..." : "מחכים לשאר החברים..."}</div>
             </div>
           ) : (
             <>
@@ -1830,7 +2194,12 @@ function ParticipantFMK({ T, onLeave, code, session, submitted, setSubmitted, pa
 }
 
 function ParticipantShell({ T, children, code, brideName, onLeave, gameId }) {
-  const titleByGame = { bridequiz: "חידון על הכלה", fmk: "Fuck Marry Kill" };
+  const titleByGame = {
+    bridequiz: "חידון על הכלה",
+    celebrantq: "שאלון על החוגג/ת",
+    companyquiz: "שאלון על החברה",
+    fmk: "Fuck Marry Kill",
+  };
   const title = titleByGame[gameId] || "VibeIT";
   const scrollRef = React.useRef(null);
 
@@ -2731,117 +3100,57 @@ function ScreenBachHome({ T, onNav, user, eventName, eventId, onLogout }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* EVENT-PALETTE HEADER — welcome message + event name + event type, dropdown on the left */}
+        {/* CLEAN WHITE HEADER — logo on right, user icon on left, welcome below */}
         <div style={{
-          background: `linear-gradient(160deg, ${pal.primary.main} 0%, ${pal.primary.deep} 100%)`,
-          padding: "36px 22px 22px",
-          borderRadius: "0 0 22px 22px",
-          color: "#fff",
-          boxShadow: `0 6px 18px -10px ${pal.primary.deep}73`,
-          position: "relative", overflow: "hidden",
+          padding: "44px 22px 20px",
+          background: T.bg,
+          position: "relative",
         }}>
-          {/* decorative blob */}
-          <div style={{
-            position: "absolute", top: -36, right: -50,
-            width: 140, height: 140, borderRadius: "50%",
-            background: "rgba(255,255,255,0.10)", pointerEvents: "none",
-          }}/>
-          {/* secondary-color blob (bottom-left) */}
-          <div style={{
-            position: "absolute", bottom: -30, left: -30,
-            width: 100, height: 100, borderRadius: "50%",
-            background: `${pal.secondary.main}55`, pointerEvents: "none",
-            filter: "blur(2px)",
-          }}/>
-
-          {/* top row — kebab menu on LEFT, brand on RIGHT (RTL) */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <BrandLogo size={26} textSize={15} style={{ color: "#fff" }}/>
+          {/* top row — user icon on LEFT, brand on RIGHT (RTL) */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <BrandLogo size={30} textSize={18}/>
             <div style={{ position: "relative" }}>
               <button
                 onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
-                aria-label="תפריט"
+                aria-label="תפריט משתמש"
                 style={{
-                  width: 36, height: 36, borderRadius: 12,
-                  background: "rgba(255,255,255,0.18)",
-                  border: "1px solid rgba(255,255,255,0.25)",
+                  width: 38, height: 38, borderRadius: 999,
+                  background: `linear-gradient(135deg, ${pal.primary.main}, ${pal.primary.deep})`,
+                  color: "#fff", fontWeight: 900, fontSize: 16,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", color: "#fff",
-                  backdropFilter: "blur(4px)",
+                  border: "none", cursor: "pointer", fontFamily: T.font,
+                  boxShadow: `0 4px 12px -4px ${pal.primary.main}66`,
                 }}>
-                <Icon name="dots" size={20} color="#fff" w={1.8}/>
+                {(user.name || "?")[0]}
               </button>
               {menuOpen && (
-                <div onClick={(e) => e.stopPropagation()} style={{
-                  position: "absolute", top: 44, left: 0,
-                  background: "#fff", borderRadius: 14,
-                  boxShadow: "0 16px 40px -12px rgba(15,14,13,0.35), 0 4px 12px -4px rgba(15,14,13,0.15)",
-                  border: "1px solid rgba(15,14,13,0.08)",
-                  minWidth: 188, padding: 6, zIndex: 50,
-                  animation: "screenIn 160ms ease-out",
-                }}>
-                  {[
-                    { key: "home", label: "מסך הבית", icon: "home" },
-                    { key: "helpCenter", label: "עזרה", icon: "help" },
-                    { key: "logout", label: "התנתקות", icon: "chevR", danger: true },
-                  ].map(item => (
-                    <button key={item.key}
-                      onClick={() => {
-                        setMenuOpen(false);
-                        if (item.key === "logout") onLogout?.();
-                        else if (item.key === "home") { /* already home */ }
-                        else onNav(item.key);
-                      }}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10, width: "100%",
-                        padding: "10px 12px", borderRadius: 10,
-                        background: "transparent", border: "none",
-                        cursor: "pointer", fontFamily: T.font, textAlign: "right",
-                        fontSize: 14, fontWeight: 700,
-                        color: item.danger ? "#C73E1C" : T.ink,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = item.danger ? PB.orange.soft : T.surfaceAlt}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                      <Icon name={item.icon} size={17} color={item.danger ? "#C73E1C" : T.inkSoft} w={1.6}/>
-                      <span style={{ flex: 1 }}>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <UserMenu
+                  T={T}
+                  hostName={user.name}
+                  eventId={eventId}
+                  products={[eventId]}
+                  onSwitchProduct={() => alert("בקרוב — כשיהיו לך כמה מוצרים נוכל להחליף ביניהם בלחיצה")}
+                  onBuyMore={() => alert("בקרוב — רכישה לאירוע נוסף ישירות מהאפליקציה")}
+                  onLogout={onLogout}
+                  onClose={() => setMenuOpen(false)}
+                />
               )}
             </div>
           </div>
 
           {/* welcome block */}
-          <div style={{ position: "relative", marginTop: 18, display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: 999,
-              background: "rgba(255,255,255,0.22)",
-              border: "1.5px solid rgba(255,255,255,0.5)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 900, color: "#fff", fontSize: 20,
-              backdropFilter: "blur(4px)", flexShrink: 0,
-            }}>{(user.name || "?")[0]}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.2 }}>
-                {greeting}
-              </div>
-              <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: -0.3, color: "#fff", marginTop: 2,
-                lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {eventName || pal.label}
-              </div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 6,
-                background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.28)",
-                padding: "3px 9px", borderRadius: 999,
-                fontSize: 11, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>
-                <Icon name={pal.icon} size={12} color="#fff" w={1.7}/>
-                {pal.label}
-              </div>
-            </div>
+          <div style={{ marginTop: 22 }}>
+            <Eyebrow T={T}>{greeting}</Eyebrow>
+            <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.5, lineHeight: 1.1,
+              color: T.ink, margin: "10px 0 0", whiteSpace: "nowrap",
+              overflow: "hidden", textOverflow: "ellipsis" }}>
+              {eventName || pal.label}
+            </h1>
           </div>
         </div>
 
-        {/* CONTENT */}
-        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column" }}>
+        {/* CONTENT — bottom padding leaves room for the floating BottomNav */}
+        <div style={{ padding: "20px 22px 100px", display: "flex", flexDirection: "column" }}>
           {/* host-only note — tinted to event-secondary palette */}
           <div style={{
             display: "flex", alignItems: "center", gap: 11,
@@ -2928,7 +3237,6 @@ function ScreenBachHome({ T, onNav, user, eventName, eventId, onLogout }) {
           </div>
         </div>
       </div>
-      <HomeBar/>
     </>
   );
 }
@@ -3006,7 +3314,7 @@ function ScreenHelpCenter({ T, onBack }) {
             background: "rgba(255,255,255,0.18)", pointerEvents: "none",
           }}/>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ width: 40 }}/>
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>מרכז עזרה</div>
             <div style={{ width: 40 }}/>
           </div>
@@ -3021,8 +3329,8 @@ function ScreenHelpCenter({ T, onBack }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+        {/* Content — bottom padding leaves room for the BottomNav */}
+        <div style={{ padding: "20px 22px 100px", display: "flex", flexDirection: "column", flex: 1 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <a href={waLink} target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", gap: 12,
@@ -3143,80 +3451,137 @@ function ScreenComingSoon({ T, eventId, onBack }) {
 /* ──────────────────────────────────────────────────────────────
    CHECKLIST (from PDF)
    ────────────────────────────────────────────────────────────── */
-const CHECKLIST_SECTIONS = [
-  { id: "4-6m", t: "4–6 חודשים לפני", sub: "מה עושות?", pop: "pink", items: [
-    "פתיחת קבוצה של המלוות והכלה",
-    "סיעור מוחות עם הכלה",
-    "רשימת מוזמנות",
-    "תקציב מוערך בהתאם — סקר שוק ראשוני",
-    "אופציות לתאריכים מהכלה",
-    "מקום / אזור מוערך (בית של מישהי הכי טוב)",
-  ]},
-  { id: "3-4m", t: "3–4 חודשים לפני", sub: "מתחממות", pop: "orange", items: [
-    "פתיחת קבוצה עם כלל המוזמנות — סינון ראשוני",
-    "סקר אופציות לתאריכים",
-    "סגירת תאריך", "סגירת מקום", "בקשה לתשלום",
-    "הזמנת קישוטים ופיצ'פקס",
-  ]},
-  { id: "2m", t: "חודשיים לפני", sub: "סוגרות", pop: "ink", items: [
-    "סקר מי שותה מה (מומלץ על מנת לחסוך באלכוהול)",
-    "סגירת אטרקציה", "סגירת ספק אוכל", "הפצת הזמנה",
-  ]},
-  { id: "2-3w", t: "שבועיים–שלושה לפני", sub: "סגורות", pop: "pink", items: [
-    "סגירת לו\"ז מול המוזמנות והכלה (מומלץ לגזור זמנים לבעייתיות)",
-    "קניות (חד\"פ, חטיפים, אלכוהול)",
-    "וידוא הגעה סופית של כל הבנות",
-    "הכנת פלייליסט",
-  ]},
-  { id: "1w", t: "שבוע לפני", sub: "מוודאות", pop: "orange", items: [
-    "וידוא הגעת ספקים", "סגירת לו\"ז למלוות",
-    "בדיקת האפליקציה ותקינות המשחקים",
-    "וידוא שליחת שאלון לחתן",
-    "וידוא טעינת תשובות החתן",
-    "ציוד למשחק \"מפה לאוזן\" — אוזניות טובות",
-    "וידוא אפשרות \"הקרנה\" בלוקיישן (לא חובה)",
-  ]},
-  { id: "1d", t: "יום לפני", sub: "לא שוכחות", pop: "ink", items: [
-    "קישוטים", "קניות (חד\"פ, חטיפים, אלכוהול)",
-    "נגן מוזיקה ומטען",
-    "אם שכרתן מקום — וודאו שיש לכן סרטונים והנחיות לתפעול מהבעלים",
-    "מתנות אם יש", "לשלוח מיקום בקבוצת הווטסאפ",
-    "בדיקת תקינות אפליקציית המשחקים",
-  ]},
-  { id: "day", t: "היום הגדול", sub: "נהנות", pop: "pink", items: [
-    "הגעה מוקדמת לסידור המקום",
-    "לשתות קפה ולקחת ציפרלקס",
-    "בדיקת תקינות אפליקציית המשחקים",
-    "להינות",
-  ]},
-];
+const CHECKLIST_SECTIONS_BY_EVENT = {
+  bach: [
+    { id: "4-6m", t: "4–6 חודשים לפני", sub: "מה עושות?", pop: "pink", items: [
+      "פתיחת קבוצה של המלוות והכלה",
+      "סיעור מוחות עם הכלה",
+      "רשימת מוזמנות",
+      "תקציב מוערך בהתאם — סקר שוק ראשוני",
+      "אופציות לתאריכים מהכלה",
+      "מקום / אזור מוערך (בית של מישהי הכי טוב)",
+    ]},
+    { id: "3-4m", t: "3–4 חודשים לפני", sub: "מתחממות", pop: "orange", items: [
+      "פתיחת קבוצה עם כלל המוזמנות — סינון ראשוני",
+      "סקר אופציות לתאריכים",
+      "סגירת תאריך", "סגירת מקום", "בקשה לתשלום",
+      "הזמנת קישוטים ופיצ'פקס",
+    ]},
+    { id: "2m", t: "חודשיים לפני", sub: "סוגרות", pop: "ink", items: [
+      "סקר מי שותה מה (מומלץ על מנת לחסוך באלכוהול)",
+      "סגירת אטרקציה", "סגירת ספק אוכל", "הפצת הזמנה",
+    ]},
+    { id: "2-3w", t: "שבועיים–שלושה לפני", sub: "סגורות", pop: "pink", items: [
+      "סגירת לו\"ז מול המוזמנות והכלה (מומלץ לגזור זמנים לבעייתיות)",
+      "קניות (חד\"פ, חטיפים, אלכוהול)",
+      "וידוא הגעה סופית של כל הבנות",
+      "הכנת פלייליסט",
+    ]},
+    { id: "1w", t: "שבוע לפני", sub: "מוודאות", pop: "orange", items: [
+      "וידוא הגעת ספקים", "סגירת לו\"ז למלוות",
+      "בדיקת האפליקציה ותקינות המשחקים",
+      "וידוא שליחת שאלון לחתן",
+      "וידוא טעינת תשובות החתן",
+      "ציוד למשחק \"מפה לאוזן\" — אוזניות טובות",
+      "וידוא אפשרות \"הקרנה\" בלוקיישן (לא חובה)",
+    ]},
+    { id: "1d", t: "יום לפני", sub: "לא שוכחות", pop: "ink", items: [
+      "קישוטים", "קניות (חד\"פ, חטיפים, אלכוהול)",
+      "נגן מוזיקה ומטען",
+      "אם שכרתן מקום — וודאו שיש לכן סרטונים והנחיות לתפעול מהבעלים",
+      "מתנות אם יש", "לשלוח מיקום בקבוצת הווטסאפ",
+      "בדיקת תקינות אפליקציית המשחקים",
+    ]},
+    { id: "day", t: "היום הגדול", sub: "נהנות", pop: "pink", items: [
+      "הגעה מוקדמת לסידור המקום",
+      "לשתות קפה ולקחת ציפרלקס",
+      "בדיקת תקינות אפליקציית המשחקים",
+      "להינות",
+    ]},
+  ],
 
-const buildSeedItems = () => {
+  // Birthday — social celebration focus
+  bday: [
+    { id: "early", t: "תכנון מוקדם", sub: "הקונספט", pop: "magenta", items: [
+      "קביעת תאריך, שעה ובחירת קונספט/נושא למסיבה (אם יש)",
+      "הכנת רשימת מוזמנים ושליחת הזמנות (מעקב אישורי הגעה – RSVP)",
+      "סגירת לוקיישן (בית, בר, פארק, לופט)",
+    ]},
+    { id: "week", t: "שבוע לפני", sub: "הסידורים", pop: "sun", items: [
+      "הזמנת/הכנת אוכל, נשנושים ועוגת יום הולדת",
+      "איסוף חומרים למשחקים (עובדות מפתיעות, תמונות מביכות של חתן/כלת השמחה)",
+      "הכנת הפתעה מיוחדת (ברכות מוקלטות, סרטון, מתנה משותפת)",
+    ]},
+    { id: "day", t: "יום לפני / היום הגדול", sub: "הלוגיסטיקה", pop: "magenta", items: [
+      "קניית אלכוהול, שתייה קלה, שקיות קרח וכוסות/כלים חד-פעמיים (או רב-פעמיים)",
+      "רכישת קישוטים (בלונים, תאורה מתאימה, שלט מזל טוב)",
+      "וידוא טעינת תשובות החוגג/ת לשאלון",
+      "בדיקת תקינות אפליקציית המשחקים",
+    ]},
+  ],
+
+  // Team building — logistics + technical
+  team: [
+    { id: "approval", t: "אישורים והתחלה", sub: "הבסיס", pop: "sky", items: [
+      "קבלת אישור תקציבי סופי וחתום מהנהלה/משאבי אנוש",
+      "שליחת סקר העדפות קולינריות ואלרגיות בצוות (צמחוני, טבעוני, ללא גלוטן, כשרות)",
+      "סגירת מיקום (חדר ישיבות גדול, מסעדה, וילה, או חלל חיצוני)",
+      "שליחת זימון ביומנים (Calendar Invites) לחברי הצוות כדי לשריין את התאריך",
+    ]},
+    { id: "tech", t: "לוגיסטיקה וטכני", sub: "שבוע לפני", pop: "sage", items: [
+      "בדיקת ציוד טכנולוגי במקום המפגש (מקרן, כבל HDMI תואם, מערכת הגברה, שלטים)",
+      "בדיקת קליטת אינטרנט/Wi-Fi במקום (קריטי להפעלת המשחקים באפליקציה)",
+      "וידוא טעינת שאלון על החברה במשחק 'שאלון על החברה'",
+    ]},
+    { id: "reminder", t: "יום לפני / היום עצמו", sub: "תזכורות", pop: "sky", items: [
+      "שליחת תזכורת אחרונה יום לפני (עם כתובת מדויקת, שעת הגעה וקוד לבוש אם יש)",
+      "הגעה מוקדמת לסידור החדר",
+      "בדיקת תקינות אפליקציית המשחקים",
+    ]},
+  ],
+
+  // Date night — minimal, romantic
+  date: [
+    { id: "prep", t: "הכנות לערב", sub: "רק שניכם", pop: "red", items: [
+      "סגירת מקום או יוזמת \"ערב בית\"",
+      "הזמנת/הכנת אוכל ויין",
+      "פלייליסט שמתאים לאווירה",
+      "טלפונים על הצד — או במצב הימנעות",
+      "להחליט על משחק/פעילות זוגית אחת",
+    ]},
+  ],
+};
+
+const buildSeedItems = (eventId) => {
+  const sections = CHECKLIST_SECTIONS_BY_EVENT[eventId || "bach"] || CHECKLIST_SECTIONS_BY_EVENT.bach;
   const out = [];
-  CHECKLIST_SECTIONS.forEach(sec => sec.items.forEach((t, idx) =>
+  sections.forEach(sec => sec.items.forEach((t, idx) =>
     out.push({ id: `${sec.id}-${idx}`, section: sec.id, t, done: false, custom: false })));
   return out;
 };
 
-function ScreenChecklist({ T, onBack }) {
-  const [items, setItems] = usePersistedState("chogegot_checklist_items", buildSeedItems);
+function ScreenChecklist({ T, onBack, eventId }) {
+  const evKey = eventId || "bach";
+  const pal = getEventPalette(evKey);
+  const sections = CHECKLIST_SECTIONS_BY_EVENT[evKey] || CHECKLIST_SECTIONS_BY_EVENT.bach;
+  const [items, setItems] = usePersistedState(`chogegot_checklist_items_${evKey}`, () => buildSeedItems(evKey));
 
   // One-time migration: surface any newly-added seed items to existing users whose
   // localStorage was filled before the new rows were defined. Anything they've already
   // ticked / removed stays as-is; we only append the missing seed IDs.
   React.useEffect(() => {
-    if (!Array.isArray(items)) { setItems(buildSeedItems()); return; }
+    if (!Array.isArray(items)) { setItems(buildSeedItems(evKey)); return; }
     const existingIds = new Set(items.map(i => i.id));
-    const seed = buildSeedItems();
+    const seed = buildSeedItems(evKey);
     const missing = seed.filter(s => !existingIds.has(s.id));
     if (missing.length > 0) setItems(prev => [...(Array.isArray(prev) ? prev : []), ...missing]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [evKey]);
   const [adding, setAdding] = React.useState("");
-  const [addingTo, setAddingTo] = React.useState(CHECKLIST_SECTIONS[0].id);
+  const [addingTo, setAddingTo] = React.useState(sections[0].id);
 
   // Guard: same null-heal as ScreenBudget
-  const safeItems = Array.isArray(items) ? items : buildSeedItems();
+  const safeItems = Array.isArray(items) ? items : buildSeedItems(evKey);
 
   const done = safeItems.filter(i => i.done).length;
   const pct = safeItems.length ? Math.round((done / safeItems.length) * 100) : 0;
@@ -3232,13 +3597,13 @@ function ScreenChecklist({ T, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-        {/* Pink header with progress — slim */}
+        {/* Event-themed header with progress — slim */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+          background: `linear-gradient(160deg, ${pal.secondary.main} 0%, ${pal.secondary.main} 60%, ${pal.secondary.deep} 130%)`,
           padding: "36px 22px 14px",
           borderRadius: "0 0 22px 22px",
-          color: "#1A1A1A",
-          boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
+          color: pal.secondary.on,
+          boxShadow: `0 6px 18px -10px ${pal.secondary.main}66`,
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
@@ -3248,15 +3613,15 @@ function ScreenChecklist({ T, onBack }) {
           }}/>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>צ'קליסט המארגנת</div>
+            <div style={{ width: 40 }}/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: pal.secondary.on }}>צ'קליסט המארגנים</div>
             <div style={{ width: 40 }}/>
           </div>
 
           <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 11.5, color: "rgba(26,26,26,0.78)", fontWeight: 700, letterSpacing: 0.4 }}>משימות לארגון</div>
-              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: "#1A1A1A", lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{safeItems.length}</span></div>
+              <div style={{ fontSize: 11.5, color: pal.secondary.on, opacity: 0.78, fontWeight: 700, letterSpacing: 0.4 }}>משימות לארגון</div>
+              <div className="num" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5, color: pal.secondary.on, lineHeight: 1, marginTop: 2 }}>{done}<span style={{ opacity: 0.55, fontSize: 22 }}>/{safeItems.length}</span></div>
             </div>
             <div style={{ padding: "5px 12px", borderRadius: 999,
               background: "#1A1A1A", color: "#fff",
@@ -3269,13 +3634,13 @@ function ScreenChecklist({ T, onBack }) {
         </div>
 
         {/* Sections */}
-        <div style={{ flex: 1, overflow: "auto", padding: "20px 22px 14px", display: "flex", flexDirection: "column", gap: 18 }}>
-          {CHECKLIST_SECTIONS.map((sec, sidx) => {
+        <div style={{ flex: 1, overflow: "auto", padding: "20px 22px 100px", display: "flex", flexDirection: "column", gap: 18 }}>
+          {sections.map((sec, sidx) => {
             const sectionItems = safeItems.filter(i => i.section === sec.id);
             const secDone = sectionItems.filter(i => i.done).length;
             const secPct = sectionItems.length ? Math.round((secDone / sectionItems.length) * 100) : 0;
-            // Rotate through orange, pink, black for visual variety across timeline sections.
-            const palette = [PB.orange, PB.pink, PB.ink, PB.orange, PB.pink, PB.ink];
+            // Rotate through event primary, secondary, ink for visual variety across timeline sections.
+            const palette = [pal.primary, pal.secondary, PB.ink, pal.primary, pal.secondary, PB.ink];
             const sp = palette[sidx % palette.length];
             return (
               <div key={sec.id}>
@@ -3331,17 +3696,17 @@ function ScreenChecklist({ T, onBack }) {
           <div style={{ height: 4 }}/>
         </div>
 
-        {/* Add row */}
-        <div style={{ display: "flex", gap: 6, padding: "10px 22px 24px", flexShrink: 0, background: T.surface,
+        {/* Add row — sits above the floating BottomNav (paddingBottom leaves room for it) */}
+        <div style={{ display: "flex", gap: 6, padding: "10px 22px 96px", flexShrink: 0, background: T.surface,
           borderTop: `1px solid ${T.line}`,
         }}>
           <select value={addingTo} onChange={e => setAddingTo(e.target.value)} style={{
             padding: "0 10px", borderRadius: 12,
-            border: T.border, background: PB.orange.soft, color: PB.orange.deep,
+            border: T.border, background: pal.primary.soft, color: pal.primary.deep,
             fontSize: 11.5, fontWeight: 800, fontFamily: T.font,
             outline: "none", maxWidth: 110,
           }}>
-            {CHECKLIST_SECTIONS.map(s => <option key={s.id} value={s.id}>{s.t}</option>)}
+            {sections.map(s => <option key={s.id} value={s.id}>{s.t}</option>)}
           </select>
           <input
             value={adding} onChange={e => setAdding(e.target.value)}
@@ -3353,15 +3718,14 @@ function ScreenChecklist({ T, onBack }) {
               fontSize: "max(16px, 13.5px)", fontWeight: 500, fontFamily: T.font,
               color: T.ink, outline: "none", minWidth: 0,
             }}/>
-          <button onClick={add} style={{
-            width: 44, flexShrink: 0, borderRadius: 12, background: PB.orange.main, color: PB.orange.on,
+          <button onClick={add} aria-label="הוסיפו משימה" style={{
+            width: 44, flexShrink: 0, borderRadius: 12, background: pal.primary.main, color: pal.primary.on,
             border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: `0 4px 12px -4px ${PB.orange.main}66`,
-          }}><Icon name="plus" size={18} color={PB.orange.on} w={2}/></button>
+            boxShadow: `0 4px 12px -4px ${pal.primary.main}66`,
+          }}><Icon name="plus" size={18} color={pal.primary.on} w={2}/></button>
         </div>
       </div>
-      <HomeBar/>
     </>
   );
 }
@@ -3402,7 +3766,7 @@ function ScreenPlaylist({ T, onBack }) {
             background: `${PB.orange.main}1F`, pointerEvents: "none",
           }}/>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ width: 40 }}/>
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>פלייליסט</div>
             <div style={{ width: 40 }}/>
           </div>
@@ -3417,8 +3781,8 @@ function ScreenPlaylist({ T, onBack }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "20px 22px 28px", display: "flex", flexDirection: "column", flex: 1 }}>
+        {/* Content — bottom padding leaves room for the BottomNav */}
+        <div style={{ padding: "20px 22px 100px", display: "flex", flexDirection: "column", flex: 1 }}>
           {/* Spotify hero card */}
           <button onClick={openSpotify} style={{
             display: "flex", alignItems: "center", gap: 14, width: "100%",
@@ -3500,7 +3864,8 @@ function ScreenPlaylist({ T, onBack }) {
    ────────────────────────────────────────────────────────────── */
 const EXPENSE_CATS = ["לוקיישן", "אוכל", "אלכוהול", "עיצוב", "אטרקציה", "תוספות", "אחר"];
 
-const SEED_EXPENSES = [
+// Bach gets the festive demo data; other events start clean so the organiser fills in their own.
+const BACH_SEED_EXPENSES = [
   { id: "e1", cat: "לוקיישן",  item: "וילה",        type: "fixed",    amount: 2500 },
   { id: "e2", cat: "אוכל",     item: "שולחן שוק",  type: "variable", amount: 125 },
   { id: "e3", cat: "אלכוהול",  type: "variable", item: "יין ובירות", amount: 33 },
@@ -3508,14 +3873,49 @@ const SEED_EXPENSES = [
   { id: "e5", cat: "אטרקציה",  item: "מפעילה",      type: "fixed",    amount: 1800 },
   { id: "e6", cat: "אחר",      item: 'בלת"מים',     type: "variable", amount: 13 },
 ];
-const SEED_PARTICIPANTS = Array.from({ length: 12 }, (_, i) => ({
+const BACH_SEED_PARTICIPANTS = Array.from({ length: 12 }, (_, i) => ({
   id: `p${i+1}`, name: `משתתפת ${i+1}`, coming: true, paid: i < 5,
 }));
+const seedExpensesFor     = (evKey) => evKey === "bach" ? BACH_SEED_EXPENSES     : [];
+const seedParticipantsFor = (evKey) => evKey === "bach" ? BACH_SEED_PARTICIPANTS : [];
+// Legacy names kept so the `safeExpenses` / `safeParticipants` fallbacks below
+// (which use these in a few spots) still resolve cleanly.
+const SEED_EXPENSES     = BACH_SEED_EXPENSES;
+const SEED_PARTICIPANTS = BACH_SEED_PARTICIPANTS;
 
-function ScreenBudget({ T, onBack }) {
+function ScreenBudget({ T, onBack, eventId }) {
+  const evKey = eventId || "bach";
+  const pal = getEventPalette(evKey);
+  // Mode per event:
+  //   "split"   — current bach logic: pool expenses, divide by participant count, collect per head
+  //   "topdown" — cap-based: organiser sets a max, every expense deducts; no participant tracking
+  //   "hybrid"  — birthday: toggle between "single organizer" (topdown) and "split among friends" (split)
+  const modeForEvent = { bach: "split", team: "topdown", bday: "hybrid", date: "split" };
+  const baseMode = modeForEvent[evKey] || "split";
+
   const [tab, setTab] = React.useState("summary");
-  const [expenses, setExpenses] = usePersistedState("chogegot_budget_expenses", SEED_EXPENSES);
-  const [participants, setParticipants] = usePersistedState("chogegot_budget_participants", SEED_PARTICIPANTS);
+  // Per-event storage so each event keeps its own budget cleanly. Non-bach starts empty.
+  const [expenses, setExpenses] = usePersistedState(`chogegot_budget_expenses_${evKey}`, () => seedExpensesFor(evKey));
+  const [participants, setParticipants] = usePersistedState(`chogegot_budget_participants_${evKey}`, () => seedParticipantsFor(evKey));
+  // Hybrid (bday) chooser: "topdown" or "split". For non-hybrid events it's ignored.
+  const [hybridChoice, setHybridChoice] = usePersistedState(`chogegot_budget_mode_${evKey}`, "topdown");
+  // Top-down cap — only meaningful when effectiveMode === "topdown"
+  const [maxBudget, setMaxBudget] = usePersistedState(`chogegot_budget_max_${evKey}`, 0);
+  // Team sub-mode: how the topdown cap is derived. "cap" = single number, "perperson" = ₪/employee × headcount.
+  const [teamSubMode, setTeamSubMode] = usePersistedState(`chogegot_budget_teammode_${evKey}`, "cap");
+  const [perPersonAmount, setPerPersonAmount] = usePersistedState(`chogegot_budget_perperson_${evKey}`, 0);
+  const [headcount, setHeadcount] = usePersistedState(`chogegot_budget_headcount_${evKey}`, 0);
+
+  const effectiveMode = baseMode === "hybrid" ? hybridChoice : baseMode;
+  const showPeople = effectiveMode === "split";
+  // The cap fed into top-down math. For "perperson" sub-mode it's auto-derived from ₪/אדם × N.
+  const effectiveCap = (evKey === "team" && teamSubMode === "perperson")
+    ? (Number(perPersonAmount) || 0) * (Number(headcount) || 0)
+    : (Number(maxBudget) || 0);
+
+  // If People tab is hidden but user was on it (after mode flip), bounce back to summary
+  React.useEffect(() => { if (!showPeople && tab === "people") setTab("summary"); }, [showPeople, tab]);
+
   const [newExp, setNewExp] = React.useState({ cat: "", item: "", type: "fixed", amount: "" });
   const [newName, setNewName] = React.useState("");
   const [editingExpId, setEditingExpId] = React.useState(null);
@@ -3551,14 +3951,20 @@ function ScreenBudget({ T, onBack }) {
 
   const comingArr = safeParticipants.filter(p => p.coming);
   const comingN   = comingArr.length;
-  // variable expenses are stored as per-person price; scale by headcount
+  // In top-down mode every expense counts as its raw amount (no per-person variable scaling)
   const total     = safeExpenses.reduce((s, e) => {
     const amt = Number(e.amount) || 0;
+    if (effectiveMode === "topdown") return s + amt;
     return s + (e.type === "variable" ? amt * (comingN || 1) : amt);
   }, 0);
   const perPerson = comingN > 0 ? Math.round(total / comingN) : 0;
   const collected = comingArr.filter(p => p.paid).length * perPerson;
-  const remaining = Math.max(total - collected, 0);
+  // "split" mode = remaining means "left to collect from participants"
+  // "topdown" mode = remaining means "left in the cap" (can go negative)
+  const remaining = effectiveMode === "topdown"
+    ? effectiveCap - total
+    : Math.max(total - collected, 0);
+  const overBudget = effectiveMode === "topdown" && remaining < 0;
 
   const addExpense = () => {
     const amt = Number(newExp.amount); if (!newExp.item.trim() || !amt) return;
@@ -3590,13 +3996,13 @@ function ScreenBudget({ T, onBack }) {
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-        {/* Orange header with totals — slim */}
+        {/* Event-themed header with mode-aware stats */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
+          background: `linear-gradient(160deg, ${pal.primary.main} 0%, ${pal.primary.deep} 100%)`,
           padding: "36px 20px 14px",
           borderRadius: "0 0 22px 22px",
           color: "#fff",
-          boxShadow: "0 6px 18px -10px rgba(232,81,42,0.45)",
+          boxShadow: `0 6px 18px -10px ${pal.primary.deep}73`,
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
@@ -3604,50 +4010,93 @@ function ScreenBudget({ T, onBack }) {
             width: 110, height: 110, borderRadius: "50%",
             background: "rgba(255,255,255,0.10)", pointerEvents: "none",
           }}/>
+          <div style={{
+            position: "absolute", bottom: -30, left: -30,
+            width: 90, height: 90, borderRadius: "50%",
+            background: `${pal.secondary.main}55`, pointerEvents: "none", filter: "blur(2px)",
+          }}/>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
+            <div style={{ width: 40 }}/>
             <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>תקציב</div>
             <div style={{ width: 40 }}/>
           </div>
 
-          <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>סך הוצאות</div>
-              <div className="num" style={{ fontSize: 30, fontWeight: 800, marginTop: 2, letterSpacing: -0.5, color: "#fff", lineHeight: 1 }}>₪{total.toLocaleString()}</div>
-            </div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85, letterSpacing: 0.3 }}>חסר לאסוף</div>
-              <div className="num" style={{ fontSize: 18, fontWeight: 800, marginTop: 2, lineHeight: 1,
-                background: "rgba(0,0,0,0.25)", color: "#fff", padding: "4px 10px", borderRadius: 999, display: "inline-block" }}>₪{remaining.toLocaleString()}</div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative" }}>
-            <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
-              background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)",
-              backdropFilter: "blur(4px)", color: "#fff" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.92, letterSpacing: 0.3 }}>חלוקה ל-{comingN}</div>
-              <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>₪{perPerson.toLocaleString()}</div>
-            </div>
-            <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
-              background: PB.pink.main, color: PB.pink.on }}>
-              <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.82, letterSpacing: 0.3 }}>נאספו</div>
-              <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>₪{collected.toLocaleString()}</div>
-            </div>
-          </div>
+          {effectiveMode === "topdown" ? (
+            // === TOP-DOWN mode (team, bday-single, etc.) ===
+            <>
+              <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>תקציב כולל</div>
+                  <div className="num" style={{ fontSize: 30, fontWeight: 800, marginTop: 2, letterSpacing: -0.5, color: "#fff", lineHeight: 1 }}>₪{effectiveCap.toLocaleString()}</div>
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85, letterSpacing: 0.3 }}>{overBudget ? "חריגה" : "נשאר"}</div>
+                  <div className="num" style={{ fontSize: 18, fontWeight: 800, marginTop: 2, lineHeight: 1,
+                    background: overBudget ? "#1A1A1A" : "rgba(0,0,0,0.25)",
+                    color: overBudget ? "#FFD93D" : "#fff",
+                    padding: "4px 10px", borderRadius: 999, display: "inline-block" }}>
+                    {overBudget ? "-" : ""}₪{Math.abs(remaining).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative" }}>
+                <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
+                  background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)",
+                  backdropFilter: "blur(4px)", color: "#fff" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.92, letterSpacing: 0.3 }}>הוצא</div>
+                  <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>₪{total.toLocaleString()}</div>
+                </div>
+                <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
+                  background: pal.secondary.main, color: pal.secondary.on }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.82, letterSpacing: 0.3 }}>ניצול</div>
+                  <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>
+                    {effectiveCap > 0 ? Math.round((total / effectiveCap) * 100) : 0}%
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            // === SPLIT mode (bach, bday-split, date) ===
+            <>
+              <div style={{ marginTop: 12, position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", fontWeight: 700, letterSpacing: 0.4 }}>סך הוצאות</div>
+                  <div className="num" style={{ fontSize: 30, fontWeight: 800, marginTop: 2, letterSpacing: -0.5, color: "#fff", lineHeight: 1 }}>₪{total.toLocaleString()}</div>
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, opacity: 0.85, letterSpacing: 0.3 }}>חסר לאסוף</div>
+                  <div className="num" style={{ fontSize: 18, fontWeight: 800, marginTop: 2, lineHeight: 1,
+                    background: "rgba(0,0,0,0.25)", color: "#fff", padding: "4px 10px", borderRadius: 999, display: "inline-block" }}>₪{remaining.toLocaleString()}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative" }}>
+                <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
+                  background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.3)",
+                  backdropFilter: "blur(4px)", color: "#fff" }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.92, letterSpacing: 0.3 }}>חלוקה ל-{comingN}</div>
+                  <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>₪{perPerson.toLocaleString()}</div>
+                </div>
+                <div style={{ flex: 1, padding: "6px 9px", borderRadius: 8,
+                  background: pal.secondary.main, color: pal.secondary.on }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.82, letterSpacing: 0.3 }}>נאספו</div>
+                  <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1 }}>₪{collected.toLocaleString()}</div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — "people" only shows in split mode */}
         <div style={{ display: "flex", gap: 4, margin: "16px 20px 0", padding: 4,
           background: T.surfaceAlt, borderRadius: T.radius, flexShrink: 0 }}>
           <TabBtn id="summary" label="סיכום"/>
           <TabBtn id="expenses" label={`הוצאות (${safeExpenses.length})`}/>
-          <TabBtn id="people" label={`משתתפות (${comingN})`}/>
+          {showPeople && <TabBtn id="people" label={`משתתפים (${comingN})`}/>}
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, overflow: "auto", padding: "14px 20px 14px", display: "flex", flexDirection: "column", gap: 9 }}>
+        {/* Body — bottom padding leaves room for the BottomNav */}
+        <div style={{ flex: 1, overflow: "auto", padding: "14px 20px 100px", display: "flex", flexDirection: "column", gap: 9 }}>
           {tab === "summary" && (() => {
             // Collect every category that has at least one expense — including any
             // custom category the user typed in. Without this, custom 'תחבורה' rows
@@ -3664,24 +4113,174 @@ function ScreenBudget({ T, onBack }) {
               .reduce((s, e) => s + (Number(e.amount) || 0), 0);
             return (
             <>
-              {/* Per-person live breakdown — makes it obvious that perPerson is
-                  recalculated from the latest expenses + participant count */}
+              {/* Hybrid mode toggle (bday only) */}
+              {baseMode === "hybrid" && (
+                <div style={{
+                  padding: 4, background: T.surfaceAlt, borderRadius: 12,
+                  display: "flex", gap: 4, marginBottom: 4,
+                }}>
+                  {[
+                    { id: "topdown", t: "מארגן יחיד", s: "תקציב גג + הוצאות" },
+                    { id: "split",   t: "מתחלקים",    s: "סך הוצאות / מספר משתתפים" },
+                  ].map(m => {
+                    const active = hybridChoice === m.id;
+                    return (
+                      <button key={m.id} onClick={() => setHybridChoice(m.id)} style={{
+                        flex: 1, padding: "10px 8px", borderRadius: 9,
+                        background: active ? pal.primary.main : "transparent",
+                        color: active ? "#fff" : T.inkSoft,
+                        border: "none", cursor: "pointer", fontFamily: T.font,
+                        textAlign: "center",
+                        boxShadow: active ? `0 2px 8px -2px ${pal.primary.main}99` : "none",
+                        transition: "all 150ms",
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 800 }}>{m.t}</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 600, opacity: active ? 0.85 : 0.7, marginTop: 1 }}>{m.s}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TOP-DOWN: max budget input + breakdown bar */}
+              {effectiveMode === "topdown" ? (
+                <div style={{
+                  padding: "12px 14px", background: pal.primary.soft,
+                  border: `1px solid ${pal.primary.main}33`, borderRadius: T.radius,
+                  borderRight: `4px solid ${pal.primary.main}`,
+                  marginBottom: 4,
+                }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: pal.primary.deep, letterSpacing: 0.4, textTransform: "uppercase" }}>
+                    תקציב כולל לאירוע
+                  </div>
+
+                  {/* Team sub-mode toggle: how is the cap derived? */}
+                  {evKey === "team" && (
+                    <div style={{
+                      padding: 3, background: "rgba(255,255,255,0.6)", borderRadius: 10,
+                      display: "flex", gap: 3, marginTop: 8,
+                    }}>
+                      {[
+                        { id: "cap",       t: "תקציב גג" },
+                        { id: "perperson", t: "תקציב לאדם" },
+                      ].map(m => {
+                        const active = teamSubMode === m.id;
+                        return (
+                          <button key={m.id} onClick={() => setTeamSubMode(m.id)} style={{
+                            flex: 1, padding: "8px 6px", borderRadius: 8,
+                            background: active ? pal.primary.main : "transparent",
+                            color: active ? "#fff" : pal.primary.deep,
+                            border: "none", cursor: "pointer", fontFamily: T.font,
+                            fontSize: 12.5, fontWeight: 800, textAlign: "center",
+                            transition: "all 150ms",
+                          }}>{m.t}</button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Input section — single cap field, OR ₪/אדם + headcount */}
+                  {evKey === "team" && teamSubMode === "perperson" ? (
+                    <>
+                      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: pal.primary.deep, opacity: 0.85, letterSpacing: 0.2, marginBottom: 3 }}>
+                            ₪ לעובד
+                          </div>
+                          <input
+                            value={perPersonAmount || ""}
+                            onChange={e => setPerPersonAmount(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
+                            placeholder="0"
+                            inputMode="numeric"
+                            style={{
+                              width: "100%", fontSize: "max(18px, 16px)", fontWeight: 800,
+                              color: pal.primary.deep, background: "#fff",
+                              border: `1px solid ${pal.primary.main}55`, borderRadius: 9,
+                              padding: "8px 12px", outline: "none", fontFamily: T.font,
+                              direction: "ltr", textAlign: "left",
+                            }}/>
+                        </div>
+                        <div style={{
+                          alignSelf: "flex-end", fontSize: 18, fontWeight: 800,
+                          color: pal.primary.deep, padding: "8px 4px",
+                        }}>×</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: pal.primary.deep, opacity: 0.85, letterSpacing: 0.2, marginBottom: 3 }}>
+                            מספר עובדים
+                          </div>
+                          <input
+                            value={headcount || ""}
+                            onChange={e => setHeadcount(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
+                            placeholder="0"
+                            inputMode="numeric"
+                            style={{
+                              width: "100%", fontSize: "max(18px, 16px)", fontWeight: 800,
+                              color: pal.primary.deep, background: "#fff",
+                              border: `1px solid ${pal.primary.main}55`, borderRadius: 9,
+                              padding: "8px 12px", outline: "none", fontFamily: T.font,
+                              direction: "ltr", textAlign: "left",
+                            }}/>
+                        </div>
+                      </div>
+                      <div style={{
+                        marginTop: 8, padding: "8px 12px", background: "#fff",
+                        border: `1px dashed ${pal.primary.main}55`, borderRadius: 9,
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                      }}>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: pal.primary.deep, opacity: 0.85 }}>תקציב כולל מחושב</span>
+                        <span className="num" style={{ fontSize: 18, fontWeight: 900, color: pal.primary.deep }}>₪{effectiveCap.toLocaleString()}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                      <div className="num" style={{ fontSize: 22, fontWeight: 800, color: pal.primary.deep, lineHeight: 1 }}>₪</div>
+                      <input
+                        value={maxBudget || ""}
+                        onChange={e => setMaxBudget(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
+                        placeholder="0"
+                        inputMode="numeric"
+                        style={{
+                          flex: 1, fontSize: "max(20px, 18px)", fontWeight: 800,
+                          color: pal.primary.deep, background: "#fff",
+                          border: `1px solid ${pal.primary.main}55`, borderRadius: 9,
+                          padding: "8px 12px", outline: "none", fontFamily: T.font,
+                          direction: "ltr", textAlign: "left",
+                        }}/>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 10, height: 8, background: "#fff", borderRadius: 999, overflow: "hidden", border: `1px solid ${pal.primary.main}22` }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${effectiveCap > 0 ? Math.min(100, (total / effectiveCap) * 100) : 0}%`,
+                      background: overBudget ? "#1A1A1A" : `linear-gradient(90deg, ${pal.secondary.main}, ${pal.primary.main})`,
+                      borderRadius: 999, transition: "width 300ms",
+                    }}/>
+                  </div>
+                  <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 6, fontWeight: 500 }}>
+                    הוצא ₪{total.toLocaleString()} מתוך ₪{effectiveCap.toLocaleString()}
+                    {overBudget && <b style={{ color: "#C73E1C", marginRight: 6 }}>· חרגתם ב-₪{Math.abs(remaining).toLocaleString()}</b>}
+                  </div>
+                </div>
+              ) : (
+              /* SPLIT: Per-person live breakdown */
               <div style={{
-                padding: "12px 14px", background: PB.orange.soft,
-                border: `1px solid ${PB.orange.main}33`, borderRadius: T.radius,
-                borderRight: `4px solid ${PB.orange.main}`,
+                padding: "12px 14px", background: pal.primary.soft,
+                border: `1px solid ${pal.primary.main}33`, borderRadius: T.radius,
+                borderRight: `4px solid ${pal.primary.main}`,
                 marginBottom: 4,
               }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: PB.orange.deep, letterSpacing: 0.4, textTransform: "uppercase" }}>
-                  כל משתתפת מעבירה
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: pal.primary.deep, letterSpacing: 0.4, textTransform: "uppercase" }}>
+                  {pal.tone === "fs" ? "כל משתתפת מעבירה" : "כל משתתף מעביר"}
                 </div>
-                <div className="num" style={{ fontSize: 26, fontWeight: 800, color: PB.orange.deep, lineHeight: 1, marginTop: 2 }}>
+                <div className="num" style={{ fontSize: 26, fontWeight: 800, color: pal.primary.deep, lineHeight: 1, marginTop: 2 }}>
                   ₪{perPerson.toLocaleString()}
                 </div>
                 <div style={{ fontSize: 11, color: T.inkSoft, marginTop: 6, fontWeight: 500 }}>
                   ₪{Math.round(fixedPerPerson).toLocaleString()} מהקבועות (חלוקה ל-{comingN}) + ₪{varPerPerson.toLocaleString()} מהמשתנות
                 </div>
               </div>
+              )}
 
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4, marginTop: 6 }}>
                 <h3 style={{ fontSize: 14.5, fontWeight: 700, margin: 0, letterSpacing: -0.2 }}>פירוט לפי קטגוריה</h3>
@@ -3692,6 +4291,7 @@ function ScreenBudget({ T, onBack }) {
               {allCats.map(c => {
                 const sum = safeExpenses.filter(e => e.cat === c).reduce((s, e) => {
                   const amt = Number(e.amount) || 0;
+                  if (effectiveMode === "topdown") return s + amt;
                   return s + (e.type === "variable" ? amt * (comingN || 1) : amt);
                 }, 0);
                 if (!sum) return null;
@@ -3710,21 +4310,32 @@ function ScreenBudget({ T, onBack }) {
                   </div>
                 );
               })}
-              <div style={{
-                marginTop: 10, padding: "11px 14px", background: T.surfaceAlt, borderRadius: T.radius,
-                fontSize: 12, lineHeight: 1.55, color: T.inkSoft, fontWeight: 500,
-              }}>
-                <div><b style={{ color: T.ink }}>קבועה</b> — סכום כולל קבוע, ללא קשר לכמות (וילה, אטרקציה).</div>
-                <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>משתנה</b> — הכניסי <b>מחיר לאדם</b>; הסכום הכולל יתעדכן אוטומטית עם שינוי מספר המשתתפות.</div>
-              </div>
+              {effectiveMode === "split" && (
+                <div style={{
+                  marginTop: 10, padding: "11px 14px", background: T.surfaceAlt, borderRadius: T.radius,
+                  fontSize: 12, lineHeight: 1.55, color: T.inkSoft, fontWeight: 500,
+                }}>
+                  <div><b style={{ color: T.ink }}>קבועה</b> — סכום כולל קבוע, ללא קשר לכמות (וילה, אטרקציה).</div>
+                  <div style={{ marginTop: 3 }}><b style={{ color: T.ink }}>משתנה</b> — מחיר לאדם; הסכום הכולל יתעדכן אוטומטית עם שינוי מספר המשתתפים.</div>
+                </div>
+              )}
               <div style={{ flex: 1, minHeight: 8 }}/>
-              <Btn T={T} icon="send" onClick={() => {
-                // Each click reads the latest perPerson from the closure of the current
-                // render — so adding expenses or changing the headcount before tapping
-                // 'send' is always reflected in the message.
-                const msg = `היוש!!! האירוע של השנה קרב ובא! 🎉 כדי שנוכל להמשיך בסגירות אחרונות מזכירות להעביר תשלום של ₪${perPerson} 💛`;
-                openWhatsApp(msg);
-              }}>בקשי השלמת תשלום של ₪{perPerson}</Btn>
+              {effectiveMode === "split" ? (
+                <Btn T={T} icon="send" onClick={() => {
+                  // Each click reads the latest perPerson from the closure of the current
+                  // render — so adding expenses or changing the headcount before tapping
+                  // 'send' is always reflected in the message.
+                  const msg = pal.tone === "fs"
+                    ? `היוש!!! האירוע של השנה קרב ובא! 🎉 כדי שנוכל להמשיך בסגירות אחרונות מזכירות להעביר תשלום של ₪${perPerson} 💛`
+                    : `היי! האירוע מתקרב 🎉 בבקשה תעבירו תשלום של ₪${perPerson} לסגירות אחרונות 🙏`;
+                  openWhatsApp(msg);
+                }}>{pal.tone === "fs" ? `בקשי השלמת תשלום של ₪${perPerson}` : `בקשו השלמת תשלום של ₪${perPerson}`}</Btn>
+              ) : (
+                <div style={{ padding: "11px 14px", background: T.surfaceAlt, borderRadius: T.radius,
+                  fontSize: 11.5, lineHeight: 1.5, color: T.inkSoft, fontWeight: 500 }}>
+                  במצב <b style={{ color: T.ink }}>תקציב גג</b> ההוצאות יורדות אוטומטית מהסכום שהגדרתם. אם חרגתם — תראו זאת מודגש למעלה.
+                </div>
+              )}
             </>
             );
           })()}
@@ -3830,54 +4441,76 @@ function ScreenBudget({ T, onBack }) {
                 </div>
               ))}
 
-              {/* Add form */}
-              <div style={{ marginTop: 8, padding: 12, background: T.surfaceAlt,
+              {/* Add form — item name first (prominent + required), other fields underneath */}
+              <div style={{ marginTop: 8, padding: 14, background: T.surfaceAlt,
                 border: `1px dashed ${T.lineStrong}`, borderRadius: T.radius,
-                display: "flex", flexDirection: "column", gap: 7 }}>
+                display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>הוצאה חדשה</div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <input value={newExp.cat} onChange={e => setNewExp({ ...newExp, cat: e.target.value })}
-                    placeholder="קטגוריה (לוקיישן, אוכל...)"
-                    style={{
-                      flex: 1, padding: "10px 10px", borderRadius: 10,
-                      border: T.border, background: T.surface, color: T.ink,
-                      fontSize: "max(16px, 12.5px)", fontWeight: 600, fontFamily: T.font, outline: "none", minWidth: 0,
-                    }}/>
-                  <select value={newExp.type} onChange={e => setNewExp({ ...newExp, type: e.target.value })} style={{
-                    width: 90, padding: "10px 10px", borderRadius: 10,
-                    border: T.border, background: T.surface, color: T.ink,
-                    fontSize: 12.5, fontWeight: 600, fontFamily: T.font, outline: "none",
-                  }}>
-                    <option value="fixed">קבועה</option>
-                    <option value="variable">משתנה</option>
-                  </select>
-                </div>
-                <div style={{ display: "flex", gap: 6 }}>
+
+                {/* Item name — required, prominent */}
+                <div>
+                  <label style={{ fontSize: 10.5, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.3, display: "block", marginBottom: 4 }}>
+                    שם ההוצאה <span style={{ color: T.accent }}>*</span>
+                  </label>
                   <input value={newExp.item} onChange={e => setNewExp({ ...newExp, item: e.target.value })}
-                    placeholder="פריט / תיאור..."
+                    placeholder="לדוגמה: וילה, ספק אוכל, עוגה..."
                     onKeyDown={e => e.key === "Enter" && addExpense()}
+                    autoFocus
                     style={{
-                      flex: 1, padding: "11px 12px", borderRadius: 10,
+                      width: "100%", padding: "12px 14px", borderRadius: 10,
                       border: T.border, background: T.surface,
-                      fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font,
-                      color: T.ink, outline: "none", minWidth: 0,
-                    }}/>
-                  <input value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value.replace(/[^0-9]/g, "") })}
-                    placeholder={newExp.type === "variable" ? "₪/אדם" : "₪0"} inputMode="numeric"
-                    onKeyDown={e => e.key === "Enter" && addExpense()}
-                    style={{
-                      width: 80, padding: "11px 12px", borderRadius: 10,
-                      border: T.border, background: T.surface,
-                      fontSize: "max(16px, 13px)", fontWeight: 700, fontFamily: T.font,
-                      color: T.ink, outline: "none", direction: "ltr", textAlign: "center",
+                      fontSize: "max(16px, 14px)", fontWeight: 600, fontFamily: T.font,
+                      color: T.ink, outline: "none",
                     }}/>
                 </div>
-                {/* Explicit save button — '+' icon alone wasn't reading as 'save' for users.
-                    Feminine form (הוסיפי) matches the rest of the app's voice. */}
+
+                {/* Row: amount (required) + category (optional) + type */}
+                <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ width: 100 }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.3, display: "block", marginBottom: 4 }}>
+                      סכום <span style={{ color: T.accent }}>*</span>
+                    </label>
+                    <input value={newExp.amount} onChange={e => setNewExp({ ...newExp, amount: e.target.value.replace(/[^0-9]/g, "") })}
+                      placeholder={newExp.type === "variable" ? "₪/אדם" : "₪0"} inputMode="numeric"
+                      onKeyDown={e => e.key === "Enter" && addExpense()}
+                      style={{
+                        width: "100%", padding: "11px 12px", borderRadius: 10,
+                        border: T.border, background: T.surface,
+                        fontSize: "max(16px, 14px)", fontWeight: 800, fontFamily: T.font,
+                        color: T.ink, outline: "none", direction: "ltr", textAlign: "center",
+                      }}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.3, display: "block", marginBottom: 4 }}>
+                      קטגוריה
+                    </label>
+                    <input value={newExp.cat} onChange={e => setNewExp({ ...newExp, cat: e.target.value })}
+                      placeholder="אוכל, לוקיישן..."
+                      style={{
+                        width: "100%", padding: "11px 12px", borderRadius: 10,
+                        border: T.border, background: T.surface, color: T.ink,
+                        fontSize: "max(16px, 13px)", fontWeight: 600, fontFamily: T.font, outline: "none",
+                      }}/>
+                  </div>
+                  <div style={{ width: 92 }}>
+                    <label style={{ fontSize: 10.5, fontWeight: 800, color: T.inkSoft, letterSpacing: 0.3, display: "block", marginBottom: 4 }}>
+                      סוג
+                    </label>
+                    <select value={newExp.type} onChange={e => setNewExp({ ...newExp, type: e.target.value })} style={{
+                      width: "100%", padding: "11px 8px", borderRadius: 10,
+                      border: T.border, background: T.surface, color: T.ink,
+                      fontSize: 13, fontWeight: 600, fontFamily: T.font, outline: "none",
+                    }}>
+                      <option value="fixed">קבועה</option>
+                      <option value="variable">משתנה</option>
+                    </select>
+                  </div>
+                </div>
+
                 <button onClick={addExpense}
                   disabled={!newExp.item.trim() || !newExp.amount}
                   style={{
-                    marginTop: 4, width: "100%", padding: "12px 14px", borderRadius: 10,
+                    marginTop: 2, width: "100%", padding: "12px 14px", borderRadius: 10,
                     background: (!newExp.item.trim() || !newExp.amount) ? T.surfaceAlt : T.accent,
                     color: (!newExp.item.trim() || !newExp.amount) ? T.muted : T.onAccent,
                     border: "none",
@@ -3887,7 +4520,7 @@ function ScreenBudget({ T, onBack }) {
                     transition: "background 150ms",
                   }}>
                   <Icon name="plus" size={16} color={(!newExp.item.trim() || !newExp.amount) ? T.muted : T.onAccent} w={2}/>
-                  הוסיפי הוצאה
+                  {pal.tone === "fs" ? "הוסיפי הוצאה" : "הוסיפו הוצאה"}
                 </button>
               </div>
             </>
@@ -4002,20 +4635,65 @@ function ScreenBudget({ T, onBack }) {
 /* ──────────────────────────────────────────────────────────────
    GAMES
    ────────────────────────────────────────────────────────────── */
-const GAMES = [
-  { id: "lipread",   t: "מפה לאוזן",        s: "קריאת שפתיים בזוג",     type: "timer", pop: "orange", time: "2 סבבים", players: "זוג",  difficulty: 2,
-    tagline: "המשחק שיאתגר את הקשב, הריכוז והסבלנות שלכן." },
-  { id: "charades",  t: "בלי לומר מילה",    s: "פנטומימה על תמונות",     type: "timer", pop: "pink",   time: "2 סבבים", players: "זוג",  difficulty: 2,
-    tagline: "משחק פנטומימה שכל ניחוש יהפוך למדבקה בווטסאפ." },
-  { id: "groomq",    t: "שאלון עם החתן",    s: "כמה הם מכירים אותך?",    type: "card",  pop: "orange", time: false,  players: "לכלה", difficulty: 1, drinking: true,
-    tagline: "החתן נשאל מבעוד מועד — בוא נראה אם הוא מכיר אותך טוב." },
-  { id: "bridequiz", t: "חידון על הכלה",    s: "מי מכירה הכי טוב?",      type: "quiz",  pop: "pink",   time: false, players: "כולן", difficulty: 2, joinable: true,
-    tagline: "מי מכירה אותה הכי טוב? אולי אפילו יותר טוב ממה שהיא מכירה את עצמה." },
-  { id: "nhie",      t: "Never Have I Ever", s: "משחק שתייה",             type: "card",  pop: "ink",    time: false,  players: "כולן", difficulty: 2, hot: true, drinking: true,
-    tagline: "מה אף פעם לא… עשית? המשחק שיגרום לך לשתות כהוגן." },
-  { id: "fmk",       t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",   time: false,  players: "כולן", difficulty: 1, hot: true, icon: "ring", joinable: true,
-    tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
-];
+// All game metadata, keyed by id. GAMES_BY_EVENT below picks which ids show up where.
+// Adding a new game = add an entry here + a deck in TIMER/CARD/QUIZ_DECKS + reference it in GAMES_BY_EVENT.
+const ALL_GAMES_META = {
+  // === Universal icebreakers (shared across multiple events) ===
+  lipread:    { id: "lipread",    t: "מפה לאוזן",         s: "קריאת שפתיים בזוג",       type: "timer", pop: "orange",  time: "2 סבבים", players: "זוג",   difficulty: 2,
+                tagline: "המשחק שיאתגר את הקשב, הריכוז והסבלנות." },
+  charades:   { id: "charades",   t: "בלי לומר מילה",     s: "פנטומימה על תמונות",       type: "timer", pop: "pink",    time: "2 סבבים", players: "זוג",   difficulty: 2,
+                tagline: "משחק פנטומימה — כל ניחוש מצחיק נדבק." },
+
+  // === Bach (existing) ===
+  groomq:     { id: "groomq",     t: "שאלון עם החתן",     s: "כמה הוא מכיר אותך?",      type: "card",  pop: "orange",  time: false,     players: "לכלה",  difficulty: 1, drinking: true,
+                tagline: "החתן נשאל מבעוד מועד — בוא נראה אם הוא מכיר אותך טוב." },
+  bridequiz:  { id: "bridequiz",  t: "חידון על הכלה",     s: "מי מכירה הכי טוב?",       type: "quiz",  pop: "pink",    time: false,     players: "כולן",  difficulty: 2, joinable: true,
+                tagline: "מי מכירה אותה הכי טוב? אולי אפילו יותר טוב ממה שהיא מכירה את עצמה." },
+  nhie:       { id: "nhie",       t: "Never Have I Ever", s: "משחק שתייה",              type: "card",  pop: "ink",     time: false,     players: "כולן",  difficulty: 2, hot: true, drinking: true,
+                tagline: "מה אף פעם לא… עשית? המשחק שיגרום לכם לשתות כהוגן." },
+  fmk:        { id: "fmk",        t: "Fuck Marry Kill",   s: "3 אופציות, החלטה אחת",   type: "card",  pop: "pink",    time: false,     players: "כולן",  difficulty: 1, hot: true, icon: "ring", joinable: true,
+                tagline: "כל סיבוב — 3 אופציות, כל אחת אומרת את שלה." },
+
+  // === Birthday ===
+  celebrantq: { id: "celebrantq", t: "שאלון על החוגג/ת",  s: "מי מכיר הכי טוב?",        type: "quiz",  pop: "magenta", time: false,     players: "כולם",  difficulty: 2, joinable: true,
+                tagline: "החוגג/ת ענה מראש — נראה מי מהחבורה הכי מכיר אותו." },
+  mostlikely: { id: "mostlikely", t: "מי הכי...",          s: "הצבעה אנונימית בחבורה",    type: "card",  pop: "sun",     time: false,     players: "כולם",  difficulty: 1, hot: true,
+                tagline: "אמירה אחת — כל אחד מצביע מי הכי. התשובה תפתיע אתכם." },
+  wishcards:  { id: "wishcards",  t: "\"זה הוא שלא בירך...\"", s: "מברכים לפי הקלף",      type: "card",  pop: "magenta", time: false,     players: "כולם",  difficulty: 1,
+                tagline: "כל אחד שולף קלף ומברך לפי ההנחיה — מצחיק, מוזר, או שניהם." },
+
+  // === Team building ===
+  // Shared icebreaker with birthday — see also bday list.
+  truelie:    { id: "truelie",    t: "סיפור אמיתי / סיפור שקר", s: "מנחשים מי הקטין עליכם", type: "card",  pop: "ink",     time: false,     players: "כולם",  difficulty: 1, joinable: true,
+                tagline: "כל משתתף שולח שני סיפורים — אחד אמת, אחד שקר. החבורה מנחשת איזה איזה." },
+  companyquiz:{ id: "companyquiz",t: "שאלון על החברה",    s: "סגנון Kahoot, joinable",   type: "quiz",  pop: "sky",     time: false,     players: "כולם",  difficulty: 2, joinable: true, icon: "rocket",
+                tagline: "שאלות על החברה / הצוות / השנה. כל אחד עונה מהטלפון שלו." },
+  findsomeone:{ id: "findsomeone",t: "מצא מישהו ש...",    s: "התרוצצות בחדר",            type: "card",  pop: "sage",    time: false,     players: "כולם",  difficulty: 1,
+                tagline: "אתגרים מצחיקים שצריך למצוא להם חברי צוות תואמים." },
+  familyfeud: { id: "familyfeud", t: "Family Feud",        s: "מה ענו 100 אנשים?",       type: "card",  pop: "sky",     time: false,     players: "כולם",  difficulty: 2, hot: true,
+                tagline: "100 אנשים נשאלו — נסו לנחש את התשובות הכי פופולריות." },
+};
+
+const GAMES_BY_EVENT = {
+  bach: [
+    { sec: null, ids: ["lipread", "charades", "groomq", "bridequiz", "nhie", "fmk"] },
+  ],
+  bday: [
+    { sec: null, ids: ["lipread", "charades", "celebrantq", "mostlikely", "wishcards", "truelie"] },
+  ],
+  team: [
+    { sec: "אייסברייקרים",   ids: ["lipread", "charades", "truelie"] },
+    { sec: "משחקים תחרותיים", ids: ["companyquiz", "findsomeone", "familyfeud"] },
+  ],
+  date: [
+    { sec: null, ids: ["lipread", "charades", "nhie"] },
+  ],
+};
+
+// Flat list used for the `screen === "game"` lookup so any game id resolves regardless of event.
+const ALL_GAMES_LIST = Object.values(ALL_GAMES_META);
+// Keep GAMES symbol for legacy code paths that import it (slideshow mockup etc.). Always bach.
+const GAMES = GAMES_BY_EVENT.bach[0].ids.map(id => ALL_GAMES_META[id]);
 
 const TIMER_DECKS = {
   lipread: { label: "מילה להעביר", headline: "מפה לאוזן",
@@ -4157,6 +4835,161 @@ const CARD_DECKS = {
       "אף פעם לא נרדמתי באמצע סרט בקולנוע",
     ],
   },
+
+  // ─── Birthday ──────────────────────────────────────────────
+  mostlikely: { label: "מי הכי...", headline: "מי הכי...", shuffle: true,
+    rules: [
+      "בוחרים 3 שחקנים שמכירים אחד את השני טוב.",
+      "בכל סבב מופיע קלף עם אמירה: 'מי הכי...'",
+      "כל שלושה מצביעים בו-זמנית על מי שהאמירה הכי מייצגת אותו.",
+      "אפשר להצביע גם על עצמך — אם זה אתה, זה אתה.",
+      "רצוי לעשות את זה בעיניים עצומות, כדי שאף אחד לא יושפע מההצבעה של השני.",
+      "עוד יותר רצוי לצלם את שלושתם — בשביל לראות אחר כך כמה הם היו מתואמים.",
+      "מומלץ להקרין על מסך גדול.",
+    ],
+    prompts: [
+      "מי הכי יישן בכל מסיבה",
+      "מי הכי קמצן",
+      "מי הכי טוב במטבח",
+      "מי הכי מאוהב בעצמו",
+      "מי הכי דרמטי",
+      "מי הכי גאון בלקפוץ לפול",
+      "מי הכי קולי כשהוא שותה",
+      "מי הכי מאחר לכל אירוע",
+      "מי הכי לא מסוגל לשמור סוד",
+      "מי הכי יהפוך לסלב",
+      "מי הכי יילך לאי בודד עם נטפליקס",
+      "מי הכי טוב בריקודים",
+      "מי הכי גרוע בריקודים",
+      "מי הכי יתלהב מטרנדים בטיקטוק",
+      "מי הכי יקבל בעיני מועמדות לראשות עיר",
+      "מי הכי ייתן עצות לא רצויות",
+      "מי הכי טוב בלהיות נוכח (גם בלי לדבר)",
+      "מי הכי מטריד את החברים בקבוצת הוואטסאפ",
+      "מי הכי ימצא משהו לאכול גם בחצי הלילה",
+      "מי הכי יעבוד בשבת אם יבקשו",
+    ],
+  },
+  wishcards: { label: "ברכה לפי הקלף", headline: "\"זה הוא שלא בירך...\"", shuffle: true,
+    rules: [
+      "בכל סבב, אחד מהחבורה שולף קלף.",
+      "הקלף מכיל הנחיה — איך לברך את החוגג/ת.",
+      "צריך לאלתר ברכה ממש לפי ההנחיה — מצחיק, מוזר, או שניהם.",
+      "אין נכון או לא נכון — האווירה היא העיקר.",
+      "מומלץ להקליט. שמירת חוויה ליום הולדת הבא.",
+    ],
+    prompts: [
+      "לאחל דברים טובים בצורה הכי כועסת שיש",
+      "לברך כמו ראש ממשלה במסיבת עיתונאים",
+      "לברך במבטא שאתה יודע לעשות הכי טוב",
+      "עליך לברך ולשלב את המילה \"ביסלי\"",
+      "עליך לברך ולשלב את המילה \"שלבקת חוגרת\"",
+      "לברך כמו חיזוי אסטרולוגי",
+      "לברך בלחישה — כאילו אתה חושף סוד מדינה",
+      "לברך כמו שדרן ספורט בשידור חי",
+      "לברך כמו מאמן אישי באמצע אימון",
+      "עליך לברך ולשלב את המילה \"מצלמת זווית\"",
+      "לברך כמו ילד בן 5 שבדיוק למד מילים חדשות",
+      "לברך כמו פרסומת לתרופה (כולל אזהרות בקול נמוך)",
+      "לברך כמו מורה שמודיע על מבחן פתע",
+      "לברך כמו מנחה חדשות הערב",
+      "לברך כאילו אתה מתפעל מעצמך — כל משפט בסוף עם \"זה אני אמרתי\"",
+      "לברך בשירה (אופרה, ראפ, אגדה — אתה בוחר)",
+      "לברך באנגלית עם תרגום סימולטני שלך עצמך",
+      "עליך לברך ולשלב את המילה \"בורקס\"",
+      "לברך כמו זוכה אוסקר על הבמה",
+      "לברך כמו מדריך טיולים שמספר על אתר היסטורי",
+    ],
+  },
+
+  // ─── Shared icebreaker (bday + team) ────────────────────────
+  truelie: { label: "סיפור אמיתי / סיפור שקר", headline: "סיפור אמיתי / סיפור שקר", shuffle: true,
+    rules: [
+      "כל משתתף מצטרף במשחק בסריקת ברקוד — בלי הזדהות, לגמרי אנונימי.",
+      "כל משתתף שולח שני סיפורים אישיים מהטלפון: אחד אמיתי לחלוטין, אחד מומצא.",
+      "אחרי שכולם שלחו, המנחה לוחץ 'הבא' — בכל סבב מופיעים על המסך שני הסיפורים של אותו משתתף, אחד אחרי השני.",
+      "החבורה מצביעה אקטיבית — איזה אמיתי ואיזה שקר.",
+      "המסך חושף את התשובה הנכונה. מי שצדק — מקבל נקודה.",
+      "אנונימי לחלוטין — אף אחד לא יודע מי כתב את הסיפורים שעל המסך.",
+      "מומלץ להקרין על מסך גדול.",
+    ],
+    // Inspiration prompts — given to the participant on the phone while submitting,
+    // to help her/him think of two stories. Optional reading.
+    prompts: [
+      "המקצוע הכי לא צפוי שעשית בחיים",
+      "סלב מפורסם שפגשת באקראי",
+      "מדינה מוזרה שטסת אליה",
+      "אוכל הכי משונה שאכלת בחו\"ל",
+      "כישרון נסתר שאף אחד לא יודע עליו",
+      "טסט/בחינה שעברת בקושי או שנכשלת בו פעמים רבות",
+      "פגישה משונה במהלך טיול",
+      "תחביב לא צפוי שיש לך",
+      "טעות יקרה שעשית עם כסף",
+      "מקום משונה שישנת בו לילה אחד",
+      "חיית מחמד מוזרה שהייתה במשפחה",
+      "תחרות שזכית בה (קטנה, גדולה, או הזויה)",
+      "סצנה מצחיקה שקרתה לך במקום ציבורי",
+      "פעם שהשתמשת בכישרון מיוחד שלך באמת",
+      "סיפור על קעקוע / תיקון פלסטי / שינוי גוף",
+      "פעם שהתחזית למישהו אחר ולא נתפסת",
+      "החלטה אימפולסיבית שהשפיעה עליך עד היום",
+    ],
+  },
+  findsomeone: { label: "מצאו מישהו ש...", headline: "מצא מישהו ש...", shuffle: true,
+    rules: [
+      "פתאום קמים — סבב 'מצאו מישהו ש...'",
+      "כל אחד מסתובב בחדר ומחפש אחד שעונה לתיאור.",
+      "מי שמצא יקבל חתימה (או שורת טקסט) על הכרטיס.",
+      "5 דקות לסבב, ומי שמילא הכי הרבה כרטיסים מנצח.",
+      "אם המשרד קטן — אפשר בלי קימה.",
+    ],
+    prompts: [
+      "מצא מישהו שטס לחו\"ל בחודש האחרון",
+      "מצא מישהו שיודע לנגן בכלי",
+      "מצא מישהו שגדל מחוץ לעיר הזו",
+      "מצא מישהו שעשה ספורט אקסטרים",
+      "מצא מישהו שדובר 3 שפות",
+      "מצא מישהו שלמד מקצוע שונה ממה שעובד היום",
+      "מצא מישהו שיש לו תחביב מוזר",
+      "מצא מישהו שנפגש עם סלבריטי",
+      "מצא מישהו שלא שותה קפה",
+      "מצא מישהו שראה את כל סדרות הארי פוטר",
+      "מצא מישהו שיש לו כלב",
+      "מצא מישהו שעבר חוויה משנה-חיים",
+      "מצא מישהו שיודע לבשל מאכל לאומי לא ישראלי",
+      "מצא מישהו שיש לו כישרון חבוי",
+      "מצא מישהו שנמצא בחברה פחות משנה",
+      "מצא מישהו שטיפס על הר",
+      "מצא מישהו שנמצא בחברה יותר מ-5 שנים",
+      "מצא מישהו שיודע לעשות קסם",
+    ],
+  },
+  familyfeud: { label: "מה ענו 100?", headline: "Family Feud",
+    rules: [
+      "כל כרטיס מציג שאלה ש-100 אנשים נשאלו.",
+      "הקבוצה מנחשת את 5 התשובות הפופולריות.",
+      "המארגן חושף תשובה-תשובה לפי מה שהקבוצה אומרת.",
+      "אפשר לחלק את הקבוצה לצוותים מתחרים.",
+      "מומלץ להקרין על מסך גדול.",
+    ],
+    prompts: [
+      "מה הדבר הראשון שעושים בבוקר?",
+      "מה האוכל הכי טוב לראש השנה?",
+      "מה המתנה הכי שווה לקבל מהמנכ\"ל?",
+      "מה הסיבה הכי נפוצה לאחר לעבודה?",
+      "מה הדבר שהכי קונים בעת בריחה לחו\"ל?",
+      "מה הכי מבלבל באפליקציה חדשה?",
+      "מה הדבר הראשון שעולה לראש כששומעים 'גיבוש'?",
+      "מה האוכל שלא יכול לחסור בארוחת ערב?",
+      "מה הדבר שהכי שונאים לעשות בעבודה?",
+      "מה היו הסדרות הכי נצפות בנטפליקס?",
+      "מה הדבר שאוחזים ביד כל היום?",
+      "מה הדבר שמשכיחים ברכב?",
+      "מה הדבר שמגוגלים הכי הרבה בלילה?",
+      "מה הדבר שצריך באוויר על מנת לעבוד?",
+      "מה הסיבה הכי נפוצה לבטל פגישה?",
+    ],
+  },
 };
 
 const QUIZ_DECKS = {
@@ -4197,20 +5030,103 @@ const QUIZ_DECKS = {
       [{ n: "ליהי", a: "טיסה ליפן" }, { n: "שירה", a: "תיק יד יוקרתי" }, { n: "תמר", a: "השלמת לימודי תואר שני" }],
     ],
   },
+
+  // ─── Birthday ──────────────────────────────────────────────
+  celebrantq: { headline: "שאלון על החוגג/ת",
+    rules: [
+      "החוגג/ת צופה — לא משחק/ת.",
+      "כל מי שהצטרף לחדר מקבל את השאלה בטלפון.",
+      "20 שניות לחשוב ולכתוב תשובה. ברגע שכולם ענו — הטיימר נעצר.",
+      "אז החוגג/ת עונה בקול — ורק אז ייחשפו התשובות של החבורה.",
+      "מי שהכי קרוב למה שהחוגג/ת אמר/ה — מנצח את הסבב.",
+      "מומלץ להקרין את המשחק על מסך גדול.",
+    ],
+    secondsPerQ: 20,
+    questions: [
+      "מה התחביב הכי מוזר של החוגג/ת?",
+      "באיזה מקצוע עוסק/ת החוגג/ת?",
+      "מה הסרט שהחוגג/ת ראה/ראתה הכי הרבה פעמים?",
+      "מי החבר/ה הכי ותיק/ה של החוגג/ת?",
+      "באיזו מדינה הכי היה/הייתה רוצה לגור?",
+      "מה הדבר שהכי מעצבן את החוגג/ת?",
+      "אם החוגג/ת היה/הייתה זוכה ב-25,000 ₪ — על מה היה/הייתה מבזבז/ת קודם?",
+      "מה האימוג'י הכי מתאים לחוגג/ת?",
+      "אם היה לחוגג/ת ערוץ יוטיוב — על מה זה היה?",
+      "מה התכונה שהחוגג/ת הכי גאה בה?",
+    ],
+    // Mock answers for solo demo — mix of neutral/male/female names of friends in the circle.
+    mockAnswers: [
+      [{ n: "דניאל", a: "אספן בולים" }, { n: "רוני", a: "ריקודי סלסה" }, { n: "יואב", a: "שירותים אצל הזולת" }],
+      [{ n: "דניאל", a: "מתכנת" }, { n: "רוני", a: "מורה לאנגלית" }, { n: "יואב", a: "מהנדס תעשיה וניהול" }],
+      [{ n: "דניאל", a: "פולפ פיקשן" }, { n: "רוני", a: "הסנדק" }, { n: "יואב", a: "הארי פוטר 3" }],
+      [{ n: "דניאל", a: "אבא" }, { n: "רוני", a: "אני (רוני)" }, { n: "יואב", a: "החבר מגן הילדים" }],
+      [{ n: "דניאל", a: "יפן" }, { n: "רוני", a: "פורטוגל" }, { n: "יואב", a: "ניו זילנד" }],
+      [{ n: "דניאל", a: "אנשים שמדברים בקולנוע" }, { n: "רוני", a: "פקקים" }, { n: "יואב", a: "אוכל שמתקרר מהר מדי" }],
+      [{ n: "דניאל", a: "לקנות אופנוע" }, { n: "רוני", a: "טיסה לבריזיל" }, { n: "יואב", a: "להשקיע בקריפטו" }],
+      [{ n: "דניאל", a: "🦁" }, { n: "רוני", a: "🌻" }, { n: "יואב", a: "🚀" }],
+      [{ n: "דניאל", a: "סקירות גאדג'טים" }, { n: "רוני", a: "מתכוני קינוחים" }, { n: "יואב", a: "טיפים לחיים" }],
+      [{ n: "דניאל", a: "סבלנות" }, { n: "רוני", a: "האמפתיה" }, { n: "יואב", a: "החברות" }],
+    ],
+  },
+
+  // ─── Team building ──────────────────────────────────────────
+  companyquiz: { headline: "שאלון על החברה",
+    rules: [
+      "המנהל/מארגן מציג את השאלות אחת אחת.",
+      "כל חבר צוות מקבל את השאלה בטלפון שלו ועונה בקצרה.",
+      "20 שניות לכל שאלה. ברגע שכולם ענו — הטיימר נעצר.",
+      "אז מקבלים את התשובות הנכונות והתשובות הכי מצחיקות.",
+      "מי שצדק בכי הרבה — מנצח.",
+      "מומלץ להקרין על מסך גדול.",
+    ],
+    secondsPerQ: 20,
+    questions: [
+      "באיזו שנה החברה נוסדה?",
+      "מי המנכ\"ל הנוכחי?",
+      "כמה עובדים בחברה (בערך)?",
+      "מה השם של הפרויקט הראשון של החברה?",
+      "מה הצבע ב-CI של החברה?",
+      "באיזה רחוב נמצא המשרד?",
+      "מה הערך/Value הכי חשוב בעיניכם בחברה?",
+      "מה ההטבה הכי שווה?",
+      "מי הלקוח/ה הוותיק/ה ביותר של החברה?",
+      "מה אומרים הכי הרבה במשרד?",
+    ],
+    mockAnswers: [
+      [{ n: "דניאל", a: "2018" }, { n: "תמר", a: "2017" }, { n: "יואב", a: "2019" }],
+      [{ n: "דניאל", a: "רוני כהן" }, { n: "תמר", a: "רוני כהן" }, { n: "יואב", a: "רונן" }],
+      [{ n: "דניאל", a: "42" }, { n: "תמר", a: "50" }, { n: "יואב", a: "45" }],
+      [{ n: "דניאל", a: "פלטפורמת B2B" }, { n: "תמר", a: "האפליקציה הראשונה" }, { n: "יואב", a: "MVP" }],
+      [{ n: "דניאל", a: "כחול" }, { n: "תמר", a: "סגול וכחול" }, { n: "יואב", a: "כחול ולבן" }],
+      [{ n: "דניאל", a: "הברזל 12" }, { n: "תמר", a: "הברזל" }, { n: "יואב", a: "תל אביב" }],
+      [{ n: "דניאל", a: "שקיפות" }, { n: "תמר", a: "אמון" }, { n: "יואב", a: "צמיחה" }],
+      [{ n: "דניאל", a: "ימי חמישי" }, { n: "תמר", a: "Work from home" }, { n: "יואב", a: "ההפנינג השנתי" }],
+      [{ n: "דניאל", a: "TechCorp" }, { n: "תמר", a: "Acme" }, { n: "יואב", a: "TechCorp" }],
+      [{ n: "דניאל", a: "'אני אבדוק'" }, { n: "תמר", a: "'בוא נדבר ב-1on1'" }, { n: "יואב", a: "'מתי הסטנדאפ?'" }],
+    ],
+  },
 };
 
-function ScreenGamesHub({ T, onNav, onBack }) {
+function ScreenGamesHub({ T, onNav, onBack, eventId }) {
+  const pal = getEventPalette(eventId);
+  const sections = GAMES_BY_EVENT[eventId || "bach"] || GAMES_BY_EVENT.bach;
+  // Tone-aware copy: bach stays feminine, others are masculine plural
+  const tone = pal.tone;
+  const hubSubtitle = tone === "fs"
+    ? "כל משחק אפשר להקרין על מסך גדול דרך כפתור \"הקרנה\"."
+    : "כל משחק אפשר להקרין על מסך גדול דרך כפתור \"הקרנה\".";
+
   return (
     <>
       <StatusBar T={T}/>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", overflow: "auto" }}>
-        {/* Slim pink header */}
+        {/* Event-themed header */}
         <div style={{
-          background: `linear-gradient(160deg, ${PB.pink.main} 0%, #EAB0C2 60%, ${PB.pink.deep} 130%)`,
+          background: `linear-gradient(160deg, ${pal.primary.main} 0%, ${pal.primary.deep} 100%)`,
           padding: "36px 22px 14px",
           borderRadius: "0 0 22px 22px",
-          color: "#1A1A1A",
-          boxShadow: `0 6px 18px -10px ${PB.pink.main}66`,
+          color: "#fff",
+          boxShadow: `0 6px 18px -10px ${pal.primary.deep}73`,
           position: "relative", overflow: "hidden", flexShrink: 0,
         }}>
           <div style={{
@@ -4218,54 +5134,72 @@ function ScreenGamesHub({ T, onNav, onBack }) {
             width: 110, height: 110, borderRadius: "50%",
             background: "rgba(255,255,255,0.18)", pointerEvents: "none",
           }}/>
+          <div style={{
+            position: "absolute", bottom: -28, left: -28,
+            width: 90, height: 90, borderRadius: "50%",
+            background: `${pal.secondary.main}55`, pointerEvents: "none", filter: "blur(2px)",
+          }}/>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-            <RoundBtn T={T} icon="chevR" onClick={onBack} dark/>
-            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#1A1A1A" }}>משחקים</div>
+            <div style={{ width: 40 }}/>
+            <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3, color: "#fff" }}>משחקים</div>
             <div style={{ width: 40 }}/>
           </div>
 
           <div style={{ marginTop: 12, position: "relative" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#1A1A1A" }}>
-              במה משחקים?
+            <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
+              {tone === "fs" ? "במה משחקים?" : "במה משחקים?"}
             </h1>
-            <p style={{ fontSize: 12.5, color: "rgba(26,26,26,0.78)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
-              כל משחק אפשר להקרין על מסך גדול דרך כפתור "הקרנה".
+            <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
+              {hubSubtitle}
             </p>
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "16px 22px 28px", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {GAMES.map((g, gi) => {
-              const tile = [PB.orange, PB.pink, PB.orange, PB.pink, PB.orange, PB.pink];
-              const p = tile[gi % tile.length];
-              return (
-                <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
-                  display: "flex", alignItems: "center", gap: 13,
-                  background: T.surface, border: T.border, borderRadius: T.radiusLg,
-                  boxShadow: T.shadowSm, padding: "13px 14px",
-                  cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
-                }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 13, flexShrink: 0,
-                    background: p.soft, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={22} color={p.deep} w={1.45}/></div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
-                    <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
-                    <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                      {g.time !== false && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.time}</span>}
-                      <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.players}</span>
-                      {g.drinking && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>משחק שתייה</span>}
-                    </div>
-                  </div>
-                  <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
-                </button>
-              );
-            })}
-          </div>
+        {/* Content — bottom padding leaves room for the BottomNav */}
+        <div style={{ padding: "16px 22px 100px", display: "flex", flexDirection: "column", gap: 18 }}>
+          {sections.map((section, si) => (
+            <div key={si}>
+              {section.sec && (
+                <div style={{ marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 4, height: 18, borderRadius: 2, background: si === 0 ? pal.secondary.main : pal.primary.main }}/>
+                  <h2 style={{ fontWeight: 800, fontSize: 16, margin: 0, letterSpacing: -0.2, color: T.ink }}>{section.sec}</h2>
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {section.ids.map((gid, gi) => {
+                  const g = ALL_GAMES_META[gid];
+                  if (!g) return null;
+                  // Tile color alternates primary/secondary within section; if game has its own pop, prefer that
+                  const popMap = PB[g.pop] || (gi % 2 === 0 ? pal.primary : pal.secondary);
+                  return (
+                    <button key={g.id} onClick={() => onNav("game", { gameId: g.id })} style={{
+                      display: "flex", alignItems: "center", gap: 13,
+                      background: T.surface, border: T.border, borderRadius: T.radiusLg,
+                      boxShadow: T.shadowSm, padding: "13px 14px",
+                      cursor: "pointer", fontFamily: T.font, textAlign: "right", width: "100%",
+                    }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: 13, flexShrink: 0,
+                        background: popMap.soft, display: "flex", alignItems: "center", justifyContent: "center",
+                      }}><Icon name={g.icon || (g.type === "timer" ? "clock" : g.type === "quiz" ? "star" : "users")} size={22} color={popMap.deep} w={1.45}/></div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 15.5, fontWeight: 800, color: T.ink, letterSpacing: -0.2 }}>{g.t}</div>
+                        <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 1 }}>{g.s}</div>
+                        <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                          {g.time !== false && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.time}</span>}
+                          <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>{g.players}</span>
+                          {g.drinking && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: T.surfaceAlt, color: T.inkSoft }}>משחק שתייה</span>}
+                          {g.joinable && <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: pal.secondary.soft, color: pal.secondary.deep }}>joinable</span>}
+                        </div>
+                      </div>
+                      <Icon name="chevL" size={18} color={T.muted} w={1.5}/>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       <HomeBar/>
@@ -4332,7 +5266,10 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
         {/* Invite participants — only for games where joining matters AND where the
             game itself doesn't already render its own session lobby (bridequiz/FMK pass
             their own join card through `extras`). */}
-        {game.joinable && game.id !== "bridequiz" && game.id !== "fmk" && (
+        {game.joinable && game.id !== "bridequiz" && game.id !== "fmk" && (() => {
+          // bach-flavoured games keep the feminine voice; everything else is plural masculine.
+          const isBach = game.id === "groomq" || game.id === "nhie";
+          return (
           <Card T={T} padding="14px 16px" style={{ marginTop: 14, background: p.soft, border: `1px solid ${p.main}33` }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 11, background: p.main, color: p.on,
@@ -4340,15 +5277,16 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
                 <Icon name="qr" size={20} color={p.on} w={1.6}/>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: p.deep }}>צרפי את הבנות למשחק</div>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: p.deep }}>{isBach ? "צרפי את הבנות למשחק" : "צרפו את החברים למשחק"}</div>
                 <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 1 }}>
-                  ענו על השאלות מהטלפון שלהן בזמן אמת
+                  {isBach ? "ענו על השאלות מהטלפון שלהן בזמן אמת" : "עונים על השאלות מהטלפון שלהם בזמן אמת"}
                 </div>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 11 }}>
               <button onClick={() => {
-                const msg = `הוזמנת למשחק "${game.t}" ב-VibeIT 🎉\nפתחי בטלפון: https://linoyh1-star.github.io/-/?join=${game.id}`;
+                const inviteVerb = isBach ? "פתחי" : "פתחו";
+                const msg = `הוזמנת למשחק "${game.t}" ב-VibeIT 🎉\n${inviteVerb} בטלפון: https://linoyh1-star.github.io/-/?join=${game.id}`;
                 if (navigator.share) {
                   navigator.share({ title: "VibeIT", text: msg }).catch(() => {});
                 } else {
@@ -4361,7 +5299,7 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
               }}>
                 <Icon name="share" size={15} color={p.on} w={1.7}/>
-                שלחי לינק
+                {isBach ? "שלחי לינק" : "שלחו לינק"}
               </button>
               <button onClick={() => alert("סריקת קוד תתווסף בקרוב 📷")} style={{
                 flex: 1, padding: "10px 12px",
@@ -4375,7 +5313,8 @@ function GameIntro({ T, game, rules, onStart, onBack, startLabel = "יאללה, 
               </button>
             </div>
           </Card>
-        )}
+          );
+        })()}
 
         {extras}
         <div style={{ flex: 1, minHeight: 16 }}/>
@@ -4680,6 +5619,62 @@ function QuizGame({ T: parentT, game, onBack }) {
   const total = questions.length;
   const timerSec = deck.secondsPerQ || 10;
 
+  // Per-game copy: bridequiz keeps the bach feminine voice; celebrantq + companyquiz use neutral/plural.
+  const QUIZ_LABELS = {
+    bridequiz: {
+      joiningTitle:    "הבנות מצטרפות",
+      qrHint:          "סרקי את ה-QR, הקלידי את הקוד, או שתפי לינק בוואטסאפ.",
+      waMsg:           (url, code) => `הצטרפי לחידון על הכלה 💍\n\nלינק: ${url}\nאו קוד: ${code}`,
+      joinIntroTitle:  "הצטרפות הבנות בזמן אמת",
+      joinIntroSub:    "סורקות QR או מקלידות קוד — רואות שאלות ועונות מהטלפון שלהן.",
+      openLobbyBtn:    "פתחי לוביי לחברות",
+      openingBtn:      "פותחת...",
+      waitingFirst:    "מחכות לחברה הראשונה...",
+      startBtn:        (n) => n === 0 ? "מחכות שיצטרפו" : `מתחילות חידון (${n})`,
+      doneSub:         "מקווות שגיליתן עליה משהו חדש 😉",
+      turnNow:         "כלתינו, זה הרגע שלך לענות!",
+      turnSub:         "תני את התשובה שלך בקול, ואז לחצי לחשוף את מה שהבנות כתבו.",
+      allDone:         "כולן ענו!",
+      emptyAnswers:    "אף בת עוד לא ענתה — תתקדמי לשאלה הבאה כשתרצי.",
+      emptyDemo:       "במצב אמיתי יופיעו פה כל הבנות שסרקו QR והתשובות שלהן.",
+    },
+    celebrantq: {
+      joiningTitle:    "החברים מצטרפים",
+      qrHint:          "סרקו את ה-QR, הקלידו את הקוד, או שתפו לינק בוואטסאפ.",
+      waMsg:           (url, code) => `הצטרפו לשאלון על החוגג/ת 🎉\n\nלינק: ${url}\nאו קוד: ${code}`,
+      joinIntroTitle:  "הצטרפות החברים בזמן אמת",
+      joinIntroSub:    "סורקים QR או מקלידים קוד — רואים שאלות ועונים מהטלפון.",
+      openLobbyBtn:    "פתחו לוביי לחברים",
+      openingBtn:      "פותח...",
+      waitingFirst:    "מחכים לחבר/ה הראשון/ה...",
+      startBtn:        (n) => n === 0 ? "מחכים שיצטרפו" : `מתחילים שאלון (${n})`,
+      doneSub:         "מקווים שגיליתם עליו/ה משהו חדש 😉",
+      turnNow:         "החוגג/ת, זה הרגע שלך לענות!",
+      turnSub:         "תן/י את התשובה שלך בקול, ואז לחצ/י לחשוף את מה שהחברים כתבו.",
+      allDone:         "כולם ענו!",
+      emptyAnswers:    "אף אחד עוד לא ענה — תוכלו להתקדם לשאלה הבאה כשתרצו.",
+      emptyDemo:       "במצב אמיתי יופיעו פה כל החברים שסרקו QR והתשובות שלהם.",
+    },
+    companyquiz: {
+      joiningTitle:    "הצוות מצטרף",
+      qrHint:          "סרקו את ה-QR, הקלידו את הקוד, או שתפו לינק בוואטסאפ.",
+      waMsg:           (url, code) => `הצטרפו לשאלון על החברה 🚀\n\nלינק: ${url}\nאו קוד: ${code}`,
+      joinIntroTitle:  "הצטרפות הצוות בזמן אמת",
+      joinIntroSub:    "סורקים QR או מקלידים קוד — רואים שאלות ועונים מהטלפון.",
+      openLobbyBtn:    "פתחו לוביי לצוות",
+      openingBtn:      "פותח...",
+      waitingFirst:    "מחכים לחבר הצוות הראשון...",
+      startBtn:        (n) => n === 0 ? "מחכים שיצטרפו" : `מתחילים שאלון (${n})`,
+      doneSub:         "סבב מעולה! לראות מי הכיר הכי טוב את החברה.",
+      turnNow:         "הגיע הרגע לחשוף את התשובה הנכונה!",
+      turnSub:         "הקריאו בקול את התשובה הנכונה, ואז לחצו לחשוף את מה שהצוות כתב.",
+      allDone:         "כולם ענו!",
+      emptyAnswers:    "אף אחד עוד לא ענה — אפשר להתקדם לשאלה הבאה.",
+      emptyDemo:       "במצב אמיתי יופיעו פה כל חברי הצוות שסרקו QR והתשובות שלהם.",
+    },
+  };
+  const L = QUIZ_LABELS[game.id] || QUIZ_LABELS.bridequiz;
+
   // Session state — null when running solo with mock participants. Once the host clicks
   // 'פתחי לוביי' we create a Firestore doc and from then on the screen is driven by it.
   const [sessionCode, setSessionCode] = React.useState(null);
@@ -4798,9 +5793,9 @@ function QuizGame({ T: parentT, game, onBack }) {
             <Icon name="qr" size={22} color={PB.pink.on} w={1.6}/>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: PB.pink.deep }}>הצטרפות הבנות בזמן אמת</div>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: PB.pink.deep }}>{L.joinIntroTitle}</div>
             <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 2 }}>
-              סורקות QR או מקלידות קוד — רואות שאלות ועונות מהטלפון שלהן.
+              {L.joinIntroSub}
             </div>
           </div>
         </div>
@@ -4812,7 +5807,7 @@ function QuizGame({ T: parentT, game, onBack }) {
           opacity: creatingSession ? 0.7 : 1,
         }}>
           <Icon name="qr" size={15} color={PB.pink.on} w={1.7}/>
-          {creatingSession ? "פותחת..." : "פתחי לוביי לחברות"}
+          {creatingSession ? L.openingBtn : L.openLobbyBtn}
         </button>
         <button onClick={() => startQ(0)} style={{
           marginTop: 7, width: "100%", padding: "8px 14px",
@@ -4822,7 +5817,7 @@ function QuizGame({ T: parentT, game, onBack }) {
       </Card>
     );
     return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
-      onStart={openLobby} startLabel="פתחי לוביי לחברות" extras={introExtras}/>;
+      onStart={openLobby} startLabel={L.openLobbyBtn} extras={introExtras}/>;
   }
 
   // ─── Lobby phase — show QR + code, wait for participants ────────
@@ -4830,7 +5825,7 @@ function QuizGame({ T: parentT, game, onBack }) {
     const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
     const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
     const shareViaWhatsapp = () => {
-      const msg = `הצטרפי לחידון על הכלה 💍\n\nלינק: ${joinUrl}\nאו קוד: ${sessionCode}`;
+      const msg = L.waMsg(joinUrl, sessionCode);
       openWhatsApp(msg);
     };
     return (
@@ -4841,10 +5836,10 @@ function QuizGame({ T: parentT, game, onBack }) {
           <div style={{ marginTop: 4, textAlign: "center" }}>
             <Eyebrow T={T}>לוביי פתוח</Eyebrow>
             <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 4px", letterSpacing: -0.4 }}>
-              הבנות מצטרפות
+              {L.joiningTitle}
             </h1>
             <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
-              סרקי את ה-QR, הקלידי את הקוד, או שתפי לינק בוואטסאפ.
+              {L.qrHint}
             </p>
           </div>
 
@@ -4876,7 +5871,7 @@ function QuizGame({ T: parentT, game, onBack }) {
             {liveParticipants.length === 0 ? (
               <div style={{ padding: "14px 16px", background: T.surfaceAlt, borderRadius: T.radius,
                 border: `1px dashed ${T.lineStrong}`, fontSize: 12.5, color: T.inkSoft, fontWeight: 600, textAlign: "center" }}>
-                מחכות לחברה הראשונה...
+                {L.waitingFirst}
               </div>
             ) : (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -4893,7 +5888,7 @@ function QuizGame({ T: parentT, game, onBack }) {
           <div style={{ flex: 1, minHeight: 14 }}/>
 
           <Btn T={T} onClick={() => startQ(0)} disabled={liveParticipants.length === 0}>
-            {liveParticipants.length === 0 ? "מחכות שיצטרפו" : `מתחילות חידון (${liveParticipants.length})`}
+            {L.startBtn(liveParticipants.length)}
           </Btn>
           <button onClick={() => startQ(0)} style={{
             marginTop: 8, background: "transparent", border: "none",
@@ -4914,7 +5909,7 @@ function QuizGame({ T: parentT, game, onBack }) {
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 10px", letterSpacing: -0.4 }}>סיימנו את החידון!</h1>
             <p style={{ fontSize: 14, color: T.inkSoft, fontWeight: 500, margin: "0 0 22px", maxWidth: 280, lineHeight: 1.55 }}>
-              מקווות שגיליתן עליה משהו חדש 😉
+              {L.doneSub}
             </p>
             <Card T={T} padding={22} style={{ width: "100%", textAlign: "center" }}>
               <div className="num" style={{ fontSize: 56, fontWeight: 800, color: T.accent, lineHeight: 1, letterSpacing: -1 }}>{total}</div>
@@ -5008,15 +6003,15 @@ function QuizGame({ T: parentT, game, onBack }) {
           <div style={{
             fontSize: big ? "clamp(13px,1.8vw,24px)" : 11.5, fontWeight: 800,
             color: "rgba(255,255,255,0.55)", letterSpacing: 2.5, textTransform: "uppercase",
-          }}>{answered.length >= participants.length ? "כולן ענו!" : "תם הזמן"}</div>
+          }}>{answered.length >= participants.length ? L.allDone : "תם הזמן"}</div>
           <div style={{
             fontSize: big ? "clamp(34px,5vw,72px)" : 24, fontWeight: 800,
             color: "#fff", lineHeight: 1.25, letterSpacing: -0.4, maxWidth: big ? "70%" : "100%",
-          }}>כלתינו, זה הרגע שלך לענות!</div>
+          }}>{L.turnNow}</div>
           <div style={{
             fontSize: big ? "clamp(14px,1.6vw,22px)" : 13, fontWeight: 500,
             color: "rgba(255,255,255,0.7)", maxWidth: big ? "60%" : "100%", lineHeight: 1.5,
-          }}>תני את התשובה שלך בקול, ואז לחצי לחשוף את מה שהבנות כתבו.</div>
+          }}>{L.turnSub}</div>
           <button onClick={() => setPhase("revealed")} style={{
             marginTop: big ? 4 : 4,
             padding: big ? "clamp(14px,1.8vw,22px) clamp(36px,4vw,60px)" : "14px 26px",
@@ -5049,7 +6044,7 @@ function QuizGame({ T: parentT, game, onBack }) {
             {answersToShow.length === 0 ? (
               <div style={{ padding: 20, color: big ? "rgba(255,255,255,0.7)" : T.inkSoft,
                 textAlign: "center", fontSize: 13, fontWeight: 500 }}>
-                {sessionCode ? "אף בת עוד לא ענתה — תתקדמי לשאלה הבאה כשתרצי." : "במצב אמיתי יופיעו פה כל הבנות שסרקו QR והתשובות שלהן."}
+                {sessionCode ? L.emptyAnswers : L.emptyDemo}
               </div>
             ) : (
               answersToShow.map((ans, idx) => {
@@ -5751,6 +6746,431 @@ function CardGame({ T: parentT, game, onBack }) {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   TRUE-LIE GAME — anonymous-ish multiplayer where each participant
+   submits two stories (one true, one false) from their phone, and
+   the rest of the room votes which is which.
+
+   Phases: intro → lobby → submit → voting (per participant) → reveal → done
+   ────────────────────────────────────────────────────────────── */
+function TrueLieGame({ T: parentT, game, onBack }) {
+  const T = { ...parentT, accent: PB[game.pop || "ink"].main, onAccent: PB[game.pop || "ink"].on,
+              accentSoft: PB[game.pop || "ink"].soft, accentDeep: PB[game.pop || "ink"].deep };
+  const deck = CARD_DECKS[game.id] || { rules: [], prompts: [] };
+
+  const [phase, setPhase] = React.useState("intro"); // intro | lobby | submit | voting | reveal | done
+  const [sessionCode, setSessionCode] = React.useState(null);
+  const [sessionDoc, setSessionDoc] = React.useState(null);
+  const [liveParticipants, setLiveParticipants] = React.useState([]);
+  const [creatingSession, setCreatingSession] = React.useState(false);
+  const [currentPi, setCurrentPi] = React.useState(0);
+
+  // App-state context for the host's identifying details
+  const persistedState = React.useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("chogegot_state") || "{}"); } catch (e) { return {}; }
+  }, []);
+  const authSession = React.useMemo(loadAuthSession, []);
+  const hostUsername = authSession?.username || null;
+  const eventName = persistedState?.eventName || "";
+
+  // Live session subscriptions
+  React.useEffect(() => {
+    if (!sessionCode) return;
+    const off1 = fbSubscribeSession(sessionCode, setSessionDoc);
+    const off2 = fbSubscribeParticipants(sessionCode, setLiveParticipants);
+    return () => { try { off1(); } catch (e) {} try { off2(); } catch (e) {} };
+  }, [sessionCode]);
+
+  // Reflect host-side phase + currentPi into the session doc so participants stay in sync
+  React.useEffect(() => {
+    if (!sessionCode) return;
+    const map = { lobby: "lobby", submit: "submitting", voting: "voting", reveal: "reveal", done: "done" };
+    const wireState = map[phase];
+    if (wireState) fbUpdateSession(sessionCode, { state: wireState, currentPi });
+  }, [sessionCode, phase, currentPi]);
+
+  const openLobby = async () => {
+    if (creatingSession) return;
+    setCreatingSession(true);
+    try {
+      const code = await fbCreateSession({ hostUsername, gameId: game.id, questions: [], brideName: "", eventName });
+      if (code) { setSessionCode(code); setPhase("lobby"); }
+      else alert("לא הצלחנו לפתוח לוביי. בדקו חיבור ונסו שוב.");
+    } finally { setCreatingSession(false); }
+  };
+
+  const submittedParticipants = liveParticipants.filter(p => p.storiesSubmitted);
+  const currentTarget = liveParticipants[currentPi] || null;
+
+  // Display order for the current round (which story is shown as A vs B)
+  // Stored on the session doc as an array of "TF" / "FT" so all clients agree.
+  const displayOrders = sessionDoc?.displayOrders || {};
+  const currentOrder = displayOrders[String(currentPi)] || "TF";
+  const slotA = currentOrder[0] === "T" ? currentTarget?.trueStory : currentTarget?.falseStory;
+  const slotB = currentOrder[1] === "T" ? currentTarget?.trueStory : currentTarget?.falseStory;
+  const correctSlot = currentOrder[0] === "T" ? "A" : "B";
+
+  // Count votes for the current round, excluding the storyteller
+  const votersInRound = liveParticipants.filter(p =>
+    p.id !== currentTarget?.id && p.tlVotes && p.tlVotes[currentPi] != null
+  );
+  const expectedVoters = Math.max(0, submittedParticipants.length - 1);
+
+  // Final scores: for every revealed round, count how many of each voter's picks were right
+  const computeScores = () => {
+    const scores = {};
+    submittedParticipants.forEach(p => { scores[p.name] = 0; });
+    submittedParticipants.forEach((target, idx) => {
+      const order = displayOrders[String(idx)] || "TF";
+      const correct = order[0] === "T" ? "A" : "B";
+      liveParticipants.forEach(voter => {
+        if (voter.id === target.id) return;
+        const vote = voter.tlVotes?.[idx];
+        if (vote === correct && scores[voter.name] != null) scores[voter.name] += 1;
+      });
+    });
+    return Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  };
+
+  const startSubmitting = () => setPhase("submit");
+
+  const startVoting = async () => {
+    // Pre-generate randomized display orders for every submitter, and snapshot the
+    // round data (target name + slot A/B stories) onto the session doc so participant
+    // clients can render the round without reading the participants subcollection.
+    const orders = {};
+    const tlRoundTarget = {};
+    const tlRoundStoryA = {};
+    const tlRoundStoryB = {};
+    submittedParticipants.forEach((p, i) => {
+      const order = Math.random() < 0.5 ? "TF" : "FT";
+      orders[String(i)] = order;
+      tlRoundTarget[String(i)] = p.name;
+      tlRoundStoryA[String(i)] = order[0] === "T" ? (p.trueStory || "") : (p.falseStory || "");
+      tlRoundStoryB[String(i)] = order[1] === "T" ? (p.trueStory || "") : (p.falseStory || "");
+    });
+    await fbUpdateSession(sessionCode, { displayOrders: orders, tlRoundTarget, tlRoundStoryA, tlRoundStoryB });
+    setCurrentPi(0);
+    setPhase("voting");
+  };
+  const revealAnswer = () => setPhase("reveal");
+  const nextRound = () => {
+    if (currentPi + 1 >= submittedParticipants.length) { setPhase("done"); return; }
+    setCurrentPi(currentPi + 1);
+    setPhase("voting");
+  };
+  const restart = () => { setCurrentPi(0); setPhase(sessionCode ? "lobby" : "intro"); };
+
+  // ── INTRO ─────────────────────────────────────────────
+  if (phase === "intro") {
+    const introExtras = (
+      <Card T={T} padding={"14px 16px"} style={{ marginTop: 14, background: T.accentSoft, border: `1px solid ${T.accent}33` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: T.accent, color: T.onAccent,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon name="qr" size={22} color={T.onAccent} w={1.6}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 800, color: T.accentDeep }}>הצטרפות חברים בזמן אמת</div>
+            <div style={{ fontSize: 11.5, color: T.inkSoft, fontWeight: 600, marginTop: 2 }}>
+              סורקים QR, נכנסים עם שם, ומזינים את שני הסיפורים מהטלפון.
+            </div>
+          </div>
+        </div>
+        <button onClick={openLobby} disabled={creatingSession} style={{
+          marginTop: 12, width: "100%", padding: "10px 14px",
+          background: T.accent, color: T.onAccent, border: "none", borderRadius: T.radius,
+          fontSize: 13.5, fontWeight: 800, cursor: creatingSession ? "wait" : "pointer", fontFamily: T.font,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          opacity: creatingSession ? 0.7 : 1,
+        }}>
+          <Icon name="qr" size={15} color={T.onAccent} w={1.7}/>
+          {creatingSession ? "פותח..." : "פתחו לוביי"}
+        </button>
+      </Card>
+    );
+    return <GameIntro T={T} game={game} rules={deck.rules} onBack={onBack}
+      onStart={openLobby} startLabel="פתחו לוביי" extras={introExtras}/>;
+  }
+
+  // ── LOBBY (waiting for participants to join) ─────────
+  if (phase === "lobby") {
+    const joinUrl = `${window.location.origin}${window.location.pathname}?join=${sessionCode}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(joinUrl)}`;
+    const shareViaWhatsapp = () => {
+      const msg = `הצטרפו ל-"${game.t}" 🎭\n\nלינק: ${joinUrl}\nאו קוד: ${sessionCode}`;
+      openWhatsApp(msg);
+    };
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ marginTop: 4, textAlign: "center" }}>
+            <Eyebrow T={T}>לוביי פתוח</Eyebrow>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "8px 0 4px", letterSpacing: -0.4 }}>החברים מצטרפים</h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45 }}>
+              סורקו את ה-QR, הקלידו את הקוד, או שתפו לינק בוואטסאפ.
+            </p>
+          </div>
+
+          <div style={{ marginTop: 14, padding: 16, background: T.surface, borderRadius: T.radiusLg,
+            border: T.border, boxShadow: T.shadow, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <img src={qrSrc} alt={`QR code for ${joinUrl}`} referrerPolicy="no-referrer"
+              style={{ width: 180, height: 180, borderRadius: 12, display: "block", background: "#fff" }}/>
+            <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 800, color: T.muted, letterSpacing: 1.6, textTransform: "uppercase" }}>קוד הצטרפות</div>
+            <div className="num" style={{ fontSize: 30, fontWeight: 800, color: T.ink, letterSpacing: 4, marginTop: 4 }}>{sessionCode}</div>
+          </div>
+
+          <button onClick={shareViaWhatsapp} style={{
+            marginTop: 12, width: "100%", padding: "12px 14px", borderRadius: 12,
+            background: "#25D366", color: "#fff", border: "none", cursor: "pointer",
+            fontFamily: T.font, fontSize: 14, fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
+            <Icon name="share" size={16} color="#fff" w={1.8}/>
+            שיתוף לינק בוואטסאפ
+          </button>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: T.muted, letterSpacing: 0.6, textTransform: "uppercase", marginBottom: 8 }}>
+              הצטרפו {liveParticipants.length}
+            </div>
+            {liveParticipants.length === 0 ? (
+              <div style={{ padding: "14px 16px", background: T.surfaceAlt, borderRadius: T.radius,
+                border: `1px dashed ${T.lineStrong}`, fontSize: 12.5, color: T.inkSoft, fontWeight: 600, textAlign: "center" }}>
+                מחכים לחבר הראשון...
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {liveParticipants.map(p => (
+                  <span key={p.id} style={{
+                    padding: "5px 11px", borderRadius: 999, background: T.accentSoft, color: T.accentDeep,
+                    fontSize: 12.5, fontWeight: 800,
+                  }}>{p.name}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1, minHeight: 14 }}/>
+
+          <Btn T={T} onClick={startSubmitting} disabled={liveParticipants.length < 2}>
+            {liveParticipants.length < 2 ? `צריך לפחות 2 משתתפים (${liveParticipants.length})` : `התחילו הזנת סיפורים (${liveParticipants.length})`}
+          </Btn>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  // ── SUBMIT (waiting for everyone to send 2 stories) ───
+  if (phase === "submit") {
+    const ready = submittedParticipants.length;
+    const total = liveParticipants.length;
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+          <TopBar T={T} onBack={() => setPhase("lobby")} title={game.t}/>
+          <div style={{ marginTop: 8, textAlign: "center" }}>
+            <Eyebrow T={T}>שלב 1 · הזנת סיפורים</Eyebrow>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: "10px 0 6px", letterSpacing: -0.4 }}>
+              מחכים שכולם יזינו 2 סיפורים
+            </h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0, lineHeight: 1.45, maxWidth: 320, marginInline: "auto" }}>
+              כל אחד רואה בטלפון שלו טופס — סיפור אמיתי וסיפור שקר. הם נשלחים אליי כשהוא לוחץ "שלח".
+            </p>
+          </div>
+
+          <div style={{ marginTop: 26, padding: 22, background: T.surface, borderRadius: T.radiusLg,
+            border: T.border, boxShadow: T.shadow, textAlign: "center" }}>
+            <div className="num" style={{ fontSize: 56, fontWeight: 900, color: T.accent, lineHeight: 1, letterSpacing: -1 }}>
+              {ready}<span style={{ opacity: 0.45, fontSize: 36 }}>/{total}</span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginTop: 8 }}>שלחו את הסיפורים</div>
+            <div style={{ marginTop: 12, height: 8, background: T.surfaceAlt, borderRadius: 999, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${total ? (ready / total) * 100 : 0}%`,
+                background: `linear-gradient(90deg, ${T.accent}, ${T.accentDeep})`,
+                borderRadius: 999, transition: "width 350ms" }}/>
+            </div>
+            <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+              {liveParticipants.map(p => (
+                <span key={p.id} style={{
+                  padding: "5px 11px", borderRadius: 999,
+                  background: p.storiesSubmitted ? T.accent : T.surfaceAlt,
+                  color: p.storiesSubmitted ? T.onAccent : T.inkSoft,
+                  fontSize: 12, fontWeight: 800, opacity: p.storiesSubmitted ? 1 : 0.7,
+                }}>{p.storiesSubmitted ? "✓ " : ""}{p.name}</span>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minHeight: 14 }}/>
+
+          <Btn T={T} onClick={startVoting} disabled={ready < 2}>
+            {ready < 2 ? "מחכים שיגיעו ל-2 לפחות" : `התחילו הצבעות (${ready} משתתפים)`}
+          </Btn>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  // ── VOTING / REVEAL (per-participant round) ──────────
+  if (phase === "voting" || phase === "reveal") {
+    if (!currentTarget) {
+      return (
+        <>
+          <StatusBar T={T}/>
+          <div style={{ position: "absolute", inset: 0, padding: 48, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            <div style={{ color: T.inkSoft, fontWeight: 600 }}>טוען...</div>
+          </div>
+          <HomeBar/>
+        </>
+      );
+    }
+    const roundN = currentPi + 1;
+    const totalRounds = submittedParticipants.length;
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 20px 22px", display: "flex", flexDirection: "column" }}>
+          <TopBar T={T} onBack={() => setPhase("submit")} title={game.t}/>
+          <div style={{ marginTop: 4, textAlign: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: 1.4, textTransform: "uppercase" }}>
+              סבב {roundN} / {totalRounds}
+            </div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, margin: "6px 0 0", letterSpacing: -0.3 }}>
+              הסיפורים של <span style={{ color: T.accent }}>{currentTarget.name}</span>
+            </h1>
+          </div>
+
+          {/* Story A */}
+          <div style={{ marginTop: 16, padding: "14px 16px",
+            background: phase === "reveal" && correctSlot === "A" ? T.accentSoft : T.surface,
+            border: phase === "reveal" && correctSlot === "A" ? `2px solid ${T.accent}` : T.border,
+            borderRadius: T.radiusLg, boxShadow: T.shadowSm }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 8, background: T.accent, color: T.onAccent,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900 }}>א'</div>
+              {phase === "reveal" && (
+                <span style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+                  background: correctSlot === "A" ? T.accent : T.surfaceAlt,
+                  color: correctSlot === "A" ? T.onAccent : T.inkSoft }}>
+                  {correctSlot === "A" ? "אמת ✓" : "שקר ✗"}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.45 }}>{slotA || "—"}</div>
+          </div>
+
+          {/* Story B */}
+          <div style={{ marginTop: 10, padding: "14px 16px",
+            background: phase === "reveal" && correctSlot === "B" ? T.accentSoft : T.surface,
+            border: phase === "reveal" && correctSlot === "B" ? `2px solid ${T.accent}` : T.border,
+            borderRadius: T.radiusLg, boxShadow: T.shadowSm }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 8, background: T.accent, color: T.onAccent,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900 }}>ב'</div>
+              {phase === "reveal" && (
+                <span style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 9px", borderRadius: 999,
+                  background: correctSlot === "B" ? T.accent : T.surfaceAlt,
+                  color: correctSlot === "B" ? T.onAccent : T.inkSoft }}>
+                  {correctSlot === "B" ? "אמת ✓" : "שקר ✗"}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: T.ink, lineHeight: 1.45 }}>{slotB || "—"}</div>
+          </div>
+
+          {/* Vote progress */}
+          <div style={{ marginTop: 16, padding: "10px 14px", background: T.surfaceAlt, borderRadius: T.radius,
+            display: "flex", alignItems: "center", gap: 10 }}>
+            <Icon name="users" size={17} color={T.muted} w={1.6}/>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: T.inkSoft }}>
+                {phase === "voting" ? "מצביעים..." : "הצבעות"}
+              </div>
+              <div className="num" style={{ fontSize: 15, fontWeight: 800, color: T.ink }}>
+                {votersInRound.length} / {expectedVoters}
+              </div>
+            </div>
+            {phase === "reveal" && (() => {
+              const aCount = votersInRound.filter(v => v.tlVotes[currentPi] === "A").length;
+              const bCount = votersInRound.filter(v => v.tlVotes[currentPi] === "B").length;
+              return (
+                <div style={{ display: "flex", gap: 6, fontSize: 11, fontWeight: 800 }}>
+                  <span style={{ padding: "3px 8px", borderRadius: 999, background: correctSlot === "A" ? T.accent : "#fff", color: correctSlot === "A" ? T.onAccent : T.ink, border: T.border }}>א' {aCount}</span>
+                  <span style={{ padding: "3px 8px", borderRadius: 999, background: correctSlot === "B" ? T.accent : "#fff", color: correctSlot === "B" ? T.onAccent : T.ink, border: T.border }}>ב' {bCount}</span>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div style={{ flex: 1, minHeight: 8 }}/>
+
+          {phase === "voting" ? (
+            <Btn T={T} onClick={revealAnswer}>חשפו את התשובה</Btn>
+          ) : (
+            <Btn T={T} onClick={nextRound}>
+              {currentPi + 1 >= totalRounds ? "לסיכום" : "סבב הבא"}
+            </Btn>
+          )}
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  // ── DONE (final scoreboard) ──────────────────────────
+  if (phase === "done") {
+    const scores = computeScores();
+    return (
+      <>
+        <StatusBar T={T}/>
+        <div style={{ position: "absolute", inset: 0, padding: "48px 22px 24px", display: "flex", flexDirection: "column" }}>
+          <TopBar T={T} onBack={onBack} title={game.t}/>
+          <div style={{ marginTop: 4, textAlign: "center" }}>
+            <Eyebrow T={T}>סיכום</Eyebrow>
+            <h1 style={{ fontSize: 28, fontWeight: 800, margin: "8px 0 4px", letterSpacing: -0.4 }}>סיימנו את כל הסבבים!</h1>
+            <p style={{ fontSize: 13, color: T.inkSoft, fontWeight: 500, margin: 0 }}>מי הכי קלע בניחושים?</p>
+          </div>
+
+          <div style={{ marginTop: 18, flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            {scores.map(([name, score], i) => (
+              <div key={name} style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 14px",
+                background: i === 0 ? T.accentSoft : T.surface,
+                border: i === 0 ? `1.5px solid ${T.accent}` : T.border,
+                borderRadius: T.radiusLg, boxShadow: T.shadowSm,
+              }}>
+                <div className="num" style={{
+                  width: 34, height: 34, borderRadius: 999, flexShrink: 0,
+                  background: i === 0 ? T.accent : T.surfaceAlt,
+                  color: i === 0 ? T.onAccent : T.ink,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 15, fontWeight: 900,
+                }}>{i + 1}</div>
+                <div style={{ flex: 1, fontSize: 15, fontWeight: 800, color: T.ink }}>{name}</div>
+                <div className="num" style={{ fontSize: 18, fontWeight: 900, color: i === 0 ? T.accentDeep : T.ink }}>{score}</div>
+              </div>
+            ))}
+          </div>
+
+          <Btn T={T} onClick={restart}>סבב חדש</Btn>
+          <button onClick={onBack} style={{ marginTop: 10, background: "transparent", border: "none",
+            fontSize: 13, fontWeight: 600, color: T.inkSoft, cursor: "pointer" }}>לרשימת המשחקים</button>
+        </div>
+        <HomeBar/>
+      </>
+    );
+  }
+
+  return null;
+}
+
+/* ──────────────────────────────────────────────────────────────
    APP SHELL — routing + per-screen skin
    ────────────────────────────────────────────────────────────── */
 function App() {
@@ -5920,7 +7340,25 @@ function App() {
 
   // pick skin
   const skinName = SCREEN_SKIN[screen] || "orange";
-  const T = skin(skinName);
+  let T = skin(skinName);
+  // Once we know which event the user picked, override the screen accent with the event's
+  // primary palette so buttons / pills / highlights everywhere match the chosen theme
+  // (orange for bach, magenta for bday, sky for team, red for date). Skipped on the
+  // pre-event onboarding screens.
+  const EVENT_AWARE_SCREENS = new Set([
+    "bachHome", "checklist", "playlist", "budget", "games", "game",
+    "helpCenter", "qrjoin", "slideshow", "nameEvent",
+  ]);
+  if (event && EVENT_AWARE_SCREENS.has(screen)) {
+    const pal = getEventPalette(event);
+    T = {
+      ...T,
+      accent: pal.primary.main,
+      accentDeep: pal.primary.deep,
+      accentSoft: pal.primary.soft,
+      onAccent: pal.primary.on,
+    };
+  }
 
   let content;
   if (screen === "login") content = <ScreenLogin T={T} prefillUsername={prefillUsername} onSuccess={async (res) => {
@@ -5984,15 +7422,16 @@ function App() {
   else if (screen === "slideshow") content = <ScreenSlideshow T={T} slides={BACH_SLIDES} eventName={eventName} onDone={() => setScreen("bachHome")}/>;
   else if (screen === "bachHome") content = <ScreenBachHome T={T} onNav={nav} user={{ name }} eventName={eventName} eventId={event} onLogout={reset}/>;
   else if (screen === "qrjoin") content = <ScreenQRJoin T={T} onBack={() => setScreen("bachHome")}/>;
-  else if (screen === "checklist") content = <ScreenChecklist T={T} onBack={() => setScreen("bachHome")}/>;
+  else if (screen === "checklist") content = <ScreenChecklist T={T} onBack={() => setScreen("bachHome")} eventId={event}/>;
   else if (screen === "playlist") content = <ScreenPlaylist T={T} onBack={() => setScreen("bachHome")}/>;
-  else if (screen === "budget") content = <ScreenBudget T={T} onBack={() => setScreen("bachHome")}/>;
-  else if (screen === "games") content = <ScreenGamesHub T={T} onNav={nav} onBack={() => setScreen("bachHome")}/>;
+  else if (screen === "budget") content = <ScreenBudget T={T} onBack={() => setScreen("bachHome")} eventId={event}/>;
+  else if (screen === "games") content = <ScreenGamesHub T={T} onNav={nav} onBack={() => setScreen("bachHome")} eventId={event}/>;
   else if (screen === "game") {
-    const g = GAMES.find(x => x.id === gameId) || GAMES[0];
+    const g = ALL_GAMES_LIST.find(x => x.id === gameId) || ALL_GAMES_LIST[0];
     const back = () => setScreen("games");
     if (g.type === "timer") content = <TimerGame T={T} game={g} onBack={back}/>;
     else if (g.type === "quiz") content = <QuizGame T={T} game={g} onBack={back}/>;
+    else if (g.id === "truelie") content = <TrueLieGame T={T} game={g} onBack={back}/>;
     else content = <CardGame T={T} game={g} onBack={back}/>;
   }
   else if (screen === "comingSoon") content = <ScreenComingSoon T={T} eventId={event} onBack={() => setScreen("event")}/>;
@@ -6001,12 +7440,28 @@ function App() {
   else if (screen === "participant") content = <ScreenParticipant T={T} code={participantCode}
     onLeave={() => { setParticipantCode(""); setScreen("login"); }}/>;
 
+  // Which screens should the floating BottomNav appear on?
+  // Excluded: onboarding, login, in-game (each game screen owns its full surface).
+  const BOTTOM_NAV_SCREENS = new Set(["bachHome", "checklist", "playlist", "budget", "games", "helpCenter", "qrjoin"]);
+  const showBottomNav = BOTTOM_NAV_SCREENS.has(screen);
+  const bottomNavCurrent = screen === "helpCenter" ? "help" : "home";
+
   return (
     <>
       <PhoneShell T={T}>
         <div key={screen} style={{ position: "absolute", inset: 0, animation: "screenIn 280ms ease-out" }}>
           {content}
         </div>
+        {showBottomNav && (
+          <BottomNav
+            T={T}
+            current={bottomNavCurrent}
+            canGoBack={screen !== "bachHome"}
+            onBack={() => setScreen("bachHome")}
+            onHome={() => setScreen("bachHome")}
+            onHelp={() => setScreen("helpCenter")}
+          />
+        )}
       </PhoneShell>
       {/* Toast notification (groom answers loaded, etc.) */}
       {toast && (
@@ -6039,7 +7494,7 @@ function App() {
         const goNext = () => switchTo(order[(idx + 1) % order.length]);
         return (
           <div style={{
-            position: "fixed", bottom: 16, left: "50%", transform: "translateX(-50%)",
+            position: "fixed", bottom: showBottomNav ? 96 : 16, left: "50%", transform: "translateX(-50%)",
             zIndex: 1300,
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 8px",
