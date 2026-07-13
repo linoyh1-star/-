@@ -487,6 +487,30 @@ const EVENT_PALETTE = {
 };
 const getEventPalette = (eventId) => EVENT_PALETTE[eventId] || EVENT_PALETTE.bach;
 
+// BUY_CONFIG — per-event purchase metadata.
+// Linoy fills in the Grow URL for each event's discounted product page. The app sends the
+// current user's username + email as query params so Make.com can attach the new product
+// to the existing account instead of creating a new one.
+const BUY_CONFIG = {
+  bach: { regular: 297, discount: 149, url: "https://www.grow.link/CHANGE_ME_BACH" },
+  bday: { regular: 297, discount: 149, url: "https://www.grow.link/CHANGE_ME_BDAY" },
+  team: { regular: 297, discount: 149, url: "https://www.grow.link/CHANGE_ME_TEAM" },
+  date: { regular: 297, discount: 149, url: "https://www.grow.link/CHANGE_ME_DATE" },
+};
+// Build the Grow checkout link for a specific event, with the current user's identity
+// appended so Make.com's "add product to existing user" scenario can attach the purchase
+// to her record. Linoy: if Grow ignores these params, configure hidden fields in the
+// product form to read u/email from the URL.
+const buildBuyUrl = (eventId, { username, email } = {}) => {
+  const cfg = BUY_CONFIG[eventId];
+  if (!cfg) return null;
+  const params = new URLSearchParams();
+  if (username) params.set("u", username);
+  if (email)    params.set("email", email);
+  const qs = params.toString();
+  return qs ? `${cfg.url}?${qs}` : cfg.url;
+};
+
 const skin = (name) => ({ ...T_BASE, ...SKINS[name], _skin: name });
 
 // per-screen skin assignment
@@ -834,12 +858,17 @@ function UserMenu({ T, hostName, eventId, products = [], onSwitchProduct, onBuyM
         </div>
       </button>
 
-      {/* Buy another event */}
-      <button onClick={() => { onClose?.(); onBuyMore?.(); }} style={menuItemStyle(T)}>
-        <Icon name="plus" size={17} color={T.inkSoft} w={1.7}/>
+      {/* Buy another event — gated behind BUY_MORE_ENABLED until the extra products launch */}
+      <button onClick={() => { if (!BUY_MORE_ENABLED) return; onClose?.(); onBuyMore?.(); }}
+        disabled={!BUY_MORE_ENABLED}
+        style={menuItemStyle(T, { disabled: !BUY_MORE_ENABLED })}
+        title={BUY_MORE_ENABLED ? "" : "שאר סוגי האירועים בקרוב"}>
+        <Icon name="plus" size={17} color={BUY_MORE_ENABLED ? T.inkSoft : T.muted} w={1.7}/>
         <div style={{ flex: 1, textAlign: "right" }}>
           <div style={{ fontSize: 13.5, fontWeight: 700 }}>רכישה לאירוע נוסף</div>
-          <div style={{ fontSize: 10.5, fontWeight: 500, color: T.muted, marginTop: 1 }}>הוספת מוצר חדש לחשבון</div>
+          <div style={{ fontSize: 10.5, fontWeight: 500, color: T.muted, marginTop: 1 }}>
+            {BUY_MORE_ENABLED ? "הוספת מוצר חדש לחשבון" : "בקרוב — שאר סוגי האירועים בהכנה"}
+          </div>
         </div>
       </button>
 
@@ -1007,7 +1036,11 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
           fullName: res.fullName || "",
           phone: res.phone || "",
           email: res.email || "",
-          eventType: res.eventType || "bach",
+          eventType: res.eventType || null,
+          // When Make.com starts returning the list of products owned by this user, the
+          // user menu (switch product) and the buy-more screen (filter) will pick it up
+          // automatically. Single-product users default to [] until they pick their first.
+          purchasedEvents: Array.isArray(res.purchasedEvents) ? res.purchasedEvents : [],
           loggedInAt: Date.now(),
         });
         onSuccess(res);
@@ -1465,8 +1498,12 @@ const EVENT_OPTS = [
     placeholder: "ערב של נועה ויואב", samples: ["דייט נייט", "נועה ויואב", "ערב בלי טלפונים"] },
 ];
 
-// All 4 event types are now live. To re-lock one before launch, add its id back here.
-const LOCKED_EVENTS = new Set();
+// Launch scope: only bach is live. When bday / team / date are ready, remove them
+// from this set (and remove BUY_MORE_ENABLED gating below) to expose them.
+const LOCKED_EVENTS = new Set(["bday", "team", "date"]);
+// Feature flag for the "buy additional event" flow. Off until the extra event types
+// have real content + a Grow discount link + the matching Make.com scenario.
+const BUY_MORE_ENABLED = false;
 
 function ScreenEventPicker({ T, onNext, onBack, selected, setSelected }) {
   const [lockedNotice, setLockedNotice] = React.useState("");
@@ -2736,7 +2773,7 @@ function MockupPlaylist({ T }) {
             הפלייליסט של VibeIT
           </div>
           <div style={{ fontSize: 5.5, color: "rgba(255,255,255,0.78)", fontWeight: 600, marginTop: 1 }}>
-            בספוטיפיי או באפל מיוזיק — לבחירתך
+            נפתח בספוטיפיי בלחיצה אחת
           </div>
         </div>
       </div>
@@ -2756,22 +2793,6 @@ function MockupPlaylist({ T }) {
         <Icon name="play" size={11} color="#fff"/>
       </div>
 
-      {/* Apple Music tap card */}
-      <div style={{ marginTop: 4, background: "linear-gradient(135deg, #FA243C 0%, #E61E4D 100%)",
-        borderRadius: 9, padding: 7, color: "#fff",
-        display: "flex", alignItems: "center", gap: 6,
-        boxShadow: "0 6px 14px -6px rgba(250,36,60,0.45)" }}>
-        <div style={{ width: 24, height: 24, borderRadius: 999, background: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="music" size={13} color="#FA243C" w={2}/>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 5.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Apple Music</div>
-          <div style={{ fontSize: 8.5, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
-        </div>
-        <Icon name="play" size={11} color="#fff"/>
-      </div>
-
       {/* small orange info chip */}
       <div style={{ marginTop: 5, padding: "4px 6px",
         background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`, borderRadius: 6,
@@ -2779,7 +2800,7 @@ function MockupPlaylist({ T }) {
         display: "flex", alignItems: "center", gap: 4 }}>
         <Icon name="music" size={9} color={PB.orange.deep} w={1.5}/>
         <div style={{ fontSize: 5.5, lineHeight: 1.35, color: PB.orange.deep, fontWeight: 600 }}>
-          בחרי את האפליקציה שלך — והשירים מוכנים
+          פלייליסט מוכן מראש — לחיצה אחת ופותח בספוטיפיי
         </div>
       </div>
 
@@ -3072,7 +3093,7 @@ const MP_TIPS = [
 ];
 const getTips = (tone) => tone === "fs" ? BACH_TIPS : MP_TIPS;
 
-function ScreenBachHome({ T, onNav, user, eventName, eventId, onLogout }) {
+function ScreenBachHome({ T, onNav, user, eventName, eventId, onLogout, purchasedEvents = [] }) {
   const pal = getEventPalette(eventId);
   const tone = pal.tone; // "fs" feminine singular | "mp" masculine plural
   const tips = getTips(tone);
@@ -3128,9 +3149,9 @@ function ScreenBachHome({ T, onNav, user, eventName, eventId, onLogout }) {
                   T={T}
                   hostName={user.name}
                   eventId={eventId}
-                  products={[eventId]}
+                  products={purchasedEvents.length ? purchasedEvents : [eventId]}
                   onSwitchProduct={() => alert("בקרוב — כשיהיו לך כמה מוצרים נוכל להחליף ביניהם בלחיצה")}
-                  onBuyMore={() => alert("בקרוב — רכישה לאירוע נוסף ישירות מהאפליקציה")}
+                  onBuyMore={() => onNav("buyMore")}
                   onLogout={onLogout}
                   onClose={() => setMenuOpen(false)}
                 />
@@ -3420,6 +3441,113 @@ function ScreenHelpCenter({ T, onBack }) {
   );
 }
 
+/* ──────────────────────────────────────────────────────────────
+   BUY MORE — shopping screen for additional event types.
+   Visually mirrors ScreenEventPicker: clean white shell, vertical
+   list of event rows with icon + name + sub on the right, price +
+   buy button on the left. Tap opens the Grow product page with
+   username + email appended so Make.com can attach the purchase
+   to the existing account.
+   ────────────────────────────────────────────────────────────── */
+function ScreenBuyMore({ T, onBack, purchasedEvents = [], username, email }) {
+  const owned = new Set(purchasedEvents);
+  const available = EVENT_OPTS.filter(e => !owned.has(e.id));
+
+  const openBuy = (eventId) => {
+    const url = buildBuyUrl(eventId, { username, email });
+    if (!url) return;
+    window.open(url, "_blank", "noopener");
+  };
+
+  return (
+    <>
+      <StatusBar T={T}/>
+      <div style={{ position: "absolute", inset: 0, padding: "48px 22px 100px", display: "flex", flexDirection: "column", overflow: "auto" }}>
+        {/* Title block — same rhythm as ScreenEventPicker */}
+        <div>
+          <Eyebrow T={T}>הצעה מיוחדת</Eyebrow>
+          <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.12, margin: "12px 0 0", letterSpacing: -0.6 }}>
+            רכישת<br/>אירוע נוסף
+          </h1>
+          <p style={{ fontSize: 14.5, lineHeight: 1.55, color: T.inkSoft, marginTop: 10, fontWeight: 500 }}>
+            כי כבר רכשתם מוצר אחד — שאר סוגי האירועים זמינים לכם עכשיו ב-<b style={{ color: T.ink }}>50% הנחה</b>.
+          </p>
+        </div>
+
+        {/* Vertical list — same row style as ScreenEventPicker */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 22 }}>
+          {available.length === 0 ? (
+            <div style={{
+              padding: "20px 16px", borderRadius: T.radiusLg, background: T.surfaceAlt,
+              border: `1px dashed ${T.lineStrong}`, textAlign: "center",
+            }}>
+              <div style={{ fontSize: 34, marginBottom: 6 }}>🎉</div>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: T.ink }}>רכשתם את כל סוגי האירועים!</div>
+              <div style={{ fontSize: 12.5, color: T.inkSoft, fontWeight: 500, marginTop: 4 }}>
+                בתפריט המשתמש תוכלו להחליף בין כל המוצרים.
+              </div>
+            </div>
+          ) : available.map(ev => {
+            const cfg = BUY_CONFIG[ev.id];
+            return (
+              <button key={ev.id} onClick={() => openBuy(ev.id)} style={{
+                display: "flex", alignItems: "center", gap: 15, padding: "15px 16px",
+                background: T.surface, borderRadius: T.radiusLg,
+                border: T.border, boxShadow: T.shadowSm,
+                cursor: "pointer", fontFamily: T.font, textAlign: "right",
+                color: T.ink, transition: "border-color 150ms, box-shadow 150ms",
+                position: "relative",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 13, flexShrink: 0,
+                  background: T.accentSoft,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Icon name={ev.icon} size={23} color={T.accent} w={1.35}/>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 16.5, fontWeight: 700, color: T.ink, letterSpacing: -0.2 }}>{ev.t}</div>
+                    <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                      background: T.accentSoft, color: T.accentDeep, letterSpacing: 0.3 }}>
+                      50% הנחה
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: T.inkSoft, marginTop: 2, fontWeight: 500 }}>{ev.s}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
+                    <span className="num" style={{ fontSize: 17, fontWeight: 900, color: T.accentDeep, lineHeight: 1 }}>
+                      ₪{cfg?.discount?.toLocaleString() || "—"}
+                    </span>
+                    {cfg?.regular && cfg.regular > cfg.discount && (
+                      <span className="num" style={{ fontSize: 12, fontWeight: 700, color: T.muted, textDecoration: "line-through" }}>
+                        ₪{cfg.regular.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 999, flexShrink: 0,
+                  background: T.accent, color: T.onAccent,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: `0 4px 12px -4px ${T.accent}66`,
+                }}><Icon name="chevL" size={15} color={T.onAccent} w={2}/></div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Soft footer note */}
+        {available.length > 0 && (
+          <div style={{ marginTop: 18, padding: "10px 14px", background: T.surfaceAlt, borderRadius: 12,
+            fontSize: 11.5, lineHeight: 1.5, color: T.inkSoft, fontWeight: 500 }}>
+            <b style={{ color: T.ink }}>איך זה עובד?</b> לאחר התשלום המוצר החדש מתווסף אוטומטית לחשבון הקיים שלכם. תקבלו מייל אישור, וברגע שתתחברו מחדש תוכלו לעבור ביניהם דרך תפריט המשתמש.
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 function ScreenComingSoon({ T, eventId, onBack }) {
   const ev = EVENT_OPTS.find(e => e.id === eventId);
   return (
@@ -3564,7 +3692,11 @@ function ScreenChecklist({ T, onBack, eventId }) {
   const evKey = eventId || "bach";
   const pal = getEventPalette(evKey);
   const sections = CHECKLIST_SECTIONS_BY_EVENT[evKey] || CHECKLIST_SECTIONS_BY_EVENT.bach;
-  const [items, setItems] = usePersistedState(`chogegot_checklist_items_${evKey}`, () => buildSeedItems(evKey));
+  // Bach stays on the unnamespaced legacy key so existing users don't lose their ticks
+  // (their data lives at `chogegot_checklist_items`, and the cloud sync writes to it too).
+  // Non-bach events get their own suffixed key.
+  const checklistKey = evKey === "bach" ? "chogegot_checklist_items" : `chogegot_checklist_items_${evKey}`;
+  const [items, setItems] = usePersistedState(checklistKey, () => buildSeedItems(evKey));
 
   // One-time migration: surface any newly-added seed items to existing users whose
   // localStorage was filled before the new rows were defined. Anything they've already
@@ -3734,14 +3866,16 @@ function ScreenChecklist({ T, onBack, eventId }) {
    PLAYLIST
    ────────────────────────────────────────────────────────────── */
 // TODO: replace with the real curated playlist URL
-// Public 'Bachelorette Bash' playlists — both placeholders the user will swap for her own
-// curated list once she's built it.
-const CHOGEGOT_PLAYLIST_URL = "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M";
-const CHOGEGOT_APPLE_PLAYLIST_URL = "https://music.apple.com/il/playlist/bachelorette-bash/pl.6cb1c5d3aaeb469cb3a3b8c19f56a8aa";
+// Curated Spotify playlists for bach parties. Add / reorder freely — the screen renders
+// one card per entry in this list.
+const VIBEIT_PLAYLISTS = [
+  { name: "מרימות",                            url: "https://open.spotify.com/playlist/4e5qOTYTn369ETBqIZuOnP?si=UwrR0MswSuaLTsNejj93RQ" },
+  { name: "אמאא איזה שיר!!",                    url: "https://open.spotify.com/playlist/0dO4ouxqhyVpk97v4iDIt0?si=w2Uwa17RRiGL0-euYEH5oA" },
+  { name: "נוסטלגיה מרימה — ווייבים של וינטג'", url: "https://open.spotify.com/playlist/4pIXxDdRKFjWG24mJgQOQ7?si=-AIHDYJ4Qh2BQk1kmITtRg&pi=Y1LhHZ1vTcad-" },
+];
 
 function ScreenPlaylist({ T, onBack }) {
-  const openSpotify = () => window.open(CHOGEGOT_PLAYLIST_URL, "_blank", "noopener");
-  const openApple = () => window.open(CHOGEGOT_APPLE_PLAYLIST_URL, "_blank", "noopener");
+  const openSpotify = (url) => window.open(url, "_blank", "noopener");
   return (
     <>
       <StatusBar T={T}/>
@@ -3773,68 +3907,39 @@ function ScreenPlaylist({ T, onBack }) {
 
           <div style={{ marginTop: 12, position: "relative" }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px", lineHeight: 1.1, letterSpacing: -0.4, color: "#fff" }}>
-              הפלייליסט של VibeIT
+              הפלייליסטים של VibeIT
             </h1>
             <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.78)", lineHeight: 1.45, fontWeight: 600, margin: 0, maxWidth: 280 }}>
-              מבחר שירים מוכן מראש לכל החגיגה — לחיצה אחת ופותח בספוטיפיי.
+              3 מיקסים לוויב שאתן רוצות — לחיצה אחת ופותח בספוטיפיי.
             </p>
           </div>
         </div>
 
         {/* Content — bottom padding leaves room for the BottomNav */}
-        <div style={{ padding: "20px 22px 100px", display: "flex", flexDirection: "column", flex: 1 }}>
-          {/* Spotify hero card */}
-          <button onClick={openSpotify} style={{
-            display: "flex", alignItems: "center", gap: 14, width: "100%",
-            padding: 18, borderRadius: T.radiusLg,
-            background: "#1DB954", color: "#fff",
-            border: "none", cursor: "pointer", fontFamily: T.font, textAlign: "right",
-            boxShadow: "0 10px 28px -10px rgba(29,185,84,0.5)",
-          }}>
-            <div style={{ width: 56, height: 56, borderRadius: 999, background: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Icon name="spotify" size={40}/>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
-              <div style={{ fontSize: 17, fontWeight: 800, marginTop: 2, letterSpacing: -0.3 }}>פתיחת הפלייליסט</div>
-            </div>
-            <Icon name="play" size={26} color="#fff"/>
-          </button>
+        <div style={{ padding: "20px 22px 100px", display: "flex", flexDirection: "column", flex: 1, gap: 10 }}>
+          {/* One Spotify card per curated playlist */}
+          {VIBEIT_PLAYLISTS.map((pl, idx) => (
+            <button key={pl.url} onClick={() => openSpotify(pl.url)} style={{
+              display: "flex", alignItems: "center", gap: 14, width: "100%",
+              padding: 16, borderRadius: T.radiusLg,
+              background: "#1DB954", color: "#fff",
+              border: "none", cursor: "pointer", fontFamily: T.font, textAlign: "right",
+              boxShadow: "0 10px 26px -12px rgba(29,185,84,0.5)",
+            }}>
+              <div style={{ width: 52, height: 52, borderRadius: 999, background: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon name="spotify" size={36}/>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
+                <div style={{ fontSize: 16.5, fontWeight: 800, marginTop: 2, letterSpacing: -0.3,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pl.name}</div>
+              </div>
+              <Icon name="play" size={24} color="#fff"/>
+            </button>
+          ))}
 
-          {/* Apple Music card */}
-          <button onClick={openApple} style={{
-            marginTop: 10, display: "flex", alignItems: "center", gap: 14, width: "100%",
-            padding: 16, borderRadius: T.radiusLg,
-            background: "linear-gradient(135deg, #FA243C 0%, #E61E4D 100%)", color: "#fff",
-            border: "none", cursor: "pointer", fontFamily: T.font, textAlign: "right",
-            boxShadow: "0 8px 22px -10px rgba(250,36,60,0.45)",
-          }}>
-            <div style={{ width: 52, height: 52, borderRadius: 999, background: "#fff",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Icon name="music" size={28} color="#FA243C" w={2}/>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Apple Music</div>
-              <div style={{ fontSize: 16, fontWeight: 800, marginTop: 2, letterSpacing: -0.3 }}>פתיחת הפלייליסט</div>
-            </div>
-            <Icon name="play" size={24} color="#fff"/>
-          </button>
-
-          {/* Small info chip */}
-          <div style={{
-            marginTop: 12, padding: "10px 12px",
-            background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`,
-            borderRadius: T.radius, borderRight: `4px solid ${PB.orange.main}`,
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <Icon name="music" size={18} color={PB.orange.deep} w={1.5}/>
-            <div style={{ fontSize: 12, lineHeight: 1.45, color: PB.orange.deep, fontWeight: 600 }}>
-              שני הפלייליסטים בעולמות נפרדים — בחרי את האפליקציה שלך.
-            </div>
-          </div>
-
-          <div style={{ flex: 1 }}/>
+          <div style={{ flex: 1, minHeight: 4 }}/>
 
           {/* Bottom branded note */}
           <div style={{
@@ -3849,7 +3954,7 @@ function ScreenPlaylist({ T, onBack }) {
               display: "flex", alignItems: "center", justifyContent: "center",
             }}><Icon name="sparkle" size={15} color="#fff" w={1.8}/></div>
             <div style={{ flex: 1, fontSize: 11.5, fontWeight: 500, color: "rgba(255,255,255,0.78)" }}>
-              <b style={{ color: "#fff" }}>טיפ:</b> שני הפלייליסטים מותאמים למסיבת רווקות. בחרי את שלך.
+              <b style={{ color: "#fff" }}>טיפ:</b> כל הפלייליסטים מותאמים למסיבת רווקות. בחרו את הוויב שמתאים לרגע.
             </div>
           </div>
         </div>
@@ -3895,8 +4000,13 @@ function ScreenBudget({ T, onBack, eventId }) {
 
   const [tab, setTab] = React.useState("summary");
   // Per-event storage so each event keeps its own budget cleanly. Non-bach starts empty.
-  const [expenses, setExpenses] = usePersistedState(`chogegot_budget_expenses_${evKey}`, () => seedExpensesFor(evKey));
-  const [participants, setParticipants] = usePersistedState(`chogegot_budget_participants_${evKey}`, () => seedParticipantsFor(evKey));
+  // Bach stays on the unnamespaced legacy keys so existing users' expenses / participants
+  // survive the multi-event refactor (cloud sync also writes to these names). Non-bach
+  // events get their own suffixed keys.
+  const expensesKey     = evKey === "bach" ? "chogegot_budget_expenses"     : `chogegot_budget_expenses_${evKey}`;
+  const participantsKey = evKey === "bach" ? "chogegot_budget_participants" : `chogegot_budget_participants_${evKey}`;
+  const [expenses, setExpenses]         = usePersistedState(expensesKey,     () => seedExpensesFor(evKey));
+  const [participants, setParticipants] = usePersistedState(participantsKey, () => seedParticipantsFor(evKey));
   // Hybrid (bday) chooser: "topdown" or "split". For non-hybrid events it's ignored.
   const [hybridChoice, setHybridChoice] = usePersistedState(`chogegot_budget_mode_${evKey}`, "topdown");
   // Top-down cap — only meaningful when effectiveMode === "topdown"
@@ -7386,8 +7496,10 @@ function App() {
       if (first) setName(first);
     }
 
+    // Only restore from Firestore. We deliberately ignore res.eventType so a brand-new
+    // user always lands on the event picker after first login — the choice is made in the
+    // app, not at payment time.
     if (cloud?.event) setEvent(cloud.event);
-    else if (res?.eventType) setEvent(res.eventType);
 
     if (cloud?.eventName) setEventName(cloud.eventName);
     if (cloud?.gameId) setGameId(cloud.gameId);
@@ -7420,7 +7532,8 @@ function App() {
   else if (screen === "nameEvent") content = <ScreenNameEvent T={T} eventId={event} eventName={eventName} setEventName={setEventName}
     onNext={() => setScreen(event === "bach" ? "slideshow" : "bachHome")} onBack={() => setScreen("event")}/>;
   else if (screen === "slideshow") content = <ScreenSlideshow T={T} slides={BACH_SLIDES} eventName={eventName} onDone={() => setScreen("bachHome")}/>;
-  else if (screen === "bachHome") content = <ScreenBachHome T={T} onNav={nav} user={{ name }} eventName={eventName} eventId={event} onLogout={reset}/>;
+  else if (screen === "bachHome") content = <ScreenBachHome T={T} onNav={nav} user={{ name }} eventName={eventName} eventId={event} onLogout={reset}
+    purchasedEvents={authSession?.purchasedEvents?.length ? authSession.purchasedEvents : (event ? [event] : [])}/>;
   else if (screen === "qrjoin") content = <ScreenQRJoin T={T} onBack={() => setScreen("bachHome")}/>;
   else if (screen === "checklist") content = <ScreenChecklist T={T} onBack={() => setScreen("bachHome")} eventId={event}/>;
   else if (screen === "playlist") content = <ScreenPlaylist T={T} onBack={() => setScreen("bachHome")}/>;
@@ -7436,13 +7549,22 @@ function App() {
   }
   else if (screen === "comingSoon") content = <ScreenComingSoon T={T} eventId={event} onBack={() => setScreen("event")}/>;
   else if (screen === "helpCenter") content = <ScreenHelpCenter T={T} onBack={() => setScreen("bachHome")}/>;
+  // buyMore is only rendered when the buy-more feature is enabled; otherwise nothing
+  // in the UI can navigate there. Kept behind the flag so URL/hash tricks can't reach
+  // an unfinished screen either.
+  else if (screen === "buyMore" && BUY_MORE_ENABLED) content = <ScreenBuyMore T={T}
+    onBack={() => setScreen("bachHome")}
+    purchasedEvents={authSession?.purchasedEvents || (event ? [event] : [])}
+    username={authSession?.username}
+    email={authSession?.email}
+  />;
   else if (screen === "groomMode") content = <ScreenGroomMode T={T} data={groomData} onSent={() => {}}/>;
   else if (screen === "participant") content = <ScreenParticipant T={T} code={participantCode}
     onLeave={() => { setParticipantCode(""); setScreen("login"); }}/>;
 
   // Which screens should the floating BottomNav appear on?
   // Excluded: onboarding, login, in-game (each game screen owns its full surface).
-  const BOTTOM_NAV_SCREENS = new Set(["bachHome", "checklist", "playlist", "budget", "games", "helpCenter", "qrjoin"]);
+  const BOTTOM_NAV_SCREENS = new Set(["bachHome", "checklist", "playlist", "budget", "games", "helpCenter", "qrjoin", "buyMore"]);
   const showBottomNav = BOTTOM_NAV_SCREENS.has(screen);
   const bottomNavCurrent = screen === "helpCenter" ? "help" : "home";
 
