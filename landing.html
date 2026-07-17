@@ -240,6 +240,49 @@
   }
   .scr-h-dark::after { background: rgba(234,160,186,0.2); }
 
+  /* Clean white app header (mirrors ScreenBachHome/MockupHome in the app) */
+  .scr-h-white {
+    padding: 4px 2px 0; margin: -6px -8px 0;
+  }
+  .brand-mini { display: inline-flex; align-items: center; gap: 5px; }
+  .brand-mini-mark {
+    width: 22px; height: 22px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--orange), var(--pink-deep));
+    color: #fff; font-family: "Heebo", sans-serif;
+    font-weight: 900; font-size: 13px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-mini-text {
+    font-family: "Heebo", sans-serif;
+    font-size: 13px; font-weight: 900; letter-spacing: -0.3px;
+    background: linear-gradient(110deg, var(--orange), var(--pink-deep));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .avatar-mini-solid {
+    width: 26px; height: 26px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+    color: #fff; font-weight: 900; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px -4px rgba(232,81,42,0.4);
+  }
+  .welcome-block { margin: 10px 0 4px; }
+  .h-eyebrow {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: "Heebo", sans-serif;
+    font-size: 9.5px; font-weight: 800;
+    color: var(--ink-3); letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .h-eyebrow-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--orange); }
+  .h-event-title {
+    font-family: "Heebo", sans-serif;
+    font-size: 16px; font-weight: 900;
+    color: var(--ink); letter-spacing: -0.4px;
+    margin-top: 3px; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
   .row    { display: flex; align-items: center; gap: 8px; position: relative; }
   .row-sb { display: flex; align-items: center; justify-content: space-between; position: relative; }
 
@@ -1458,7 +1501,7 @@
       </div>
     </div>
 
-    <!-- Mockup: Home (mirrors MockupHome from app) -->
+    <!-- Mockup: Home (mirrors ScreenBachHome / MockupHome from app) -->
     <div class="phone-wrap phone-wrap-tilt">
       <div class="phone phone-tilt phone-float">
         <div class="phone-status">
@@ -1466,23 +1509,23 @@
           <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
         </div>
         <div class="phone-body">
-          <div class="scr-h-orange">
-            <div class="row">
-              <div class="avatar-mini">מ</div>
-              <div style="flex:1;min-width:0;">
-                <div class="h-greeting">היי מאיה, מארחת</div>
-                <div class="h-event-name">הרווקות של מאיה</div>
+          <div class="scr-h-white">
+            <div class="row-sb">
+              <div class="brand-mini">
+                <div class="brand-mini-mark">V</div>
+                <div class="brand-mini-text">VibeIT</div>
               </div>
-              <div style="display:flex;gap:5px;">
-                <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.7 2.7 0 0 1 5.4 0c0 1.6-2.7 2-2.7 3.6"/><circle cx="12" cy="17" r="0.9" fill="#fff" stroke="none"/></svg></div>
-                <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11l8.5-7.5L20.5 11M5.5 9.5V20h13V9.5"/></svg></div>
-              </div>
+              <div class="avatar-mini-solid">מ</div>
+            </div>
+            <div class="welcome-block">
+              <div class="h-eyebrow"><span class="h-eyebrow-dot"></span>היי מאיה, מארחת</div>
+              <div class="h-event-title">הרווקות של מאיה</div>
             </div>
           </div>
 
-          <div class="pink-note">
+          <div class="pink-note" style="margin-top:10px;">
             <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
-            <div class="pink-note-text">הכלים האלה גלויים <b>רק לך כמארחת</b></div>
+            <div class="pink-note-text">הכלים גלויים <b>רק לך כמארחת</b></div>
           </div>
 
           <div class="toolbox-heading">
@@ -1619,18 +1662,22 @@
 
           <!-- SLIDE 1 — Home / Tools -->
           <div class="slide-screen">
-            <div class="scr-h-orange">
-              <div class="row">
-                <div class="avatar-mini">מ</div>
-                <div style="flex:1;min-width:0;">
-                  <div class="h-greeting">היי מאיה, מארחת</div>
-                  <div class="h-event-name">הרווקות של מאיה</div>
+            <div class="scr-h-white">
+              <div class="row-sb">
+                <div class="brand-mini">
+                  <div class="brand-mini-mark">V</div>
+                  <div class="brand-mini-text">VibeIT</div>
                 </div>
-                <div style="display:flex;gap:5px;">
-                  <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.5a2.7 2.7 0 0 1 5.4 0c0 1.6-2.7 2-2.7 3.6"/><circle cx="12" cy="17" r="0.9" fill="#fff" stroke="none"/></svg></div>
-                  <div class="header-icon-btn"><svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11l8.5-7.5L20.5 11M5.5 9.5V20h13V9.5"/></svg></div>
-                </div>
+                <div class="avatar-mini-solid">מ</div>
               </div>
+              <div class="welcome-block">
+                <div class="h-eyebrow"><span class="h-eyebrow-dot"></span>היי מאיה, מארחת</div>
+                <div class="h-event-title">הרווקות של מאיה</div>
+              </div>
+            </div>
+            <div class="pink-note" style="margin-top:8px;">
+              <svg class="ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+              <div class="pink-note-text">הכלים גלויים <b>רק לך כמארחת</b></div>
             </div>
             <div class="toolbox-heading" style="margin-top:8px;">
               <div class="toolbox-stripe"></div>
@@ -1702,11 +1749,11 @@
           <div style="display:flex;flex-direction:column;gap:5px;margin-top:7px;">
             <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">פתיחת קבוצה של המארגנות והחוגגת</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">פתיחת קבוצה של המלוות והכלה</div>
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;background:var(--orange);display:flex;align-items:center;justify-content:center;"><svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">סיעור מוחות עם החוגגת</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--orange-deep);text-decoration:line-through;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">סיעור מוחות עם הכלה</div>
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
@@ -1718,99 +1765,132 @@
             </div>
             <div style="display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;">
               <div style="width:16px;height:16px;border-radius:4px;border:1.5px solid #DBD6D1;"></div>
-              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">אופציות לתאריכים מהחוגגת</div>
+              <div style="flex:1;font-size:11.5px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">אופציות לתאריכים מהכלה</div>
             </div>
           </div>
             <div class="slide-label">צ'קליסט</div>
           </div>
 
-          <!-- SLIDE 3 — Budget -->
+          <!-- SLIDE 3 — Budget (mirrors ScreenBudget / MockupBudget from app) -->
           <div class="slide-screen">
             <div class="scr-h-orange">
               <div class="row-sb">
                 <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
-                <div style="font-size:12px;font-weight:800;color:#fff;">תקציב המסיבה</div>
+                <div style="font-size:12px;font-weight:800;color:#fff;">תקציב</div>
                 <div style="width:14px;"></div>
               </div>
-              <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:flex-end;">
+              <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;position:relative;">
                 <div>
                   <div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.88);letter-spacing:0.4px;">סך הוצאות</div>
                   <div class="num" style="font-size:24px;font-weight:800;color:#fff;line-height:1;margin-top:2px;">₪6,650</div>
                 </div>
-                <div style="padding:3px 10px;border-radius:999px;background:#1A1A1A;color:#fff;font-size:11px;font-weight:800;">8 משתתפות</div>
+                <div style="text-align:left;">
+                  <div style="font-size:9.5px;font-weight:700;color:rgba(255,255,255,0.88);">חסר לאסוף</div>
+                  <div class="num" style="display:inline-block;margin-top:2px;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,0.25);color:#fff;font-size:12px;font-weight:800;">₪3,880</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:5px;margin-top:6px;position:relative;">
+                <div style="flex:1;padding:5px 8px;border-radius:7px;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.3);color:#fff;">
+                  <div style="font-size:9px;font-weight:700;opacity:0.92;">חלוקה ל-12</div>
+                  <div class="num" style="font-size:13px;font-weight:800;margin-top:1px;">₪554</div>
+                </div>
+                <div style="flex:1;padding:5px 8px;border-radius:7px;background:var(--pink);color:#1A1A1A;">
+                  <div style="font-size:9px;font-weight:700;opacity:0.8;">נאספו</div>
+                  <div class="num" style="font-size:13px;font-weight:800;margin-top:1px;">₪2,770</div>
+                </div>
               </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-size:12px;font-weight:800;">צילום</div>
-                  <div style="font-size:10px;color:var(--ink-3);">דנה הוסיפה</div>
-                </div>
-                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪1,200</div>
-              </div>
-              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-size:12px;font-weight:800;">קייטרינג</div>
-                  <div style="font-size:10px;color:var(--ink-3);">משתנה — ₪/אדם</div>
-                </div>
-                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪3,200</div>
-              </div>
-              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-size:12px;font-weight:800;">עיצוב + ערכות</div>
-                  <div style="font-size:10px;color:var(--ink-3);">קבוע</div>
-                </div>
-                <div class="num" style="font-size:13px;font-weight:800;color:var(--orange-deep);">₪900</div>
-              </div>
+
+            <!-- tabs -->
+            <div style="display:flex;gap:3px;padding:3px;background:var(--bg-alt);border-radius:10px;margin-top:2px;">
+              <div style="flex:1;font-size:11px;font-weight:800;padding:5px 0;text-align:center;background:#fff;color:var(--ink);border-radius:7px;box-shadow:0 1px 2px rgba(15,14,13,0.06);">סיכום</div>
+              <div style="flex:1;font-size:11px;font-weight:700;padding:5px 0;text-align:center;color:var(--ink-3);">הוצאות</div>
+              <div style="flex:1;font-size:11px;font-weight:700;padding:5px 0;text-align:center;color:var(--ink-3);">משתתפות</div>
             </div>
-            <div style="margin-top:9px;background:var(--orange);color:#fff;border-radius:10px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-size:11px;font-weight:700;opacity:0.95;">לאסוף מכל משתתפת</div>
-              <div class="num" style="font-size:15px;font-weight:900;">₪831</div>
+
+            <div style="margin-top:8px;font-size:11.5px;font-weight:800;color:var(--ink);">פירוט לפי קטגוריה</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-top:5px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--ink-2);">
+                  <span>לוקיישן</span><span class="num">₪2,500</span>
+                </div>
+                <div style="margin-top:3px;height:3.5px;background:var(--bg-alt);border-radius:999px;overflow:hidden;">
+                  <div style="width:38%;height:100%;background:var(--orange);border-radius:999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--ink-2);">
+                  <span>אטרקציה</span><span class="num">₪1,800</span>
+                </div>
+                <div style="margin-top:3px;height:3.5px;background:var(--bg-alt);border-radius:999px;overflow:hidden;">
+                  <div style="width:27%;height:100%;background:var(--orange);border-radius:999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--ink-2);">
+                  <span>אוכל</span><span class="num">₪1,500</span>
+                </div>
+                <div style="margin-top:3px;height:3.5px;background:var(--bg-alt);border-radius:999px;overflow:hidden;">
+                  <div style="width:23%;height:100%;background:var(--orange);border-radius:999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--ink-2);">
+                  <span>אלכוהול</span><span class="num">₪400</span>
+                </div>
+                <div style="margin-top:3px;height:3.5px;background:var(--bg-alt);border-radius:999px;overflow:hidden;">
+                  <div style="width:6%;height:100%;background:var(--orange);border-radius:999px;"></div>
+                </div>
+              </div>
             </div>
             <div class="slide-label">תקציב חי</div>
           </div>
 
-          <!-- SLIDE 4 — Games -->
+          <!-- SLIDE 4 — Games (mirrors ScreenGamesHub / MockupGames from app) -->
           <div class="slide-screen">
-            <div class="scr-h-orange">
+            <div class="scr-h-pink">
               <div class="row-sb">
-                <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
-                <div style="font-size:12px;font-weight:800;color:#fff;">המשחקים שלך</div>
+                <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+                <div style="font-size:12px;font-weight:800;color:#1A1A1A;">משחקים</div>
                 <div style="width:14px;"></div>
               </div>
+              <div style="margin-top:5px;position:relative;">
+                <div style="font-size:15px;font-weight:900;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.1;">במה משחקים?</div>
+                <div style="font-size:10px;color:rgba(26,26,26,0.78);font-weight:600;margin-top:2px;">כל משחק אפשר להקרין למסך גדול</div>
+              </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-              <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.2);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">01</div>
-                <div style="flex:1;">
-                  <div style="font-size:12px;font-weight:800;">מפה לאוזן</div>
-                  <div style="font-size:10px;color:var(--ink-3);">קריאת שפתיים בזוגות</div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:var(--orange-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C73E1C" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">מפה לאוזן</div>
+                  <div style="font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">קריאת שפתיים בזוג</div>
                 </div>
-                <div style="font-size:11px;font-weight:800;color:var(--orange-deep);background:#fff;padding:3px 7px;border-radius:999px;">⏱</div>
+                <svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
               </div>
-              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#1A1A1A;font-weight:800;font-size:11px;">02</div>
-                <div style="flex:1;">
-                  <div style="font-size:12px;font-weight:800;">בלי לומר מילה</div>
-                  <div style="font-size:10px;color:var(--ink-3);">פנטומימה — אנרגיה גבוהה</div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:var(--pink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">בלי לומר מילה</div>
+                  <div style="font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">פנטומימה על מילים</div>
                 </div>
-                <div style="font-size:11px;font-weight:800;color:var(--pink-deep);background:var(--pink-soft);padding:3px 7px;border-radius:999px;">⏱</div>
+                <svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
               </div>
-              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">03</div>
-                <div style="flex:1;">
-                  <div style="font-size:12px;font-weight:800;">שאלון עם החתן</div>
-                  <div style="font-size:10px;color:var(--ink-3);">משתף את החתן בווטסאפ</div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:var(--orange-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C73E1C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="10.5" r="2.5"/><path d="M3 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5"/><path d="M13.5 20c0-2.2 2-3.5 4-3.5s3.5 1.3 3.5 3.5"/></svg></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">שאלון עם החתן</div>
+                  <div style="font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">כמה הוא מכיר אותך?</div>
                 </div>
-                <div style="font-size:11px;font-weight:800;color:#fff;background:var(--ink);padding:3px 7px;border-radius:999px;">💬</div>
+                <svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
               </div>
-              <div style="background:var(--pink-soft);border:1px solid rgba(199,94,130,0.25);border-right:3px solid var(--pink);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-                <div style="width:28px;height:28px;border-radius:8px;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;">04</div>
-                <div style="flex:1;">
-                  <div style="font-size:12px;font-weight:800;">חידון על החוגגת</div>
-                  <div style="font-size:10px;color:var(--pink-deep);">חי עם הבנות מהטלפון</div>
+              <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 9px;display:flex;align-items:center;gap:8px;">
+                <div style="width:28px;height:28px;border-radius:7px;background:var(--pink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.7L12 16.9l-5.2 2.6 1-5.7L3.5 9.7l5.9-.9L12 3.5z"/></svg></div>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">חידון על הכלה</div>
+                  <div style="font-size:10px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">מי מכירה הכי טוב?</div>
                 </div>
-                <div style="font-size:11px;font-weight:800;color:#fff;background:var(--pink-deep);padding:3px 7px;border-radius:999px;">📱</div>
+                <svg class="ic" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
               </div>
             </div>
             <div class="slide-label">משחקים</div>
@@ -1886,63 +1966,66 @@
           <span style="display:flex;gap:5px;align-items:center;"><span class="signal"></span><span class="batt"></span></span>
         </div>
         <div class="phone-body">
-          <div class="scr-h-orange">
+          <div class="scr-h-pink">
             <div class="row-sb">
-              <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
-              <div style="font-size:12px;font-weight:800;color:#fff;">בחירת משחק</div>
+              <svg class="ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round"><path d="M9.5 6l6 6-6 6"/></svg>
+              <div style="font-size:12px;font-weight:800;color:#1A1A1A;">משחקים</div>
               <div style="width:14px;"></div>
             </div>
-            <div style="margin-top:4px;font-size:10px;color:rgba(255,255,255,0.85);font-weight:600;">הרווקות של מאיה · 6 משחקים מוכנים</div>
+            <div style="margin-top:5px;position:relative;">
+              <div style="font-size:16px;font-weight:900;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.1;">במה משחקים?</div>
+              <div style="font-size:10.5px;color:rgba(26,26,26,0.78);font-weight:600;margin-top:2px;">כל משחק אפשר להקרין למסך גדול</div>
+            </div>
           </div>
 
           <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-            <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.22);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">01</div>
-              <div style="flex:1;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C73E1C" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg></div>
+              <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">מפה לאוזן</div>
-                <div style="font-size:9.5px;color:var(--ink-3);">קריאת שפתיים · טיימר</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">קריאת שפתיים בזוג</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:var(--orange-deep);background:#fff;padding:3px 7px;border-radius:999px;">⏱ 60ש'</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
-            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink);display:flex;align-items:center;justify-content:center;color:#1A1A1A;font-weight:900;font-size:11px;">02</div>
-              <div style="flex:1;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg></div>
+              <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">בלי לומר מילה</div>
-                <div style="font-size:9.5px;color:var(--ink-3);">פנטומימה · אנרגיה גבוהה</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">פנטומימה על מילים</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:var(--pink-deep);background:var(--pink-soft);padding:3px 7px;border-radius:999px;">⏱ 45ש'</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
-            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">03</div>
-              <div style="flex:1;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C73E1C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="10.5" r="2.5"/><path d="M3 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5"/><path d="M13.5 20c0-2.2 2-3.5 4-3.5s3.5 1.3 3.5 3.5"/></svg></div>
+              <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">שאלון עם החתן</div>
-                <div style="font-size:9.5px;color:var(--ink-3);">משתף את החתן בווטסאפ</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">כמה הוא מכיר אותך?</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--ink);padding:3px 7px;border-radius:999px;">💬</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
-            <div style="background:var(--pink-soft);border:1px solid rgba(199,94,130,0.25);border-right:3px solid var(--pink);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">04</div>
-              <div style="flex:1;">
-                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">חידון על החוגגת</div>
-                <div style="font-size:9.5px;color:var(--pink-deep);">חי · 20ש' לשאלה</div>
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.7L12 16.9l-5.2 2.6 1-5.7L3.5 9.7l5.9-.9L12 3.5z"/></svg></div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">חידון על הכלה</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">מי מכירה הכי טוב?</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--pink-deep);padding:3px 7px;border-radius:999px;">📱</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
-            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange-deep);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">05</div>
-              <div style="flex:1;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C73E1C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="10.5" r="2.5"/><path d="M3 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5"/><path d="M13.5 20c0-2.2 2-3.5 4-3.5s3.5 1.3 3.5 3.5"/></svg></div>
+              <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">Never Have I Ever</div>
-                <div style="font-size:9.5px;color:var(--ink-3);">הקלאסיקה · עם/בלי שתייה</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">משחק שתייה</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--orange-deep);padding:3px 7px;border-radius:999px;">🥂</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
-            <div style="background:var(--orange-soft);border:1px solid rgba(232,81,42,0.22);border-right:3px solid var(--orange);border-radius:9px;padding:8px 10px;display:flex;align-items:center;gap:9px;">
-              <div style="width:30px;height:30px;border-radius:8px;background:var(--orange);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:11px;">06</div>
-              <div style="flex:1;">
+            <div style="background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;display:flex;align-items:center;gap:9px;">
+              <div style="width:30px;height:30px;border-radius:8px;background:var(--pink-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg class="ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C75E82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="4"/><path d="M8 15l4 5 4-5"/></svg></div>
+              <div style="flex:1;min-width:0;">
                 <div style="font-size:12px;font-weight:800;letter-spacing:-0.2px;">Fuck Marry Kill</div>
-                <div style="font-size:9.5px;color:var(--orange-deep);">הצבעה חיה · תוצאות בזמן אמת</div>
+                <div style="font-size:9.5px;color:var(--ink-3);">3 אופציות, החלטה אחת</div>
               </div>
-              <div style="font-size:10px;font-weight:800;color:#fff;background:var(--orange);padding:3px 7px;border-radius:999px;">📱</div>
+              <svg class="ic" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A7A39F" stroke-width="1.7" stroke-linecap="round"><path d="M14.5 6l-6 6 6 6"/></svg>
             </div>
           </div>
         </div>
