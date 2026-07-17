@@ -1158,22 +1158,6 @@ function ScreenLogin({ T, onSuccess, prefillUsername }) {
           {busy ? "מתחברת..." : "כניסה ל-VibeIT"}
         </Btn>
 
-        {/* Preview-mode entry — internal showcase link, no login required */}
-        <button onClick={() => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("preview", "events");
-          window.location.href = url.toString();
-        }} style={{
-          marginTop: 10, padding: "10px 14px",
-          background: "transparent", border: `1.5px dashed ${T.lineStrong || "#D4D0CC"}`,
-          borderRadius: 12, cursor: "pointer", fontFamily: T.font,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          fontSize: 13, fontWeight: 700, color: T.inkSoft, width: "100%",
-        }}>
-          <Icon name="sparkle" size={14} color={T.inkSoft} w={1.6}/>
-          תצוגה מקדימה — לעבור בין סוגי אירוע
-        </button>
-
         {/* Soft help note at the very bottom — matches the other onboarding screens' tone */}
         <div style={{ marginTop: 12, padding: "10px 14px",
           background: T.surfaceAlt, borderRadius: 12,
@@ -2504,6 +2488,39 @@ function MiniTopBar({ T, title, dark }) {
 }
 
 /* ───── Mockup 1: Bach home (intro slide) ───── */
+// Reusable BottomNav visualization for mockups — matches the real floating pill nav
+function MiniBottomNav({ activeIdx = 1, canGoBack = false, accent = PB.orange }) {
+  const items = [
+    { icon: "chevR", label: "חזור" },
+    { icon: "home",  label: "בית" },
+    { icon: "help",  label: "עזרה" },
+  ];
+  return (
+    <div style={{ marginTop: 5, padding: 1.5,
+      background: "#fff", borderRadius: 7,
+      boxShadow: "0 3px 8px -3px rgba(15,14,13,0.20)",
+      border: "1px solid rgba(15,14,13,0.06)",
+      display: "flex", alignItems: "stretch",
+    }}>
+      {items.map((it, i) => {
+        const active = i === activeIdx;
+        const disabled = i === 0 && !canGoBack;
+        return (
+          <div key={i} style={{ flex: 1, padding: "2.5px 0", borderRadius: 4.5,
+            background: active ? "#F4F1ED" : "transparent",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5,
+            opacity: disabled ? 0.35 : 1,
+          }}>
+            <Icon name={it.icon} size={8} color={active ? accent.main : "#1A1A1A"} w={active ? 2 : 1.6}/>
+            <span style={{ fontSize: 4.5, fontWeight: active ? 800 : 700,
+              color: active ? accent.main : "#1A1A1A" }}>{it.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function MockupHome({ T }) {
   const cats = [
     { t: "צ'קליסט", s: "ארגון המסיבה", badge: "5/30", icon: "list", p: PB.orange },
@@ -2513,87 +2530,90 @@ function MockupHome({ T }) {
   ];
   return (
     <PhoneMockup T={T}>
-      {/* Orange gradient header */}
-      <div style={{
-        background: `linear-gradient(160deg, ${PB.orange.main} 0%, #F0683E 70%, #E8512A 100%)`,
-        margin: "-6px -6px 7px", padding: "7px 8px 8px", borderRadius: "0 0 10px 10px",
-        color: "#fff", position: "relative", overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
-          borderRadius: "50%", background: "rgba(255,255,255,0.12)", pointerEvents: "none" }}/>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
-          <div style={{ width: 18, height: 18, borderRadius: 999,
-            background: "rgba(255,255,255,0.22)", border: "1px solid rgba(255,255,255,0.45)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 8, fontWeight: 800, color: "#fff" }}>מ</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 6, color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>היי מאיה, מארחת</div>
-            <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: -0.1, color: "#fff" }}>הרווקות של מאיה</div>
-          </div>
-          <div style={{ display: "flex", gap: 3 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="help" size={8} color="#fff" w={1.5}/>
-            </div>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.18)",
-              border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name="home" size={8} color="#fff" w={1.5}/>
-            </div>
-          </div>
+      {/* Clean white header — BrandLogo on right, avatar dropdown on left (RTL) */}
+      <div style={{ padding: "5px 2px 6px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <div style={{ width: 13, height: 13, borderRadius: 3.5,
+            background: `linear-gradient(135deg, ${PB.orange.main}, ${PB.pink.deep})`,
+            color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 8, fontWeight: 900, lineHeight: 1 }}>V</div>
+          <div style={{ fontSize: 8, fontWeight: 900, letterSpacing: -0.3,
+            background: `linear-gradient(110deg, ${PB.orange.main}, ${PB.pink.deep})`,
+            WebkitBackgroundClip: "text", backgroundClip: "text",
+            WebkitTextFillColor: "transparent", color: "transparent" }}>VibeIT</div>
+        </div>
+        <div style={{ width: 15, height: 15, borderRadius: 999,
+          background: `linear-gradient(135deg, ${PB.orange.main}, ${PB.orange.deep})`,
+          color: "#fff", fontSize: 8, fontWeight: 900, lineHeight: 1,
+          display: "flex", alignItems: "center", justifyContent: "center" }}>מ</div>
+      </div>
+
+      {/* Welcome + event name */}
+      <div style={{ margin: "3px 0 5px" }}>
+        <div style={{ fontSize: 5, fontWeight: 800, color: "#6B6764", letterSpacing: 0.5, textTransform: "uppercase",
+          display: "inline-flex", alignItems: "center", gap: 2 }}>
+          <span style={{ width: 2.5, height: 2.5, borderRadius: 999, background: PB.orange.main }}/>
+          היי מאיה, מארחת
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: -0.3, color: "#1A1A1A", marginTop: 1,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          הרווקות של מאיה
         </div>
       </div>
 
       {/* host-only note — pink-accented */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 6px",
-        background: PB.pink.soft, border: `1px solid ${PB.pink.main}44`, borderRadius: 6,
+      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 5px",
+        background: PB.pink.soft, border: `1px solid ${PB.pink.main}44`, borderRadius: 5,
         borderRight: `2px solid ${PB.pink.main}` }}>
-        <Icon name="lock" size={8} color={PB.pink.deep} w={1.5}/>
-        <div style={{ fontSize: 6, color: PB.pink.deep, fontWeight: 600, lineHeight: 1.3 }}>
-          הכלים האלה גלויים <b>רק לך כמארחת</b>
+        <Icon name="lock" size={7} color={PB.pink.deep} w={1.5}/>
+        <div style={{ fontSize: 5.5, color: PB.pink.deep, fontWeight: 600, lineHeight: 1.25 }}>
+          הכלים גלויים <b>רק לך כמארחת</b>
         </div>
       </div>
 
       {/* toolbox heading with orange stripe */}
-      <div style={{ marginTop: 7, marginBottom: 4, display: "flex", alignItems: "center", gap: 3 }}>
-        <div style={{ width: 2, height: 9, borderRadius: 1, background: PB.orange.main }}/>
-        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: -0.1 }}>ארגז הכלים שלך</div>
+      <div style={{ marginTop: 5, marginBottom: 3, display: "flex", alignItems: "center", gap: 3 }}>
+        <div style={{ width: 1.5, height: 8, borderRadius: 1, background: PB.orange.main }}/>
+        <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: -0.1 }}>ארגז הכלים שלך</div>
       </div>
 
       {/* toolbox grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, flex: 1 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, flex: 1 }}>
         {cats.map((c, i) => (
-          <div key={i} style={{ background: "#fff", border: T.border, borderRadius: 7, padding: 5,
+          <div key={i} style={{ background: "#fff", border: T.border, borderRadius: 6, padding: 4,
             display: "flex", flexDirection: "column", justifyContent: "space-between",
             position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", bottom: -14, left: -14, width: 32, height: 32,
+            <div style={{ position: "absolute", bottom: -12, left: -12, width: 28, height: 28,
               borderRadius: "50%", background: c.p.soft, opacity: 0.6, pointerEvents: "none" }}/>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
-              <div style={{ width: 16, height: 16, borderRadius: 4.5,
+              <div style={{ width: 13, height: 13, borderRadius: 3.5,
                 background: c.p.main, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon name={c.icon} size={9} color={c.p.on} w={1.6}/>
+                <Icon name={c.icon} size={7} color={c.p.on} w={1.6}/>
               </div>
-              <div style={{ fontSize: 6, fontWeight: 800, color: c.p.deep,
-                background: c.p.soft, padding: "1px 4px", borderRadius: 999 }}>{c.badge}</div>
+              <div style={{ fontSize: 5, fontWeight: 800, color: c.p.deep,
+                background: c.p.soft, padding: "0.5px 3px", borderRadius: 999 }}>{c.badge}</div>
             </div>
             <div style={{ position: "relative" }}>
-              <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: -0.1 }}>{c.t}</div>
-              <div style={{ fontSize: 6, color: "#6B6764", fontWeight: 600 }}>{c.s}</div>
+              <div style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: -0.1 }}>{c.t}</div>
+              <div style={{ fontSize: 5.5, color: "#6B6764", fontWeight: 600 }}>{c.s}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* black tip bar */}
-      <div style={{ marginTop: 5, padding: "4px 6px", background: "#1A1A1A", color: "#fff",
-        borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
-        <div style={{ width: 14, height: 14, borderRadius: 4, background: PB.orange.main,
+      <div style={{ marginTop: 4, padding: "3px 5px", background: "#1A1A1A", color: "#fff",
+        borderRadius: 5, display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ width: 12, height: 12, borderRadius: 3, background: PB.orange.main,
           display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="sparkle" size={8} color="#fff" w={1.6}/>
+          <Icon name="sparkle" size={7} color="#fff" w={1.6}/>
         </div>
-        <div style={{ flex: 1, fontSize: 6, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.3 }}>
+        <div style={{ flex: 1, fontSize: 5.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.3 }}>
           <b style={{ color: "#fff" }}>טיפ:</b> סדרי את הצ'קליסט שבוע מראש
         </div>
       </div>
+
+      <MiniBottomNav activeIdx={1} canGoBack={false} accent={PB.orange}/>
     </PhoneMockup>
   );
 }
@@ -2618,7 +2638,7 @@ function MockupChecklist({ T }) {
         <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
           borderRadius: "50%", background: "rgba(255,255,255,0.2)", pointerEvents: "none" }}/>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <Icon name="chevR" size={9} color="#1A1A1A" w={1.6}/>
+          <div style={{ width: 10 }}/>
           <div style={{ fontSize: 7, fontWeight: 800, color: "#1A1A1A" }}>צ'קליסט המארגנת</div>
           <div style={{ width: 10 }}/>
         </div>
@@ -2671,6 +2691,9 @@ function MockupChecklist({ T }) {
           </div>
         ))}
       </div>
+
+      <div style={{ flex: 1 }}/>
+      <MiniBottomNav activeIdx={1} canGoBack={true} accent={PB.orange}/>
     </PhoneMockup>
   );
 }
@@ -2688,7 +2711,7 @@ function MockupBudget({ T }) {
         <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
           borderRadius: "50%", background: "rgba(255,255,255,0.12)", pointerEvents: "none" }}/>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <Icon name="chevR" size={9} color="#fff" w={1.6}/>
+          <div style={{ width: 10 }}/>
           <div style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>תקציב</div>
           <div style={{ width: 10 }}/>
         </div>
@@ -2745,6 +2768,9 @@ function MockupBudget({ T }) {
           </div>
         ))}
       </div>
+
+      <div style={{ flex: 1 }}/>
+      <MiniBottomNav activeIdx={1} canGoBack={true} accent={PB.orange}/>
     </PhoneMockup>
   );
 }
@@ -2764,44 +2790,38 @@ function MockupPlaylist({ T }) {
         <div style={{ position: "absolute", bottom: -10, left: -8, width: 28, height: 28,
           borderRadius: "50%", background: `${PB.orange.main}22`, pointerEvents: "none" }}/>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <Icon name="chevR" size={9} color="#fff" w={1.6}/>
+          <div style={{ width: 10 }}/>
           <div style={{ fontSize: 7, fontWeight: 800, color: "#fff" }}>פלייליסט</div>
           <div style={{ width: 10 }}/>
         </div>
         <div style={{ marginTop: 4, position: "relative" }}>
           <div style={{ fontSize: 10.5, fontWeight: 800, color: "#fff", letterSpacing: -0.2, lineHeight: 1.1 }}>
-            הפלייליסט של VibeIT
+            הפלייליסטים של VibeIT
           </div>
           <div style={{ fontSize: 5.5, color: "rgba(255,255,255,0.78)", fontWeight: 600, marginTop: 1 }}>
-            נפתח בספוטיפיי בלחיצה אחת
+            3 מיקסים לוויב שאתן רוצות
           </div>
         </div>
       </div>
 
-      {/* Spotify big tap card */}
-      <div style={{ background: "#1DB954", borderRadius: 9, padding: 7, color: "#fff",
-        display: "flex", alignItems: "center", gap: 6,
-        boxShadow: "0 6px 14px -6px rgba(29,185,84,0.5)" }}>
-        <div style={{ width: 24, height: 24, borderRadius: 999, background: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="spotify" size={16}/>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 5.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.5, textTransform: "uppercase" }}>Spotify</div>
-          <div style={{ fontSize: 8.5, fontWeight: 800, marginTop: 1 }}>פתיחת הפלייליסט</div>
-        </div>
-        <Icon name="play" size={11} color="#fff"/>
-      </div>
-
-      {/* small orange info chip */}
-      <div style={{ marginTop: 5, padding: "4px 6px",
-        background: PB.orange.soft, border: `1px solid ${PB.orange.main}33`, borderRadius: 6,
-        borderRight: `2px solid ${PB.orange.main}`,
-        display: "flex", alignItems: "center", gap: 4 }}>
-        <Icon name="music" size={9} color={PB.orange.deep} w={1.5}/>
-        <div style={{ fontSize: 5.5, lineHeight: 1.35, color: PB.orange.deep, fontWeight: 600 }}>
-          פלייליסט מוכן מראש — לחיצה אחת ופותח בספוטיפיי
-        </div>
+      {/* Three Spotify cards — matches the real screen (מרימות / אמאא איזה שיר / נוסטלגיה מרימה) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {["מרימות", "אמאא איזה שיר!!", "נוסטלגיה מרימה"].map((name, i) => (
+          <div key={i} style={{ background: "#1DB954", borderRadius: 7, padding: "4px 6px", color: "#fff",
+            display: "flex", alignItems: "center", gap: 5,
+            boxShadow: "0 4px 10px -5px rgba(29,185,84,0.5)" }}>
+            <div style={{ width: 16, height: 16, borderRadius: 999, background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon name="spotify" size={11}/>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 4.5, fontWeight: 700, opacity: 0.88, letterSpacing: 0.4, textTransform: "uppercase" }}>Spotify</div>
+              <div style={{ fontSize: 7, fontWeight: 800, marginTop: 0.5, overflow: "hidden",
+                textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+            </div>
+            <Icon name="play" size={8} color="#fff"/>
+          </div>
+        ))}
       </div>
 
       <div style={{ flex: 1 }}/>
@@ -2809,14 +2829,16 @@ function MockupPlaylist({ T }) {
       {/* black branded tip */}
       <div style={{ padding: "4px 6px", background: "#1A1A1A", color: "#fff",
         borderRadius: 6, display: "flex", alignItems: "center", gap: 5 }}>
-        <div style={{ width: 14, height: 14, borderRadius: 4, background: PB.orange.main,
+        <div style={{ width: 12, height: 12, borderRadius: 3, background: PB.orange.main,
           display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="sparkle" size={8} color="#fff" w={1.6}/>
+          <Icon name="sparkle" size={7} color="#fff" w={1.6}/>
         </div>
         <div style={{ flex: 1, fontSize: 5.5, fontWeight: 500, color: "rgba(255,255,255,0.78)", lineHeight: 1.3 }}>
-          <b style={{ color: "#fff" }}>טיפ:</b> צרי פלייליסט לקראת האירוע
+          <b style={{ color: "#fff" }}>טיפ:</b> בחרו את הוויב שמתאים לרגע
         </div>
       </div>
+
+      <MiniBottomNav activeIdx={1} canGoBack={true} accent={PB.orange}/>
     </PhoneMockup>
   );
 }
@@ -2842,7 +2864,7 @@ function MockupGames({ T }) {
         <div style={{ position: "absolute", top: -8, right: -10, width: 30, height: 30,
           borderRadius: "50%", background: "rgba(255,255,255,0.2)", pointerEvents: "none" }}/>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-          <Icon name="chevR" size={9} color="#1A1A1A" w={1.6}/>
+          <div style={{ width: 10 }}/>
           <div style={{ fontSize: 7, fontWeight: 800, color: "#1A1A1A" }}>משחקים</div>
           <div style={{ width: 10 }}/>
         </div>
@@ -2873,6 +2895,9 @@ function MockupGames({ T }) {
           </div>
         ))}
       </div>
+
+      <div style={{ flex: 1 }}/>
+      <MiniBottomNav activeIdx={1} canGoBack={true} accent={PB.orange}/>
     </PhoneMockup>
   );
 }
