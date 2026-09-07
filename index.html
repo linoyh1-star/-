@@ -6318,6 +6318,27 @@ function CardGame({ T: parentT, game, onBack }) {
   const brideName = persistedState?.name || authSession?.fullName?.split(" ")[0] || "הכלה";
   const eventName = persistedState?.eventName || "";
 
+  // Firestore fallback for groomq: if localStorage has no answers but the user is logged in,
+  // pull from cloud. Covers the case where she loaded the link in one browser (which pushed to
+  // Firestore) and opens the game in another browser/device with an empty localStorage.
+  React.useEffect(() => {
+    if (game.id !== "groomq") return;
+    if (groomData?.a?.length) return; // already have local answers
+    if (!hostUsername) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cloud = await fbLoadAppState(hostUsername);
+        if (cancelled) return;
+        if (cloud?.groomAnswers?.a?.length) {
+          saveGroomAnswers(cloud.groomAnswers);
+          setGroomData(cloud.groomAnswers);
+        }
+      } catch (e) {}
+    })();
+    return () => { cancelled = true; };
+  }, [game.id, hostUsername]);
+
   React.useEffect(() => {
     if (!sessionCode) return;
     const off1 = fbSubscribeSession(sessionCode, setSessionDoc);
@@ -7399,7 +7420,13 @@ function App() {
       const data = b64Decode(hash.slice(8));
       if (data && Array.isArray(data.a)) {
         saveGroomAnswers(data);
-        setToast({ msg: "✓ תשובות החתן נטענו", type: "ok" });
+        // Also push straight to Firestore so cross-browser / PWA / in-app-webview cases
+        // never lose the answers to a stale localStorage. Fire-and-forget.
+        try {
+          const auth = loadAuthSession();
+          if (auth?.username) fbSaveAppState(auth.username, { groomAnswers: data });
+        } catch (e) {}
+        setToast({ msg: "✓ תשובות החתן נטענו — היכנסי למשחק 'שאלון עם החתן'", type: "ok", sticky: true });
         // clean URL so refresh doesn't re-trigger
         try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
       }
@@ -7471,12 +7498,32 @@ function App() {
     // We do NOT pre-load other localStorage fields here so a new buyer starts clean.
   }, []);
 
-  // auto-dismiss toast
+  // auto-dismiss toast (sticky toasts stay until user dismisses)
   React.useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.sticky) return;
     const t = setTimeout(() => setToast(null), 3800);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Also listen for hashchange — if the app is already open and the user pastes /
+  // taps a new #answers= link, the mount effect above won't re-run. This catches it.
+  React.useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash.startsWith("answers=")) return;
+      const data = b64Decode(hash.slice(8));
+      if (!data || !Array.isArray(data.a)) return;
+      saveGroomAnswers(data);
+      try {
+        const auth = loadAuthSession();
+        if (auth?.username) fbSaveAppState(auth.username, { groomAnswers: data });
+      } catch (e) {}
+      setToast({ msg: "✓ תשובות החתן נטענו — היכנסי למשחק 'שאלון עם החתן'", type: "ok", sticky: true });
+      try { history.replaceState(null, "", window.location.pathname); } catch (e) {}
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   // Firebase Auth state — UID for Firestore sync
   const [uid, setUid] = React.useState(null);
@@ -7668,19 +7715,32 @@ function App() {
           />
         )}
       </PhoneShell>
-      {/* Toast notification (groom answers loaded, etc.) */}
+      {/* Toast notification (groom answers loaded, etc.) — sticky toasts get a dismiss button */}
       {toast && (
         <div style={{
           position: "fixed", top: 28, left: "50%", transform: "translateX(-50%)",
           zIndex: 1100,
-          padding: "12px 22px",
-          background: "#1A1A1A", color: "#fff",
-          border: "none", borderRadius: 999,
+          maxWidth: "calc(100vw - 32px)",
+          display: "flex", alignItems: "center", gap: 12,
+          padding: toast.sticky ? "14px 16px 14px 20px" : "12px 22px",
+          background: toast.sticky ? PB.orange.main : "#1A1A1A", color: "#fff",
+          border: "none", borderRadius: toast.sticky ? 16 : 999,
           fontSize: 13.5, fontWeight: 700,
           boxShadow: "0 12px 32px -10px rgba(20,18,16,0.5)",
           fontFamily: '"Assistant", system-ui, sans-serif',
           animation: "screenIn 280ms ease-out",
-        }}>{toast.msg}</div>
+        }}>
+          <span style={{ flex: 1, lineHeight: 1.4 }}>{toast.msg}</span>
+          {toast.sticky && (
+            <button onClick={() => setToast(null)} aria-label="סגירה" style={{
+              flex: "0 0 auto",
+              width: 28, height: 28, borderRadius: 999,
+              background: "rgba(255,255,255,0.22)", color: "#fff",
+              border: "none", fontSize: 16, fontWeight: 800, lineHeight: 1,
+              cursor: "pointer",
+            }}>×</button>
+          )}
+        </div>
       )}
 
       {/* PREVIEW MODE — floating event switcher (?preview=events) */}
