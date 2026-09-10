@@ -370,30 +370,47 @@ const fbJoinSession = async (code, name, forcedId) => {
 
 // Returns true on a successful write, false on failure — so the caller can show a retry to
 // the participant instead of leaving her on the "נשלח!" screen with an answer that never landed.
+// Auto-retries up to 3 times with 500ms/1000ms backoff to swallow transient network drops
+// (spotty venue wifi, cellular flapping) before surfacing an error to the girl.
 const fbSubmitParticipantAnswer = async (code, participantId, qi, value) => {
   if (!FB || !code || !participantId) return false;
-  try {
-    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
-    // Firestore field-path update: answers.{qi} = value
-    await ref.update({ [`answers.${qi}`]: value, lastSubmitAt: Date.now() });
-    return true;
-  } catch (e) {
-    // If the doc has no answers map yet, the field-path update fails. Fall back to a set+merge.
+  const attempt = async () => {
     try {
       const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
-      await ref.set({ answers: { [qi]: value }, lastSubmitAt: Date.now() }, { merge: true });
+      await ref.update({ [`answers.${qi}`]: value, lastSubmitAt: Date.now() });
       return true;
-    } catch (e2) { console.error("[FS] submit answer failed:", e2); return false; }
+    } catch (e) {
+      // If the doc has no answers map yet, the field-path update fails. Fall back to a set+merge.
+      try {
+        const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+        await ref.set({ answers: { [qi]: value }, lastSubmitAt: Date.now() }, { merge: true });
+        return true;
+      } catch (e2) { return false; }
+    }
+  };
+  for (let i = 0; i < 3; i++) {
+    if (await attempt()) return true;
+    if (i < 2) await new Promise(r => setTimeout(r, 500 * (i + 1)));
   }
+  console.error("[FS] submit answer failed after 3 retries");
+  return false;
 };
 
 // FMK votes: { 0: 'F', 1: 'M', 2: 'K' } for the three options on a card.
+// Same 3-retry policy as answer submits to survive spotty venue wifi.
 const fbSubmitParticipantVotes = async (code, participantId, qi, votes) => {
-  if (!FB || !code || !participantId) return;
-  try {
-    const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
-    await ref.set({ votes: { [qi]: votes }, lastSubmitAt: Date.now() }, { merge: true });
-  } catch (e) { console.error("[FS] submit votes failed:", e); }
+  if (!FB || !code || !participantId) return false;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
+      await ref.set({ votes: { [qi]: votes }, lastSubmitAt: Date.now() }, { merge: true });
+      return true;
+    } catch (e) {
+      if (i === 2) console.error("[FS] submit votes failed after 3 retries:", e);
+      if (i < 2) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+    }
+  }
+  return false;
 };
 
 // True-Lie: each participant submits a true and a false story (text). Host cycles through
