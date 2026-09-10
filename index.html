@@ -348,29 +348,42 @@ const fbUpdateSession = async (code, updates) => {
 };
 
 // Participants — joining the session and submitting answers.
-const fbJoinSession = async (code, name) => {
+// `forcedId` lets the caller pass a previously-stored id so a refresh in the same browser
+// reuses the exact same participant document instead of showing up as a phantom duplicate.
+const fbJoinSession = async (code, name, forcedId) => {
   if (!FB || !code || !name) return null;
   try {
-    // Use the trimmed name as the doc id so a refresh by the same person reuses the slot.
-    const participantId = name.trim().slice(0, 40);
+    // Same-name collision used to silently overwrite the other girl's answers, because the
+    // doc id was just the trimmed name. Now every join gets its own id — `{safeName}-{rand}` —
+    // and we hand it back to the caller to remember for refresh persistence.
+    let participantId = forcedId;
+    if (!participantId) {
+      const rand = Math.random().toString(36).slice(2, 6);
+      const safeName = name.trim().slice(0, 30).replace(/[\/\.\[\]#$\s]+/g, "_");
+      participantId = `${safeName || "guest"}-${rand}`;
+    }
     const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
     await ref.set({ name: name.trim(), joinedAt: Date.now() }, { merge: true });
     return participantId;
   } catch (e) { console.error("[FS] join session failed:", e); return null; }
 };
 
+// Returns true on a successful write, false on failure — so the caller can show a retry to
+// the participant instead of leaving her on the "נשלח!" screen with an answer that never landed.
 const fbSubmitParticipantAnswer = async (code, participantId, qi, value) => {
-  if (!FB || !code || !participantId) return;
+  if (!FB || !code || !participantId) return false;
   try {
     const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
     // Firestore field-path update: answers.{qi} = value
     await ref.update({ [`answers.${qi}`]: value, lastSubmitAt: Date.now() });
+    return true;
   } catch (e) {
     // If the doc has no answers map yet, the field-path update fails. Fall back to a set+merge.
     try {
       const ref = FB.db.collection(SESSION_COLLECTION).doc(code).collection("participants").doc(participantId);
       await ref.set({ answers: { [qi]: value }, lastSubmitAt: Date.now() }, { merge: true });
-    } catch (e2) { console.error("[FS] submit answer failed:", e2); }
+      return true;
+    } catch (e2) { console.error("[FS] submit answer failed:", e2); return false; }
   }
 };
 
@@ -1698,6 +1711,8 @@ function ScreenParticipant({ T, code, onLeave }) {
   const [joinError, setJoinError] = React.useState(false);
   const [currentAnswer, setCurrentAnswer] = React.useState("");
   const [submitted, setSubmitted] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState(false);
+  const submitBtnRef = React.useRef(null);
   // True-Lie specific state
   const [tlTrueStory, setTlTrueStory] = React.useState("");
   const [tlFalseStory, setTlFalseStory] = React.useState("");
@@ -1719,6 +1734,7 @@ function ScreenParticipant({ T, code, onLeave }) {
   React.useEffect(() => {
     setSubmitted(false);
     setCurrentAnswer("");
+    setSubmitError(false);
   }, [session?.currentQi, session?.state]);
 
   const join = async () => {
@@ -1726,10 +1742,17 @@ function ScreenParticipant({ T, code, onLeave }) {
     setJoining(true);
     setJoinError(false);
     try {
-      const id = await fbJoinSession(code, name);
+      // Reuse the id from a previous join in this browser for this session code so a refresh
+      // doesn't create a phantom duplicate participant with a fresh random suffix.
+      let prevId = null;
+      try { prevId = localStorage.getItem(`chogegot_participant_id_${code}`); } catch (e) {}
+      const id = await fbJoinSession(code, name, prevId);
       if (id) {
         setParticipantId(id);
         try { localStorage.setItem(PARTICIPANT_NAME_KEY, name.trim()); } catch (e) {}
+        try { localStorage.setItem(`chogegot_participant_id_${code}`, id); } catch (e) {}
+      } else {
+        setJoinError(true);
       }
     } catch (e) {
       setJoinError(true);
@@ -1738,11 +1761,14 @@ function ScreenParticipant({ T, code, onLeave }) {
 
   const submitAnswer = async () => {
     if (!currentAnswer.trim() || !participantId || submitted) return;
+    setSubmitError(false);
     setSubmitted(true);
-    try {
-      await fbSubmitParticipantAnswer(code, participantId, session.currentQi, currentAnswer.trim());
-    } catch (e) {
+    const ok = await fbSubmitParticipantAnswer(code, participantId, session.currentQi, currentAnswer.trim());
+    if (!ok) {
+      // Silent failure used to leave the girl on the "נשלח!" screen with an answer that never
+      // reached the bride. Now the input reappears with a clear retry message.
       setSubmitted(false);
+      setSubmitError(true);
     }
   };
 
@@ -2049,9 +2075,21 @@ function ScreenParticipant({ T, code, onLeave }) {
             </div>
           ) : (
             <>
+              {submitError && (
+                <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12,
+                  background: PB.orange.soft, color: PB.orange.deep, border: `1px solid ${PB.orange.main}55`,
+                  fontSize: 13, fontWeight: 700, textAlign: "center" }}>
+                  התשובה לא נשלחה. בדקי חיבור ולחצי שוב.
+                </div>
+              )}
               <textarea value={currentAnswer} onChange={e => setCurrentAnswer(e.target.value)}
                 placeholder="התשובה שלך..." rows={3}
-                onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 350)}
+                onFocus={e => setTimeout(() => {
+                  // Scroll the SEND button (not the textarea) into view so it stays visible
+                  // above the iOS keyboard. Fallback to the textarea if the ref isn't ready.
+                  const target = submitBtnRef.current || e.target;
+                  try { target.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (er) {}
+                }, 350)}
                 style={{
                   width: "100%", padding: "14px 16px", borderRadius: 13,
                   background: T.surfaceAlt, boxShadow: `inset 0 0 0 1.5px ${currentAnswer ? PB.pink.main : T.line}`,
@@ -2059,9 +2097,11 @@ function ScreenParticipant({ T, code, onLeave }) {
                   color: T.ink, fontFamily: T.font, resize: "none", lineHeight: 1.4,
                   WebkitAppearance: "none",
                 }}/>
-              <Btn T={T} onClick={submitAnswer} disabled={!currentAnswer.trim()} style={{ marginTop: 14 }}>
-                שליחת תשובה
-              </Btn>
+              <div ref={submitBtnRef} style={{ scrollMarginBottom: 24 }}>
+                <Btn T={T} onClick={submitAnswer} disabled={!currentAnswer.trim()} style={{ marginTop: 14 }}>
+                  שליחת תשובה
+                </Btn>
+              </div>
             </>
           )}
         </div>
