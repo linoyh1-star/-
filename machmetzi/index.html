@@ -244,6 +244,11 @@
 </head>
 <body>
 <div id="root"></div>
+<script>
+  window.__mmPrompt = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__mmPrompt = e; window.dispatchEvent(new Event("mm-installable")); });
+  if ("serviceWorker" in navigator) window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+</script>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
@@ -2004,6 +2009,69 @@ function LearnScreen({ route, go }) {
           {ARTICLES.filter((a) => a.group === g).map((a) => <ListItem key={a.id} icon={a.icon} title={a.title} sub={a.sub} onClick={() => go("learn", "article", a.id)} />)}
         </div>
       ))}
+      {!isStandalone() && <><div className="section-title">האפליקציה</div><InstallCard /></>}
+    </div>
+  );
+}
+
+/* ============================================================
+   Install as app
+   ============================================================ */
+const isStandalone = () => (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function useInstall() {
+  const [prompt, setPrompt] = useState(window.__mmPrompt);
+  const [installed, setInstalled] = useState(isStandalone());
+  useEffect(() => {
+    const on = () => setPrompt(window.__mmPrompt);
+    const done = () => { setInstalled(true); setPrompt(null); };
+    window.addEventListener("mm-installable", on);
+    window.addEventListener("appinstalled", done);
+    return () => { window.removeEventListener("mm-installable", on); window.removeEventListener("appinstalled", done); };
+  }, []);
+  const install = async () => {
+    if (!prompt) return false;
+    prompt.prompt();
+    const r = await prompt.userChoice.catch(() => null);
+    window.__mmPrompt = null; setPrompt(null);
+    if (r && r.outcome === "accepted") setInstalled(true);
+    return true;
+  };
+  return { installed, canPrompt: !!prompt, install };
+}
+function InstallCard({ compact, onDismiss }) {
+  const { installed, canPrompt, install } = useInstall();
+  const [help, setHelp] = useState(!compact);
+  if (installed) return null;
+  const ios = isIOS();
+  return (
+    <div className="card tint">
+      <div className="row">
+        <img src="mascot.svg" alt="" width="48" height="48" />
+        <div className="grow">
+          <div className="bold" style={{ color: "var(--crust-deep)" }}>להתקין את מחמצי כאפליקציה</div>
+          <div className="xs muted">אייקון במסך הבית, מסך מלא, ועובד גם בלי אינטרנט</div>
+        </div>
+      </div>
+      {canPrompt && !ios
+        ? <button className="btn primary block mt12" onClick={install}><Icon name="download" size={18} />התקנה</button>
+        : !help && <button className="btn block mt12" onClick={() => setHelp(true)}>איך מתקינים?</button>}
+      {help && !canPrompt && (
+        ios ? (
+          <ol className="steps mt12 small">
+            <li>פותחים את הקישור בספארי.</li>
+            <li>לוחצים על כפתור השיתוף (ריבוע עם חץ למעלה) בתחתית המסך.</li>
+            <li>גוללים ובוחרים "הוספה למסך הבית", ואז "הוסף".</li>
+          </ol>
+        ) : (
+          <ol className="steps mt12 small">
+            <li>פותחים את הקישור בכרום.</li>
+            <li>לוחצים על שלוש הנקודות בפינת המסך.</li>
+            <li>בוחרים "התקנת אפליקציה" או "הוספה למסך הבית".</li>
+          </ol>
+        )
+      )}
+      {onDismiss && <button className="btn ghost sm block mt8" onClick={onDismiss}>לא עכשיו</button>}
     </div>
   );
 }
@@ -2014,6 +2082,7 @@ function LearnScreen({ route, go }) {
 function greeting() { const h = new Date().getHours(); return h < 5 ? "לילה טוב" : h < 12 ? "בוקר טוב" : h < 17 ? "צהריים טובים" : h < 21 ? "ערב טוב" : "לילה טוב"; }
 function HomeScreen({ store, go }) {
   const now = useNow(30000);
+  const [installHidden, setInstallHidden] = useState(() => { try { return localStorage.getItem("machmetzi_install_dismissed") === "1"; } catch (e) { return false; } });
   const last = [...store.feedings].sort((a, b) => b.at - a.at)[0];
   const tip = TIPS[Math.floor(now / 86400000) % TIPS.length];
   const b = store.bake;
@@ -2053,11 +2122,13 @@ function HomeScreen({ store, go }) {
           <div className="hdr-sub" style={{ marginTop: 0 }}>{greeting()}</div>
           <h1 className="hdr-title" style={{ fontSize: 38 }}>מחמצי</h1>
         </div>
-        <span style={{ color: "var(--wheat-deep)", marginTop: 8 }}><Icon name="wheat" size={40} stroke={1.4} /></span>
+        <img src="mascot.svg" alt="" width="64" height="64" style={{ marginTop: 2 }} />
       </div>
       <div className="ornament mb12" />
 
       {bakeCard}
+
+      {!installHidden && <InstallCard compact onDismiss={() => { try { localStorage.setItem("machmetzi_install_dismissed", "1"); } catch (e) {} setInstallHidden(true); }} />}
 
       <button className="card" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("starter", null, { seg: "log" })}>
         <div className="row between">
