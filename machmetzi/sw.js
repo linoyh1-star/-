@@ -1,6 +1,6 @@
 // Machmetzi service worker: makes the app installable and usable offline.
-const CACHE = "machmetzi-v2";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./mascot.svg", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
+const CACHE = "machmetzi-v3";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest?v=2", "./icon-v2.svg", "./mascot.svg", "./icon-v2-180.png", "./icon-v2-192.png", "./icon-v2-512.png"];
 const CDN = ["unpkg.com", "fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
