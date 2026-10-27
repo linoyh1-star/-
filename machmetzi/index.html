@@ -268,6 +268,7 @@ const DEFAULT_STATE = {
   bakes: [],
   myRecipes: [],
   build: null,
+  drafts: {},
   prefs: { temp: 24, activity: 100 },
 };
 function loadState() {
@@ -281,6 +282,7 @@ function loadState() {
       feedings: Array.isArray(s.feedings) ? s.feedings : [],
       bakes: Array.isArray(s.bakes) ? s.bakes : [],
       myRecipes: Array.isArray(s.myRecipes) ? s.myRecipes : [],
+      drafts: s.drafts && typeof s.drafts === "object" ? s.drafts : {},
     };
   } catch (e) { return DEFAULT_STATE; }
 }
@@ -289,6 +291,15 @@ function useStore() {
   useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch (e) {} }, [s]);
   const update = (fn) => setS((prev) => ({ ...prev, ...fn(prev) }));
   return [s, update];
+}
+// Form values that survive switching tabs and closing the app.
+function useDraft(store, update, key, defaults) {
+  const d = { ...defaults, ...((store.drafts || {})[key] || {}) };
+  const set = (patch) => update((s) => {
+    const all = s.drafts || {};
+    return { drafts: { ...all, [key]: { ...(all[key] || {}), ...patch } } };
+  });
+  return [d, set];
 }
 function useNow(ms = 30000) {
   const [now, setNow] = useState(Date.now());
@@ -315,6 +326,8 @@ function dayLabel(ms) {
   return d.getDate() + "." + (d.getMonth() + 1);
 }
 const when = (ms) => dayLabel(ms) + " " + hhmm(ms);
+const whenAt = (ms) => dayLabel(ms) + " ב-" + hhmm(ms);   // for use inside sentences
+const LTR = (t) => "\u2066" + t + "\u2069";              // keeps "1:5:5" in order inside Hebrew text
 function dur(min) {
   min = Math.max(0, Math.round(min));
   const h = Math.floor(min / 60), m = min % 60;
@@ -765,6 +778,104 @@ const needsHands = (s) => !s.passive || !!ACTION_AT_START[s.key];
 const nightActions = (list) => list.filter((s) => needsHands(s) && isNight(s.start));
 
 /* ============================================================
+   One plan: starter feeding + dough + bake
+   ============================================================ */
+const FRIDGE_LAG_H = 1;     // a cold starter needs about an hour to wake up
+const COMFY_D = 11;         // 1:5:5, the ratio we aim for when there is a choice
+function nextAt(now, h, m = 0) {
+  const d = new Date(now); d.setHours(h, m, 0, 0);
+  let t = d.getTime(); if (t < now + 3 * 3600000) t += 86400000;
+  return t;
+}
+// When to feed and with how much, so the starter peaks right at mixStart.
+// total = grams needed at mix time; have = grams in the jar now (0 = unknown).
+function feedSchedule({ total, have, where, temp, activity, mixStart, now }) {
+  const o = { temp, activity, flour: "white", hydration: 100 };
+  const lag = where === "fridge" ? FRIDGE_LAG_H : 0;
+  const tFor = (D) => (peakH(D, o) + lag) * 3600000;
+  const mk = (t, D, extra) => {
+    const S = Math.max(1, Math.round(total / D));
+    const F = Math.round((total - S) / 2);
+    return { at: t, D, S, F, W: Math.max(0, total - S - F), peakAt: t + tFor(D), lag, ...extra };
+  };
+  const tooLittle = have > 0 && total / have > D_MAX;
+  const Dlow = Math.max(D_MIN, have > 0 ? total / have : D_MIN);
+  const nowR = roundTo(now, 15);
+  const latest = mixStart - tFor(Dlow);
+  if (latest < nowR) return mk(nowR, Dlow, { late: true, tooLittle });
+  const target = mixStart - tFor(clamp(Math.max(Dlow, COMFY_D), D_MIN, D_MAX));
+  const earliest = roundTo(Math.max(nowR, mixStart - tFor(D_MAX)), 15);
+  let day = null, night = null;
+  for (let t = earliest; t <= latest; t += 15 * 60000) {
+    const D = dilFor((mixStart - t) / 3600000 - lag, o);
+    if (D < Dlow - 1e-6 || D > D_MAX + 1e-6) continue;
+    const c = { t, D, dist: Math.abs(t - target) };
+    if (!isNight(t)) { if (!day || c.dist < day.dist) day = c; }
+    else if (!night || c.dist < night.dist) night = c;
+  }
+  const c = day || night;
+  if (!c) return mk(nowR, Dlow, { late: true, tooLittle });
+  return mk(c.t, c.D, { night: !day, tooLittle });
+}
+const FRIDGE_PREFS = { pizza: [24, 20, 28, 36, 48, 18], other: [14, 12, 16, 18, 20, 22, 24, 10, 30, 36] };
+// Dough schedule from a mix time (anchor "mix") or a bake time (anchor "bake"); fridge length
+// is picked to keep hands-on steps out of the night unless the user fixed it.
+function doughSchedule(r, d, temp, activity, T, anchor) {
+  const fridge = FLOW_FRIDGE[r.flow] && d.mode === "fridge";
+  const list = !fridge ? [14] : d.fridgeH ? [d.fridgeH] : FRIDGE_PREFS[r.flow === "pizza" ? "pizza" : "other"];
+  let pick = null;
+  for (const fh of list) {
+    const steps = buildSteps(r, { mult: d.mult, temp, method: d.method, mode: d.mode, fridgeH: fh, perBatch: d.perBatch, includeFeed: false, activity }).steps;
+    let mixStart = T;
+    if (anchor === "bake") {
+      const bk = scheduleSteps(steps, "start", 0).list.find((x) => x.key === "bake");
+      mixStart = T - (bk ? bk.start : 0);
+    }
+    const sched = scheduleSteps(steps, "start", mixStart);
+    const nights = nightActions(sched.list).length;
+    if (!pick || (nights === 0 && pick.nights > 0)) pick = { fh, sched, mixStart, nights };
+    if (nights === 0) break;
+  }
+  return pick;
+}
+function computePlan(d, store, now) {
+  const recipes = allRecipes(store).filter((x) => !x.simple);
+  const r = d.recipeId === "none" ? null : (recipes.find((x) => x.id === d.recipeId) || recipes[0]);
+  const temp = num(d.temp, num(store.prefs.temp, 24));
+  const activity = store.prefs.activity || 100;
+  const T = d.T || nextAt(now, 8);
+  const sc = r ? scaleRecipe(r, d.mult) : null;
+  const needDough = r ? Math.round(sc.S) : Math.max(0, Math.round(num(d.need)));
+  const keep = Math.max(0, Math.round(num(d.keep)));
+  const total = Math.max(10, needDough + keep);
+  const have = num(d.have);
+  let dough = r ? doughSchedule(r, d, temp, activity, T, d.anchor) : { mixStart: T, sched: null, fh: null };
+  let feed = feedSchedule({ total, have, where: d.where, temp, activity, mixStart: dough.mixStart, now });
+  let shifted = null;
+  if (feed.late) {
+    const newMix = roundTo(feed.peakAt, 15);
+    shifted = { from: dough.mixStart, to: newMix };
+    dough = r ? doughSchedule(r, { ...d, fridgeH: dough.fh && d.fridgeH ? d.fridgeH : null }, temp, activity, newMix, "mix") : { mixStart: newMix, sched: null, fh: null };
+  }
+  const mixStart = dough.mixStart;
+  const ratio = LTR(`1:${r1(feed.F / feed.S)}:${r1(feed.W / feed.S)}`);
+  const feedStep = {
+    key: "feed", title: "האכלת המחמצת", start: feed.at, min: Math.max(15, (mixStart - feed.at) / 60000), passive: true,
+    feed: { S: feed.S, F: feed.F, W: feed.W, peakAt: feed.peakAt },
+    detail: `${d.where === "fridge" ? "מוציאים מהמקרר. " : ""}${feed.S} גרם מחמצת + ${feed.F} גרם קמח + ${feed.W} גרם מים (יחס ${ratio}). מערבבים, מסמנים את הגובה בצנצנת ומכסים. כשהיא מכפילה את עצמה, מבעבעת ומריחה חמצמץ, היא מוכנה.`,
+  };
+  const useStep = {
+    key: "use", title: r ? "המחמצת בשיא: מכינים בצק" : "המחמצת מוכנה", start: mixStart, min: 15, passive: false,
+    detail: keep > 0 ? `לוקחים ${needDough} גרם לבצק ומחזירים את ה-${keep} שנשארו למקרר, לפעם הבאה.` : `משתמשים בכל ${needDough} הגרם.`,
+  };
+  const doughList = dough.sched ? dough.sched.list : [];
+  const all = [feedStep, useStep, ...doughList].sort((a, b) => a.start - b.start || (b.key === "use") - (a.key === "use"));
+  const bake = doughList.find((x) => x.key === "bake");
+  const end = dough.sched ? dough.sched.end : mixStart;
+  return { r, sc, temp, T, needDough, keep, total, have, feed, ratio, mixStart, bakeAt: bake ? bake.start : null, end, fh: dough.fh, steps: all, shifted, units: r ? unitsOf(r, d.mult) : 0 };
+}
+
+/* ============================================================
    Icons
    ============================================================ */
 const ICONS = {
@@ -1175,17 +1286,22 @@ function calibration(feedings) {
   return { activity: clamp(Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 5) * 5, 40, 180), n: done.length };
 }
 
-function FeedCalc({ store, update, init }) {
+function FeedCalc({ store, update, go }) {
   const now = useNow(30000);
-  const [hours, setHours] = useState(init && init.hours ? clamp(init.hours, 1, 36) : 12);
-  const [needed, setNeeded] = useState(init && init.needed ? String(init.needed) : "150");
-  const [have, setHave] = useState("");
-  const [hyd, setHyd] = useState(100);
-  const [flour, setFlour] = useState("white");
-  const [act, setAct] = useState(store.prefs.activity || 100);
-  const [temp, setTemp] = useState(store.prefs.temp || 24);
+  const [d, set] = useDraft(store, update, "feed", { T: null, needed: "150", have: "", hyd: 100, flour: "white", act: null });
+  const T = d.T && d.T > now + 30 * 60000 ? d.T : now + 12 * 3600000;
+  const hours = clamp((T - now) / 3600000, 1, 36);
+  const setHours = (h) => set({ T: now + h * 3600000 });
+  const { needed, have, hyd, flour } = d;
+  const act = d.act || store.prefs.activity || 100;
+  const temp = store.prefs.temp || 24;
+  const setNeeded = (v) => set({ needed: v });
+  const setHave = (v) => set({ have: v });
+  const setHyd = (v) => set({ hyd: v });
+  const setFlour = (v) => set({ flour: v });
+  const setAct = (v) => set({ act: v });
+  const setTemp = (v) => update((s) => ({ prefs: { ...s.prefs, temp: v } }));
   const [saved, setSaved] = useState(false);
-  useEffect(() => { update((s) => ({ prefs: { ...s.prefs, temp } })); }, [temp]);
 
   const res = useMemo(() => feedPlan({ hours, needed, have, hydration: hyd, flour, activity: act, temp }), [hours, needed, have, hyd, flour, act, temp]);
   const readyAt = now + hours * 3600000;
@@ -1211,7 +1327,8 @@ function FeedCalc({ store, update, init }) {
 
   return (
     <div>
-      <div className="card">
+      <Note icon="info">כאן מחשבים רק האכלה, למשל רענון בלי אפייה. <b>אופה?</b> בלשונית <button className="link" onClick={() => go("bake", null, { plan: true })}>אפייה</button> הכל מחושב יחד: מתי להאכיל, כמה, ומתי אופים.</Note>
+      <div className="card mt12">
         <Field label="מתי המחמצת צריכה להיות מוכנה?">
           <div className="center" style={{ padding: "8px 0 4px" }}>
             <div className="big-time"><span className="soft">{dayLabel(readyAt)} {hhmm(readyAt)}</span></div>
@@ -1273,9 +1390,9 @@ function FeedCalc({ store, update, init }) {
         </div>
       </div>
 
-      {res.late && <Note kind="warn" icon="alert">גם ביחס הכי נמוך המחמצת תגיע לשיא רק ב-{when(peakAt)}, ולא בזמן שבחרת. כדי להקדים: מקום חם יותר (26–28°C), או להאכיל עם יותר מחמצת.</Note>}
+      {res.late && <Note kind="warn" icon="alert">גם ביחס הכי נמוך המחמצת תגיע לשיא רק {whenAt(peakAt)}, ולא בזמן שבחרת. כדי להקדים: מקום חם יותר (26–28°C), או להאכיל עם יותר מחמצת.</Note>}
       {res.limited && !res.late && <Note icon="info">משתמשים בכל ה-{num(have)} גרם שיש בצנצנת.{res.veryDilute ? " זה יחס גבוה מאוד. אם יש זמן, עדיף שתי האכלות: קודם קטנה, ואחריה עוד אחת." : ""}</Note>}
-      {res.capped && <Note icon="clock">יחס גבוה מזה מחליש את המחמצת, ולכן עדיף להאכיל מאוחר יותר: ב-{when(feedAt)}.</Note>}
+      {res.capped && <Note icon="clock">יחס גבוה מזה מחליש את המחמצת, ולכן עדיף להאכיל מאוחר יותר: {whenAt(feedAt)}.</Note>}
 
       <div className="grid2 mt12">
         {feedLater
@@ -1430,7 +1547,7 @@ function PrepGuide({ go }) {
         </div>
         <p className="xs muted" style={{ margin: 0 }}>מחמצת קשה (50–60% מים)? אותם יחסים, עם חצי מכמות המים.</p>
       </div>
-      <button className="btn primary block" onClick={() => go("starter", null, { seg: "calc" })}>לחישוב מדויק במחשבון</button>
+      <button className="btn primary block" onClick={() => go("bake", null, { plan: true })}>לתכנן אפייה, כולל ההאכלה</button>
     </div>
   );
 }
@@ -1478,7 +1595,7 @@ function BuildProgram({ store, update }) {
   const toggle = (d) => update((s) => ({ build: { ...s.build, done: { ...s.build.done, [d]: !s.build.done[d] } } }));
   return (
     <div>
-      <div className="card tint"><div className="bold">היום הוא יום {day} בתוכנית</div><div className="xs muted">התחלת ב-{when(b.start)}</div></div>
+      <div className="card tint"><div className="bold">היום הוא יום {day} בתוכנית</div><div className="xs muted">התחלת {whenAt(b.start)}</div></div>
       <div className="card">
         {BUILD_DAYS.map((x) => (
           <button key={x.d} className="check" onClick={() => toggle(x.d)}>
@@ -1505,12 +1622,12 @@ function StarterScreen({ store, update, route, go }) {
     const C = g.C;
     return (<div><Header title={g.title} sub={g.sub} onBack={() => go("starter", null, { seg: "guides" })} /><C store={store} update={update} go={go} /></div>);
   }
-  const seg = (route.param && route.param.seg) || "calc";
+  const seg = (route.param && route.param.seg) || "log";
   return (
     <div>
-      <Header title="המחמצת שלי" sub="מחשבון האכלה, יומן ומדריכים" />
-      <div className="mb12"><Seg options={[{ v: "calc", l: "מחשבון" }, { v: "log", l: "יומן" }, { v: "guides", l: "מדריכים" }]} value={seg} onChange={(v) => go("starter", null, { seg: v })} /></div>
-      {seg === "calc" && <FeedCalc store={store} update={update} init={route.param && route.param.init} />}
+      <Header title="המחמצת שלי" sub="איפה היא, מתי האכלת, ומדריכים" />
+      <div className="mb12"><Seg options={[{ v: "log", l: "מצב ויומן" }, { v: "calc", l: "האכלה בלבד" }, { v: "guides", l: "מדריכים" }]} value={seg} onChange={(v) => go("starter", null, { seg: v })} /></div>
+      {seg === "calc" && <FeedCalc store={store} update={update} go={go} />}
       {seg === "log" && <StarterLog store={store} update={update} />}
       {seg === "guides" && GUIDES.map((g) => <ListItem key={g.id} icon={g.icon} title={g.title} sub={g.sub} onClick={() => go("starter", "guide", g.id)} />)}
     </div>
@@ -1520,174 +1637,155 @@ function StarterScreen({ store, update, route, go }) {
 /* ============================================================
    Bake planner + active bake
    ============================================================ */
-// Picks a bake time (and, when allowed, a fridge length) so no hands-on step falls at night.
-// fhList: fridge hours to try, in order of preference. fixedBake: a time the user chose, or null.
-function slotsFrom(earliest) {
-  const d = new Date(earliest), out = [];
-  for (let day = 0; day < 4; day++) for (const h of [9, 13, 17, 20]) {
-    const c = new Date(d.getFullYear(), d.getMonth(), d.getDate() + day, h, 0, 0, 0).getTime();
-    if (c >= earliest) out.push(c);
-  }
-  return out.length ? out : [roundTo(earliest, 30)];
-}
-function autoPlan(buildFor, fhList, now, anchor, fixedBake) {
-  const t0 = roundTo(now, 5);
-  let best = null, fallback = null;
-  fhList.forEach((fh, pref) => {
-    const steps = buildFor(fh);
-    const sNow = scheduleSteps(steps, "start", t0);
-    if (anchor !== "bake") {
-      if (!fallback) fallback = { fh, bake: null };
-      if (!best && !nightActions(sNow.list).length) best = { fh, bake: null };
-      return;
-    }
-    const bk = sNow.list.find((x) => x.key === "bake");
-    const earliest = bk ? bk.start : sNow.end;
-    const cands = fixedBake ? [fixedBake] : slotsFrom(earliest);
-    if (!fallback) fallback = { fh, bake: cands[0] };
-    for (const c of cands) {
-      if (c < earliest - 60000) continue;
-      if (best && c >= best.bake) break;
-      if (!nightActions(scheduleSteps(steps, "bake", c).list).length) { best = { fh, bake: c, pref }; break; }
-    }
-  });
-  return best || fallback;
-}
 const totalLabel = (min) => (min >= 600 ? Math.round(min / 60) + " ש׳" : durShort(min));
 
-function Planner({ store, update, init, go }) {
-  const now = useNow(60000);
-  const recipes = allRecipes(store).filter((r) => !r.simple);
-  const [recipeId, setRecipeId] = useState((init && init.recipeId) || "country");
-  const r = recipes.find((x) => x.id === recipeId) || recipes[0];
-  const [mult, setMult] = useState((init && init.mult) || 1);
-  const [temp, setTemp] = useState(store.prefs.temp || 24);
-  const [method, setMethod] = useState("hand");
-  const [mode, setMode] = useState("fridge");
-  const [fridgeH, setFridgeH] = useState(14);
-  const [fridgeTouched, setFridgeTouched] = useState(false);
-  const [anchor, setAnchor] = useState("bake");
-  const [bakeAt, setBakeAt] = useState("");
-  const [perBatch, setPerBatch] = useState(1);
-  const [includeFeed, setIncludeFeed] = useState(true);
-  const [feedR, setFeedR] = useState(5);
-  const [showDdt, setShowDdt] = useState(false);
-  useEffect(() => { setFridgeH(r.flow === "pizza" ? 24 : 14); setFridgeTouched(false); }, [recipeId]);
+const PLAN_DEFAULTS = { have: "", where: "fridge", recipeId: "country", mult: 1, need: "100", keep: 50, anchor: "mix", T: null, temp: null, method: "hand", mode: "fridge", fridgeH: null, perBatch: 1, more: false };
 
-  const hasFridge = FLOW_FRIDGE[r.flow];
-  const p = { mult, temp, method, mode, fridgeH, perBatch, includeFeed, feedR, activity: store.prefs.activity || 100 };
-  const deps = [r, mult, temp, method, mode, perBatch, includeFeed, feedR, store.prefs.activity];
-  const fixedBake = anchor === "bake" && bakeAt ? fromLocalInput(bakeAt) : null;
-  const autoFridge = hasFridge && mode === "fridge" && !fridgeTouched;
-  const fhList = autoFridge ? (r.flow === "pizza" ? [24, 20, 28, 36, 48, 18] : [14, 12, 16, 18, 20, 22, 24, 10, 30, 36]) : [fridgeH];
-  const auto = useMemo(() => autoPlan((fh) => buildSteps(r, { ...p, fridgeH: fh }).steps, fhList, now, anchor, fixedBake),
-    [...deps, fridgeH, autoFridge, anchor, fixedBake, Math.floor(now / 600000)]);
-  const effFh = auto ? auto.fh : fridgeH;
-  const built = useMemo(() => buildSteps(r, { ...p, fridgeH: effFh }), [...deps, effFh]);
-  const autoBake = auto && auto.bake ? auto.bake : roundTo(now + 86400000, 60);
-  const t0 = anchor === "bake" ? (fixedBake || autoBake) : roundTo(now, 5);
-  const sched = scheduleSteps(built.steps, anchor, t0);
-  const tooLate = anchor === "bake" && sched.start < now - 5 * 60000;
-  const nightSteps = nightActions(sched.list);
-  const units = built.units;
+function Planner({ store, update, go }) {
+  const now = useNow(60000);
+  const [d, set] = useDraft(store, update, "plan", PLAN_DEFAULTS);
+  const recipes = allRecipes(store).filter((x) => !x.simple);
+  const plan = useMemo(() => computePlan(d, store, now), [JSON.stringify(d), store.myRecipes, store.prefs.activity, store.prefs.temp, Math.floor(now / 300000)]);
+  const { r, feed } = plan;
+  const T = plan.T;
+  const haveN = plan.have;
+  const leftover = haveN > 0 ? Math.round(haveN - feed.S) : 0;
+  const tPeakMin = (feed.peakAt - feed.at) / 60000;
+  const nightSteps = nightActions(plan.steps);
+  const pastT = d.T && d.T < now - 30 * 60000;
+  const quick = [nextAt(now, 8), nextAt(now, 12), nextAt(now, 18)];
+  const setTemp = (v) => { set({ temp: v }); update((s) => ({ prefs: { ...s.prefs, temp: v } })); };
 
   const start = () => {
     if (store.bake && !confirm("יש אפייה פעילה. להחליף אותה בחדשה?")) return;
-    update(() => ({ bake: { id: uid(), recipeId: r.id, name: r.name, mult, units, createdAt: Date.now(), steps: sched.list.map((s, i) => ({ ...s, i, done: false })) } }));
+    update(() => ({ bake: { id: uid(), recipeId: r ? r.id : "starter", name: r ? r.name : "הכנת מחמצת", mult: d.mult, units: plan.units ? plan.units + " " + r.unit : "", createdAt: Date.now(), steps: plan.steps.map((x, i) => ({ ...x, i, done: false })) } }));
     window.scrollTo(0, 0);
   };
-  const feedStep = sched.list.find((s) => s.key === "feed");
-  const mixStep = sched.list.find((s) => s.key === "mix" || s.key === "autolyse");
 
   return (
     <div>
       <div className="card">
-        <Field label="מתכון">
-          <select className="input" value={r.id} onChange={(e) => setRecipeId(e.target.value)}>
+        <Field label="1. כמה מחמצת יש לך עכשיו?">
+          <div className="grid2">
+            <NumInput value={d.have} onChange={(v) => set({ have: v })} suffix="גרם" placeholder="לא יודעת" />
+            <Seg options={[{ v: "fridge", l: "במקרר" }, { v: "counter", l: "בחוץ" }]} value={d.where} onChange={(v) => set({ where: v })} />
+          </div>
+        </Field>
+
+        <Field label="2. מה אופים?">
+          <select className="input" value={r ? r.id : "none"} onChange={(e) => set({ recipeId: e.target.value })}>
             {recipes.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            <option value="none">רק להכין מחמצת, בלי מתכון</option>
           </select>
+          {r
+            ? <div className="mt8"><MultChips value={d.mult} onChange={(v) => set({ mult: v })} r={r} /></div>
+            : <div className="mt8"><NumInput value={d.need} onChange={(v) => set({ need: v })} suffix="גרם לבצק" /></div>}
+          <div className="hint">{r ? `במתכון הזה צריך ${plan.needDough} גרם מחמצת.` : "כמה מחמצת צריך למתכון שלך."}</div>
         </Field>
-        <Field label="כמות" hint={`${grams(built.sc.F)} גרם קמח · כ-${grams(built.sc.total)} גרם בצק`}>
-          <MultChips value={mult} onChange={setMult} r={r} />
+
+        <Field label="כמה להשאיר בצנצנת לפעם הבאה" value={plan.keep + " גרם"}>
+          <div className="chips">
+            {[0, 30, 50, 80].map((v) => <button key={v} className={"chip" + (plan.keep === v ? " on" : "")} onClick={() => set({ keep: v })}>{v === 0 ? "בלי" : v + " גרם"}</button>)}
+          </div>
         </Field>
-        <Field label="טמפרטורת החדר">
-          <Stepper value={temp} onChange={(v) => { setTemp(v); update((s) => ({ prefs: { ...s.prefs, temp: v } })); }} min={10} max={35} format={(v) => v + "°C"} />
+
+        <Field label={r ? "3. מתי?" : "3. מתי צריך את המחמצת?"}>
+          {r && <Seg options={[{ v: "mix", l: "מתי מכינים את הבצק" }, { v: "bake", l: "מתי אופים" }]} value={d.anchor} onChange={(v) => set({ anchor: v, T: v === "bake" && plan.bakeAt ? plan.bakeAt : plan.mixStart })} />}
+          <input className="input mt8" type="datetime-local" value={toLocalInput(T)} onChange={(e) => { const t = fromLocalInput(e.target.value); if (t) set({ T: t }); }} />
+          <div className="chips mt8">
+            {quick.map((t) => <button key={t} className={"chip" + (Math.abs(T - t) < 60000 ? " on" : "")} onClick={() => set({ T: t })}>{when(t)}</button>)}
+          </div>
+          {pastT && <div className="mt8"><Note kind="warn" icon="alert">השעה שבחרת כבר עברה. בחרי שעה חדשה.</Note></div>}
         </Field>
-        {(r.flow === "loaf" || r.flow === "focaccia" || r.flow === "pizza") && (
-          <Field label="לישה">
-            <Seg options={[{ v: "hand", l: "ידנית, עם קיפולים" }, { v: "mixer", l: "מיקסר" }]} value={method} onChange={setMethod} />
+
+        {r && FLOW_FRIDGE[r.flow] && (
+          <Field label="לאפות באותו יום, או אחרי לילה במקרר?" hint={d.mode === "fridge" ? "לילה במקרר נותן טעם עמוק יותר, והאפייה יוצאת למחרת." : "האפייה יוצאת באותו יום, אחרי התפחה סופית בחוץ."}>
+            <Seg options={[{ v: "fridge", l: "לילה במקרר" }, { v: "same", l: "באותו יום" }]} value={d.mode} onChange={(v) => set({ mode: v })} />
           </Field>
         )}
-        {hasFridge && (
-          <Field label="התפחה">
-            <Seg options={[{ v: "fridge", l: "לילה במקרר" }, { v: "same", l: "באותו יום" }]} value={mode} onChange={setMode} />
-          </Field>
-        )}
-        {hasFridge && mode === "fridge" && (
-          <Field label="כמה זמן במקרר" value={effFh + " שעות"} hint={autoFridge ? "נבחר אוטומטית כדי שלא תצטרכי לקום בלילה. 12–24 שעות זה הטווח המומלץ, ואפשר עד 48." : "12–24 שעות זה הטווח המומלץ. אפשר עד 48."}>
-            <Range value={effFh} min={8} max={48} step={1} onChange={(v) => { setFridgeH(v); setFridgeTouched(true); }} labels={["8", "24", "48"]} />
-            {fridgeTouched && <button className="link mt8" onClick={() => setFridgeTouched(false)}>לבחירה אוטומטית</button>}
-          </Field>
-        )}
-        {r.flow === "loaf" && units > 1 && (
-          <Field label="כמה כיכרות נכנסות לתנור יחד">
-            <Stepper value={perBatch} onChange={setPerBatch} min={1} max={units} format={(v) => v === 1 ? "אחת (סיר אחד)" : v + " (מגש הפוך / כמה סירים)"} />
-          </Field>
-        )}
-        <Field label="מתי">
-          <Seg options={[{ v: "bake", l: r.flow === "flat" ? "להכין בשעה" : "לאפות בשעה" }, { v: "now", l: "להתחיל עכשיו" }]} value={anchor} onChange={setAnchor} />
-          {anchor === "bake" && <input className="input mt8" type="datetime-local" value={bakeAt || toLocalInput(autoBake)} onChange={(e) => setBakeAt(e.target.value)} />}
-          {anchor === "bake" && !bakeAt && <div className="hint">הוצע אוטומטית: הבוקר או הערב הקרובים שאפשר להספיק אליהם. אפשר לשנות.</div>}
+
+        <Field label="4. טמפרטורת החדר">
+          <Stepper value={plan.temp} onChange={setTemp} min={10} max={35} format={(v) => v + "°C"} />
         </Field>
-        <button className="check" style={{ marginTop: 10, borderBottom: 0 }} onClick={() => setIncludeFeed(!includeFeed)}>
-          <span className={"box" + (includeFeed ? " on" : "")}>{includeFeed && <Icon name="check" size={16} stroke={2.4} />}</span>
-          <span>לכלול האכלת מחמצת בתוכנית</span>
-        </button>
-        {includeFeed && (
-          <div className="mt8">
-            <Seg options={[{ v: 1, l: "1:1:1 · מהיר" }, { v: 2, l: "1:2:2" }, { v: 5, l: "1:5:5" }, { v: 10, l: "1:10:10 · לילה" }]} value={feedR} onChange={setFeedR} />
-            <div className="hint">יחס נמוך מגיע לשיא מהר. יחס גבוה לוקח יותר זמן ומתאים להאכלה לפני השינה.</div>
+
+        {r && <button className="link mt16" onClick={() => set({ more: !d.more })}>{d.more ? "פחות הגדרות" : "עוד הגדרות: לישה, זמן במקרר, תנור"}</button>}
+        {r && d.more && (
+          <div>
+            {(r.flow === "loaf" || r.flow === "focaccia" || r.flow === "pizza") && (
+              <Field label="לישה"><Seg options={[{ v: "hand", l: "ידנית, עם קיפולים" }, { v: "mixer", l: "מיקסר" }]} value={d.method} onChange={(v) => set({ method: v })} /></Field>
+            )}
+            {FLOW_FRIDGE[r.flow] && d.mode === "fridge" && (
+              <Field label="כמה זמן במקרר" value={plan.fh + " שעות"} hint={d.fridgeH ? "12–24 שעות זה הטווח המומלץ. אפשר עד 48." : "נבחר אוטומטית כדי שלא תצטרכי לקום בלילה."}>
+                <Range value={plan.fh || 14} min={8} max={48} step={1} onChange={(v) => set({ fridgeH: v })} labels={["8", "24", "48"]} />
+                {d.fridgeH && <button className="link mt8" onClick={() => set({ fridgeH: null })}>לבחירה אוטומטית</button>}
+              </Field>
+            )}
+            {r.flow === "loaf" && plan.units > 1 && (
+              <Field label="כמה כיכרות נכנסות לתנור יחד">
+                <Stepper value={d.perBatch} onChange={(v) => set({ perBatch: v })} min={1} max={plan.units} format={(v) => v === 1 ? "אחת (סיר אחד)" : v + " (מגש הפוך / כמה סירים)"} />
+              </Field>
+            )}
           </div>
         )}
       </div>
 
+      <div className="section-title">התוכנית שלך</div>
       <div className="card dark">
-        <div className="eyebrow" style={{ color: "#D9BE8E" }}>{r.name} · {units} {r.unit}</div>
-        <div className="grid3 mt8">
-          <div className="stat"><div className="v">{grams(built.sc.S)}</div><div className="k">גרם מחמצת</div></div>
-          <div className="stat"><div className="v">{Math.round(built.sc.hydTotal)}%</div><div className="k">הידרציה כוללת</div></div>
-          <div className="stat"><div className="v">{totalLabel((sched.end - sched.start) / 60000)}</div><div className="k">סה״כ</div></div>
+        <div className="eyebrow" style={{ color: "#D9BE8E" }}>{feed.late ? "עכשיו" : whenAt(feed.at)}</div>
+        <div className="card-title" style={{ fontSize: 22 }}>{d.where === "fridge" ? "להוציא מהמקרר ולהאכיל" : "להאכיל את המחמצת"}</div>
+        <div className="grid3 mt12">
+          <div className="stat"><div className="v">{feed.S}</div><div className="k">גרם מחמצת</div></div>
+          <div className="stat"><div className="v">{feed.F}</div><div className="k">גרם קמח</div></div>
+          <div className="stat"><div className="v">{feed.W}</div><div className="k">גרם מים</div></div>
         </div>
-        <div className="mt12">
-          <div className="kv"><span>התחלה</span><span className="bold">{when(sched.start)}</span></div>
-          <div className="kv"><span>{r.flow === "flat" ? "הכנה" : "לתנור"}</span><span className="bold">{when((sched.list.find((s) => s.key === "bake") || sched.list[0]).start)}</span></div>
-          <div className="kv"><span>מוכן</span><span className="bold">{when(sched.end)}</span></div>
-        </div>
+        <div className="center mt12"><span className="muted small">יחס </span><span className="bold ltr" style={{ fontSize: 18 }}>{plan.ratio}</span><span className="muted small"> · יוצא {plan.total} גרם</span></div>
+        <hr className="divider" style={{ background: "rgba(255,255,255,.14)" }} />
+        <div className="kv"><span>{r ? "המחמצת בשיא, מכינים בצק" : "המחמצת מוכנה"}</span><span className="bold">{when(plan.mixStart)}</span></div>
+        {plan.bakeAt && <div className="kv"><span>{r.flow === "flat" ? "הכנה במחבת" : "לתנור"}</span><span className="bold">{when(plan.bakeAt)}</span></div>}
+        {r && <div className="kv"><span>מוכן לאכילה</span><span className="bold">{when(plan.end)}</span></div>}
       </div>
 
-      {tooLate && <Note kind="warn" icon="alert">כדי להספיק עד {when(t0)} היה צריך להתחיל ב-{when(sched.start)}, וזה כבר עבר. נסי שעה מאוחרת יותר, פחות זמן במקרר, או "להתחיל עכשיו".</Note>}
-      {!tooLate && nightSteps.length > 0 && <Note kind="warn" icon="alert">יש {nightSteps.length === 1 ? "שלב" : nightSteps.length + " שלבים"} בשעות הלילה ({nightSteps.map((s) => s.title).join(", ")}). אפשר להזיז את שעת האפייה או לשנות את זמן המקרר.</Note>}
+      {plan.shifted && <Note kind="warn" icon="alert">אין מספיק זמן כדי שהמחמצת תהיה מוכנה עד {whenAt(plan.shifted.from)}. אם תאכילי עכשיו, היא תהיה מוכנה {whenAt(plan.shifted.to)}, ולפי זה בניתי את התוכנית.</Note>}
+      {plan.shifted && <button className="btn block mt8" onClick={() => set({ anchor: "mix", T: plan.shifted.to })}>להכין את הבצק {whenAt(plan.shifted.to)}</button>}
+      {feed.tooLittle && <div className="mt8"><Note kind="warn" icon="alert">{haveN} גרם זה מעט מאוד בשביל {plan.total} גרם. עדיף שתי האכלות: קודם {haveN} גרם מחמצת + {haveN * 5} גרם קמח + {haveN * 5} גרם מים, ובשיא שלה לחשב כאן שוב, עם הכמות החדשה.</Note></div>}
+      {feed.night && !plan.shifted && <div className="mt8"><Note kind="warn" icon="alert">ההאכלה יוצאת בשעות הלילה. נסי שעה אחרת להכנת הבצק.</Note></div>}
+      {!feed.night && nightSteps.length > 0 && !plan.shifted && <div className="mt8"><Note kind="warn" icon="alert">יש שלב בשעות הלילה ({nightSteps.map((x) => x.title).join(", ")}). נסי שעה אחרת, או שני את זמן המקרר בהגדרות.</Note></div>}
 
-      <div className="section-title">לוח הזמנים</div>
-      <div className="card">
-        <Timeline steps={sched.list} now={now} />
+      <div className="card mt12">
+        <div className="card-title" style={{ fontSize: 18 }}>למה ככה?</div>
+        <p className="small" style={{ margin: "8px 0 0" }}>
+          צריך {plan.needDough} גרם לבצק{plan.keep ? ` ועוד ${plan.keep} לצנצנת` : ""}, כלומר {plan.total} גרם בסך הכל.{" "}
+          {haveN > 0 && leftover <= 1
+            ? `יש לך ${haveN} גרם, אז משתמשים בכולם ומוסיפים ${feed.F + feed.W} גרם "אוכל": חצי קמח וחצי מים.`
+            : `לוקחים ${feed.S} גרם מחמצת ומוסיפים ${feed.F + feed.W} גרם "אוכל": חצי קמח וחצי מים.`}
+        </p>
+        <p className="small" style={{ margin: "8px 0 0" }}>
+          ככל שיש יותר אוכל ביחס למחמצת, לוקח לה יותר זמן להגיע לשיא. ביחס {plan.ratio} וב-{plan.temp}°C זה בערך {dur(tPeakMin)}{feed.lag ? ", כולל כשעה להתחמם מהמקרר" : ""}. לכן מאכילים {whenAt(feed.at)}, והיא בשיא {whenAt(plan.mixStart)}.
+        </p>
+        {leftover > 1 && <p className="small" style={{ margin: "8px 0 0" }}>מתוך {haveN} הגרם בצנצנת משתמשים רק ב-{feed.S}. את ה-{leftover} הנותרים אפשר להוציא (מתאים ל<button className="link" onClick={() => go("recipes", "recipe", "discard")}>פנקייק מהשאריות</button>).</p>}
+        {!haveN && <p className="small" style={{ margin: "8px 0 0" }}>לא כתבת כמה מחמצת יש. צריך לפחות {feed.S} גרם. אם יש פחות, כתבי כמה, והתוכנית תתעדכן.</p>}
       </div>
 
-      <button className="btn primary block" onClick={start} disabled={tooLate}><Icon name="clock" size={18} />להתחיל את האפייה הזו</button>
+      <button className="btn primary block" onClick={start} disabled={feed.late && !plan.shifted}><Icon name="clock" size={18} />להתחיל לפי התוכנית</button>
       <div className="grid2 mt8">
-        <button className="btn block" onClick={() => downloadIcs("machmetzi-" + r.id, sched.list.map((s) => ({ ...s, title: s.title + " · " + r.name })))}><Icon name="download" size={18} />ליומן (קובץ)</button>
-        {feedStep
-          ? <button className="btn block" onClick={() => go("starter", null, { seg: "calc", init: { needed: Math.round(built.sc.S) + 50, hours: Math.max(1, (mixStep ? mixStep.start : feedStep.start + feedStep.min * 60000) - now) / 3600000 } })}><Icon name="jar" size={18} />חישוב האכלה</button>
-          : <button className="btn block" onClick={() => go("recipes", "recipe", r.id)}><Icon name="book" size={18} />למתכון</button>}
+        <a className="btn block" href={gcalUrl("להאכיל את המחמצת", feed.at, 15, feedStepText(plan))} target="_blank" rel="noopener"><Icon name="calendar" size={18} />תזכורת להאכלה</a>
+        <button className="btn block" onClick={() => downloadIcs("machmetzi-plan", plan.steps.filter((x) => x.start > now - 60000).map((x) => ({ ...x, title: x.title + (r ? " · " + r.name : "") })))}><Icon name="download" size={18} />כל השלבים ליומן</button>
       </div>
-      <p className="xs muted center mt12">הזמנים הם הערכה לפי החום והמחמצת שלך. הבצק הוא הקובע.</p>
+
+      <div className="section-title">כל השלבים</div>
+      <div className="card"><Timeline steps={plan.steps} now={now} /></div>
+      <p className="xs muted center">הזמנים הם הערכה לפי החום והמחמצת שלך. הבצק הוא הקובע.</p>
 
       <div className="section-title">טמפרטורת מים</div>
-      {showDdt ? <DdtCalc temp={temp} method={method} /> : <ListItem icon="thermo" title="מחשבון טמפרטורת מים" sub="כמה חמים או קרים צריכים להיות המים כדי שהבצק יגיע לחום הרצוי" onClick={() => setShowDdt(true)} />}
-
+      <DdtToggle temp={plan.temp} method={d.method} />
       <BakeHistory store={store} update={update} />
     </div>
   );
+}
+const feedStepText = (plan) => `${plan.feed.S} גרם מחמצת + ${plan.feed.F} גרם קמח + ${plan.feed.W} גרם מים (יחס ${plan.ratio}). בשיא ב-${hhmm(plan.mixStart)}.`;
+function DdtToggle({ temp, method }) {
+  const [open, setOpen] = useState(false);
+  return open ? <DdtCalc temp={temp} method={method} /> : <ListItem icon="thermo" title="מחשבון טמפרטורת מים" sub="כמה חמים או קרים צריכים להיות המים כדי שהבצק יגיע לחום הרצוי" onClick={() => setOpen(true)} />;
 }
 
 function DdtCalc({ temp, method }) {
@@ -1746,7 +1844,16 @@ function ActiveBake({ store, update }) {
   const idx = steps.findIndex((s) => !s.done);
   const doneN = steps.filter((s) => s.done).length;
   const cur = idx >= 0 ? steps[idx] : null;
-  const toggle = (i) => update((s) => ({ bake: { ...s.bake, steps: s.bake.steps.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) } }));
+  const toggle = (i) => update((s) => {
+    const st = s.bake.steps[i];
+    const out = { bake: { ...s.bake, steps: s.bake.steps.map((x, j) => (j === i ? { ...x, done: !x.done } : x)) } };
+    if (st && st.feed && !st.done) {
+      const t = Date.now(), f = st.feed;
+      out.feedings = [...s.feedings, { id: uid(), at: t, S: f.S, F: f.F, W: f.W, temp: s.prefs.temp || 24, hydration: 100, flour: "white", activity: s.prefs.activity || 100, predictedPeak: t + (f.peakAt - st.start), actualPeak: null }].slice(-80);
+      out.starter = { ...s.starter, location: "counter", since: t };
+    }
+    return out;
+  });
   const shift = (min) => update((s) => ({ bake: { ...s.bake, steps: s.bake.steps.map((x) => (x.done ? x : { ...x, start: x.start + min * 60000 })) } }));
   const [rating, setRating] = useState(0);
   const [note, setNote] = useState("");
@@ -1832,7 +1939,7 @@ function BakeHistory({ store, update }) {
 }
 
 function BakeScreen({ store, update, route, go }) {
-  const [planNew, setPlanNew] = useState(!!(route.param && route.param.recipeId));
+  const [planNew, setPlanNew] = useState(!!(route.param && route.param.plan));
   if (store.bake && !planNew) {
     return (
       <div>
@@ -1844,8 +1951,8 @@ function BakeScreen({ store, update, route, go }) {
   }
   return (
     <div>
-      <Header title="תכנון אפייה" sub="בחרי מתכון ומתי לאפות, ומחמצי יבנה לוח זמנים מלא" onBack={store.bake ? () => setPlanNew(false) : null} backLabel="לאפייה הפעילה" />
-      <Planner store={store} update={(fn) => { update(fn); }} init={route.param} go={go} key={(route.param && route.param.recipeId) || "p"} />
+      <Header title="תכנון אפייה" sub="ארבע שאלות, ומחמצי מחשב מתי להאכיל, כמה, ומתי אופים" onBack={store.bake ? () => setPlanNew(false) : null} backLabel="לאפייה הפעילה" />
+      <Planner store={store} update={update} go={go} />
     </div>
   );
 }
@@ -1904,7 +2011,7 @@ function RecipeDetail({ store, update, id, go }) {
         {unitsOf(r, mult) > 1 && <p className="xs muted center mt12" style={{ margin: "10px 0 0" }}>{unitsOf(r, mult)} {r.unit}, כ-{Math.round(sc.total / unitsOf(r, mult))} גרם כל אחד</p>}
         {sc.inoc > 30 && <div className="mt12"><Note kind="warn" icon="alert">יותר מ-30% מחמצת מהקמח. הבצק יתסוס מהר מאוד.</Note></div>}
       </div>
-      <button className="btn primary block" onClick={() => go("bake", null, { recipeId: r.id, mult })}><Icon name="clock" size={18} />תכנון אפייה עם המתכון</button>
+      <button className="btn primary block" onClick={() => { update((s) => ({ drafts: { ...(s.drafts || {}), plan: { ...((s.drafts || {}).plan || {}), recipeId: r.id, mult } } })); go("bake", null, { plan: true }); }}><Icon name="clock" size={18} />תכנון אפייה עם המתכון</button>
       <div className="section-title">הכנה</div>
       <div className="card"><ol className="steps">{r.steps.map((s, k) => <li key={k}>{s}</li>)}</ol></div>
       {r.bake && r.bake.text && <><div className="section-title">אפייה</div><div className="card"><p style={{ margin: 0 }}>{r.bake.text}</p></div></>}
@@ -2143,9 +2250,17 @@ function HomeScreen({ store, go }) {
         )}
       </button>
 
+      {!b && (
+        <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake", null, { plan: true })}>
+          <div className="eyebrow" style={{ color: "#D9BE8E" }}>רוצה לאפות?</div>
+          <div className="card-title" style={{ fontSize: 22 }}>לתכנן אפייה</div>
+          <div className="small mt8" style={{ color: "#EADBC4" }}>כמה מחמצת יש לך, מה אופים ומתי. מחמצי יגיד מתי להאכיל, כמה, ומה עושים בכל שלב.</div>
+        </button>
+      )}
+
       <div className="grid2">
-        <button className="tile" onClick={() => go("starter", null, { seg: "calc" })}><span className="ico"><Icon name="scale" /></span><span className="t">מחשבון האכלה</span></button>
-        <button className="tile" onClick={() => go("bake", null, { recipeId: "country" })}><span className="ico"><Icon name="clock" /></span><span className="t">תכנון אפייה</span></button>
+        <button className="tile" onClick={() => go("starter", null, { seg: "log" })}><span className="ico"><Icon name="jar" /></span><span className="t">המחמצת שלי</span></button>
+        <button className="tile" onClick={() => go("starter", "guide", "ready")}><span className="ico"><Icon name="check" /></span><span className="t">המחמצת מוכנה?</span></button>
         <button className="tile" onClick={() => go("recipes")}><span className="ico"><Icon name="book" /></span><span className="t">מתכונים</span></button>
         <button className="tile" onClick={() => go("learn", "article", "crumb")}><span className="ico"><Icon name="slice" /></span><span className="t">מה קרה ללחם?</span></button>
       </div>
@@ -2155,7 +2270,6 @@ function HomeScreen({ store, go }) {
         <p style={{ margin: 0, fontFamily: "'Frank Ruhl Libre', serif", fontSize: 18, color: "var(--crust-deep)" }}>{tip}</p>
       </div>
 
-      <ListItem icon="check" title="המחמצת מוכנה לשימוש?" sub="בדיקה מהירה" onClick={() => go("starter", "guide", "ready")} />
       <ListItem icon="sprout" title="בניית מחמצת מאפס" sub="תוכנית של 5 ימים" onClick={() => go("starter", "guide", "build")} />
     </div>
   );
@@ -2174,15 +2288,16 @@ const TABS = [
 function App() {
   const [store, update] = useStore();
   const [route, setRoute] = useState(() => {
-    let tab = "home";
-    try { tab = localStorage.getItem("machmetzi_tab") || "home"; } catch (e) {}
-    if (!TABS.some((t) => t.id === tab)) tab = "home";
-    return { tab, page: null, param: null, n: 0 };
+    try {
+      const r = JSON.parse(localStorage.getItem("machmetzi_route"));
+      if (r && TABS.some((t) => t.id === r.tab)) return { tab: r.tab, page: r.page || null, param: r.param || null, n: 0 };
+    } catch (e) {}
+    return { tab: "home", page: null, param: null, n: 0 };
   });
   const go = (tab, page = null, param = null) => {
     setRoute((r) => ({ tab, page, param, n: r.n + 1 }));
     window.scrollTo(0, 0);
-    try { localStorage.setItem("machmetzi_tab", tab); } catch (e) {}
+    try { localStorage.setItem("machmetzi_route", JSON.stringify({ tab, page, param })); } catch (e) {}
   };
   const props = { store, update, route, go };
   let screen;
