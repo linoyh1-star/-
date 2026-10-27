@@ -789,7 +789,8 @@ function nextAt(now, h, m = 0) {
 }
 // When to feed and with how much, so the starter peaks right at mixStart.
 // total = grams needed at mix time; have = grams in the jar now (0 = unknown).
-function feedSchedule({ total, have, where, temp, activity, mixStart, now }) {
+// feedAt (optional) = the user decides when to feed; then only the ratio is solved.
+function feedSchedule({ total, have, where, temp, activity, mixStart, now, feedAt }) {
   const o = { temp, activity, flour: "white", hydration: 100 };
   const lag = where === "fridge" ? FRIDGE_LAG_H : 0;
   const tFor = (D) => (peakH(D, o) + lag) * 3600000;
@@ -800,6 +801,30 @@ function feedSchedule({ total, have, where, temp, activity, mixStart, now }) {
   };
   const tooLittle = have > 0 && total / have > D_MAX;
   const Dlow = Math.max(D_MIN, have > 0 ? total / have : D_MIN);
+  // Temperature at which dilution D would peak exactly at mixStart when fed at t (null if unrealistic).
+  const tempFor = (t, D) => {
+    const h = (mixStart - t) / 3600000 - lag;
+    if (h <= 0.5) return null;
+    const f = h / (2.5 * Math.pow(D, 0.63) * flourF("white") * hydF(100) / (clamp(num(activity, 100), 30, 200) / 100));
+    const T = Math.round(24 - 6 * Math.log2(f));
+    return T >= 4 && T <= 30 ? T : null;
+  };
+  if (feedAt) {
+    const D = dilFor((mixStart - feedAt) / 3600000 - lag, o);
+    if (!(D >= Dlow - 1e-6)) return mk(feedAt, Dlow, { late: true, tooLittle, fixed: true, warmTo: tempFor(feedAt, Dlow) });
+    if (D > D_MAX) {
+      let better = roundTo(mixStart - tFor(clamp(Math.max(Dlow, COMFY_D), D_MIN, D_MAX)), 15);
+      if (isNight(better)) {
+        // Prefer the evening before (higher ratio) over a night alarm, if the ratio stays sane.
+        const eve = new Date(better); eve.setHours(22, 0, 0, 0);
+        if (eve.getTime() > better) eve.setDate(eve.getDate() - 1);
+        const De = dilFor((mixStart - eve.getTime()) / 3600000 - lag, o);
+        if (De <= D_MAX && eve.getTime() > now) better = eve.getTime();
+      }
+      return mk(feedAt, D_MAX, { early: true, tooLittle, fixed: true, better, coolTo: tempFor(feedAt, D_MAX) });
+    }
+    return mk(feedAt, D, { tooLittle, fixed: true });
+  }
   const nowR = roundTo(now, 15);
   const latest = mixStart - tFor(Dlow);
   if (latest < nowR) return mk(nowR, Dlow, { late: true, tooLittle });
@@ -850,7 +875,8 @@ function computePlan(d, store, now) {
   const total = Math.max(10, needDough + keep);
   const have = num(d.have);
   let dough = r ? doughSchedule(r, d, temp, activity, T, d.anchor) : { mixStart: T, sched: null, fh: null };
-  let feed = feedSchedule({ total, have, where: d.where, temp, activity, mixStart: dough.mixStart, now });
+  const feedAt = d.feedMode === "auto" ? null : d.feedMode === "at" && d.feedT ? d.feedT : roundTo(now, 5);
+  let feed = feedSchedule({ total, have, where: d.where, temp, activity, mixStart: dough.mixStart, now, feedAt });
   let shifted = null;
   if (feed.late) {
     const newMix = roundTo(feed.peakAt, 15);
@@ -1639,7 +1665,7 @@ function StarterScreen({ store, update, route, go }) {
    ============================================================ */
 const totalLabel = (min) => (min >= 600 ? Math.round(min / 60) + " ש׳" : durShort(min));
 
-const PLAN_DEFAULTS = { have: "", where: "fridge", recipeId: "country", mult: 1, need: "100", keep: 50, anchor: "mix", T: null, temp: null, method: "hand", mode: "fridge", fridgeH: null, perBatch: 1, more: false };
+const PLAN_DEFAULTS = { have: "", where: "fridge", recipeId: "country", mult: 1, need: "100", keep: 50, anchor: "mix", T: null, feedMode: "now", feedT: null, temp: null, method: "hand", mode: "fridge", fridgeH: null, perBatch: 1, more: false };
 
 function Planner({ store, update, go }) {
   const now = useNow(60000);
@@ -1653,7 +1679,8 @@ function Planner({ store, update, go }) {
   const tPeakMin = (feed.peakAt - feed.at) / 60000;
   const nightSteps = nightActions(plan.steps);
   const pastT = d.T && d.T < now - 30 * 60000;
-  const quick = [nextAt(now, 8), nextAt(now, 12), nextAt(now, 18)];
+  const quick = [nextAt(now, 8), nextAt(now, 10), nextAt(now, 14), nextAt(now, 18)];
+  const feedQuick = [nextAt(now, 20, 0), nextAt(now, 21, 0), nextAt(now, 22, 0), nextAt(now, 7, 0)].filter((t, i, a) => a.indexOf(t) === i);
   const setTemp = (v) => { set({ temp: v }); update((s) => ({ prefs: { ...s.prefs, temp: v } })); };
 
   const start = () => {
@@ -1698,6 +1725,18 @@ function Planner({ store, update, go }) {
           {pastT && <div className="mt8"><Note kind="warn" icon="alert">השעה שבחרת כבר עברה. בחרי שעה חדשה.</Note></div>}
         </Field>
 
+        <Field label="מתי את מאכילה את המחמצת?" hint={d.feedMode === "auto" ? "האפליקציה תבחר את השעה הכי נוחה, לא בלילה, ותתאים את היחס." : "את קובעת מתי להאכיל, והאפליקציה מחשבת את היחס כך שהמחמצת תהיה בשיא בזמן."}>
+          <Seg options={[{ v: "now", l: "עכשיו" }, { v: "at", l: "בשעה שאבחר" }, { v: "auto", l: "שהאפליקציה תבחר" }]} value={d.feedMode} onChange={(v) => set({ feedMode: v, feedT: v === "at" && !d.feedT ? feedQuick[0] : d.feedT })} />
+          {d.feedMode === "at" && (
+            <div>
+              <input className="input mt8" type="datetime-local" value={toLocalInput(d.feedT || feedQuick[0])} onChange={(e) => { const t = fromLocalInput(e.target.value); if (t) set({ feedT: t }); }} />
+              <div className="chips mt8">
+                {feedQuick.map((t) => <button key={t} className={"chip" + (d.feedT && Math.abs(d.feedT - t) < 60000 ? " on" : "")} onClick={() => set({ feedT: t })}>{when(t)}</button>)}
+              </div>
+            </div>
+          )}
+        </Field>
+
         {r && FLOW_FRIDGE[r.flow] && (
           <Field label="לאפות באותו יום, או אחרי לילה במקרר?" hint={d.mode === "fridge" ? "לילה במקרר נותן טעם עמוק יותר, והאפייה יוצאת למחרת." : "האפייה יוצאת באותו יום, אחרי התפחה סופית בחוץ."}>
             <Seg options={[{ v: "fridge", l: "לילה במקרר" }, { v: "same", l: "באותו יום" }]} value={d.mode} onChange={(v) => set({ mode: v })} />
@@ -1731,7 +1770,7 @@ function Planner({ store, update, go }) {
 
       <div className="section-title">התוכנית שלך</div>
       <div className="card dark">
-        <div className="eyebrow" style={{ color: "#D9BE8E" }}>{feed.late ? "עכשיו" : whenAt(feed.at)}</div>
+        <div className="eyebrow" style={{ color: "#D9BE8E" }}>{feed.late || d.feedMode === "now" ? "עכשיו" : whenAt(feed.at)}</div>
         <div className="card-title" style={{ fontSize: 22 }}>{d.where === "fridge" ? "להוציא מהמקרר ולהאכיל" : "להאכיל את המחמצת"}</div>
         <div className="grid3 mt12">
           <div className="stat"><div className="v">{feed.S}</div><div className="k">גרם מחמצת</div></div>
@@ -1745,10 +1784,13 @@ function Planner({ store, update, go }) {
         {r && <div className="kv"><span>מוכן לאכילה</span><span className="bold">{when(plan.end)}</span></div>}
       </div>
 
-      {plan.shifted && <Note kind="warn" icon="alert">אין מספיק זמן כדי שהמחמצת תהיה מוכנה עד {whenAt(plan.shifted.from)}. אם תאכילי עכשיו, היא תהיה מוכנה {whenAt(plan.shifted.to)}, ולפי זה בניתי את התוכנית.</Note>}
+      {plan.shifted && <Note kind="warn" icon="alert">אין מספיק זמן כדי שהמחמצת תהיה מוכנה עד {whenAt(plan.shifted.from)}. {d.feedMode === "at" ? "אם תאכילי " + whenAt(feed.at) : "אם תאכילי עכשיו"}, היא תהיה מוכנה {whenAt(plan.shifted.to)}, ולפי זה בניתי את התוכנית.</Note>}
       {plan.shifted && <button className="btn block mt8" onClick={() => set({ anchor: "mix", T: plan.shifted.to })}>להכין את הבצק {whenAt(plan.shifted.to)}</button>}
       {feed.tooLittle && <div className="mt8"><Note kind="warn" icon="alert">{haveN} גרם זה מעט מאוד בשביל {plan.total} גרם. עדיף שתי האכלות: קודם {haveN} גרם מחמצת + {haveN * 5} גרם קמח + {haveN * 5} גרם מים, ובשיא שלה לחשב כאן שוב, עם הכמות החדשה.</Note></div>}
       {feed.night && !plan.shifted && <div className="mt8"><Note kind="warn" icon="alert">ההאכלה יוצאת בשעות הלילה. נסי שעה אחרת להכנת הבצק.</Note></div>}
+      {feed.late && feed.fixed && <div className="mt8"><Note icon="info">{haveN > 0 ? `עם ${haveN} גרם מחמצת` : "גם ביחס הכי נמוך"} היא צריכה כ-{dur((feed.peakAt - feed.at) / 60000)} כדי להגיע לשיא.{feed.warmTo && feed.warmTo > plan.temp ? ` במקום חמים של כ-${feed.warmTo}°C (למשל בתנור כבוי עם האור דולק) היא תספיק עד ${whenAt(plan.shifted ? plan.shifted.from : plan.mixStart)}.` : ""}{haveN > 0 ? " אפשר גם להשאיר פחות בצנצנת." : ""}</Note></div>}
+      {feed.early && <div className="mt8"><Note kind="warn" icon="alert">הזמן ארוך מדי: גם ביחס {LTR("1:15:15")} היא תגיע לשיא כבר {whenAt(feed.peakAt)}, לפני הבצק. עדיף להאכיל {whenAt(feed.better)}{feed.coolTo ? `, או לשים אותה במקום קריר של כ-${feed.coolTo}°C` : ""}.</Note></div>}
+      {feed.early && <button className="btn block mt8" onClick={() => set({ feedMode: "at", feedT: feed.better })}>להאכיל {whenAt(feed.better)}</button>}
       {!feed.night && nightSteps.length > 0 && !plan.shifted && <div className="mt8"><Note kind="warn" icon="alert">יש שלב בשעות הלילה ({nightSteps.map((x) => x.title).join(", ")}). נסי שעה אחרת, או שני את זמן המקרר בהגדרות.</Note></div>}
 
       <div className="card mt12">
@@ -1760,7 +1802,7 @@ function Planner({ store, update, go }) {
             : `לוקחים ${feed.S} גרם מחמצת ומוסיפים ${feed.F + feed.W} גרם "אוכל": חצי קמח וחצי מים.`}
         </p>
         <p className="small" style={{ margin: "8px 0 0" }}>
-          ככל שיש יותר אוכל ביחס למחמצת, לוקח לה יותר זמן להגיע לשיא. ביחס {plan.ratio} וב-{plan.temp}°C זה בערך {dur(tPeakMin)}{feed.lag ? ", כולל כשעה להתחמם מהמקרר" : ""}. לכן מאכילים {whenAt(feed.at)}, והיא בשיא {whenAt(plan.mixStart)}.
+          ככל שיש יותר אוכל ביחס למחמצת, לוקח לה יותר זמן להגיע לשיא. ביחס {plan.ratio} וב-{plan.temp}°C זה בערך {dur(tPeakMin)}{feed.lag ? ", כולל כשעה להתחמם מהמקרר" : ""}. לכן מאכילים {whenAt(feed.at)}, והיא בשיא {whenAt(feed.peakAt)}.
         </p>
         {leftover > 1 && <p className="small" style={{ margin: "8px 0 0" }}>מתוך {haveN} הגרם בצנצנת משתמשים רק ב-{feed.S}. את ה-{leftover} הנותרים אפשר להוציא (מתאים ל<button className="link" onClick={() => go("recipes", "recipe", "discard")}>פנקייק מהשאריות</button>).</p>}
         {!haveN && <p className="small" style={{ margin: "8px 0 0" }}>לא כתבת כמה מחמצת יש. צריך לפחות {feed.S} גרם. אם יש פחות, כתבי כמה, והתוכנית תתעדכן.</p>}
