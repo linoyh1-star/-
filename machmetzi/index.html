@@ -1683,6 +1683,10 @@ function Planner({ store, update, go }) {
   const feedQuick = [nextAt(now, 20, 0), nextAt(now, 21, 0), nextAt(now, 22, 0), nextAt(now, 7, 0)].filter((t, i, a) => a.indexOf(t) === i);
   const setTemp = (v) => { set({ temp: v }); update((s) => ({ prefs: { ...s.prefs, temp: v } })); };
 
+  // Saving pins every time: "now" becomes the actual feed time, and the mix/bake time is fixed.
+  const savePlan = () => set({ feedMode: "at", feedT: feed.at, T: d.anchor === "bake" && plan.bakeAt ? plan.bakeAt : plan.mixStart, savedAt: Date.now() });
+  const newPlan = () => { if (confirm("להתחיל תוכנית חדשה? הזמנים יחושבו מעכשיו.")) set({ feedMode: "now", feedT: null, T: null, savedAt: null }); };
+
   const start = () => {
     if (store.bake && !confirm("יש אפייה פעילה. להחליף אותה בחדשה?")) return;
     update(() => ({ bake: { id: uid(), recipeId: r ? r.id : "starter", name: r ? r.name : "הכנת מחמצת", mult: d.mult, units: plan.units ? plan.units + " " + r.unit : "", createdAt: Date.now(), steps: plan.steps.map((x, i) => ({ ...x, i, done: false })) } }));
@@ -1691,7 +1695,15 @@ function Planner({ store, update, go }) {
 
   return (
     <div>
-      <div className="card">
+      {d.savedAt ? (
+        <div className="card tint">
+          <div className="row"><Icon name="check" /><div className="grow"><div className="bold">התוכנית שמורה</div><div className="xs muted">נשמרה {whenAt(d.savedAt)}. הזמנים לא ישתנו כשתצאי ותחזרי.</div></div></div>
+          <button className="btn sm mt12" onClick={newPlan}>תוכנית חדשה</button>
+        </div>
+      ) : d.feedMode === "now" ? (
+        <Note icon="clock">הזמנים מחושבים מעכשיו ויתעדכנו כשתחזרי. כדי לקבע אותם, לחצי למטה על "שמירת התוכנית".</Note>
+      ) : null}
+      <div className="card mt12">
         <Field label="1. כמה מחמצת יש לך עכשיו?">
           <div className="grid2">
             <NumInput value={d.have} onChange={(v) => set({ have: v })} suffix="גרם" placeholder="לא יודעת" />
@@ -1726,7 +1738,7 @@ function Planner({ store, update, go }) {
         </Field>
 
         <Field label="מתי את מאכילה את המחמצת?" hint={d.feedMode === "auto" ? "האפליקציה תבחר את השעה הכי נוחה, לא בלילה, ותתאים את היחס." : "את קובעת מתי להאכיל, והאפליקציה מחשבת את היחס כך שהמחמצת תהיה בשיא בזמן."}>
-          <Seg options={[{ v: "now", l: "עכשיו" }, { v: "at", l: "בשעה שאבחר" }, { v: "auto", l: "שהאפליקציה תבחר" }]} value={d.feedMode} onChange={(v) => set({ feedMode: v, feedT: v === "at" && !d.feedT ? feedQuick[0] : d.feedT })} />
+          <Seg options={[{ v: "now", l: "עכשיו" }, { v: "at", l: "בשעה שאבחר" }, { v: "auto", l: "שהאפליקציה תבחר" }]} value={d.feedMode} onChange={(v) => set({ feedMode: v, feedT: v === "at" && !d.feedT ? feedQuick[0] : d.feedT, savedAt: v === "now" ? null : d.savedAt })} />
           {d.feedMode === "at" && (
             <div>
               <input className="input mt8" type="datetime-local" value={toLocalInput(d.feedT || feedQuick[0])} onChange={(e) => { const t = fromLocalInput(e.target.value); if (t) set({ feedT: t }); }} />
@@ -1808,7 +1820,11 @@ function Planner({ store, update, go }) {
         {!haveN && <p className="small" style={{ margin: "8px 0 0" }}>לא כתבת כמה מחמצת יש. צריך לפחות {feed.S} גרם. אם יש פחות, כתבי כמה, והתוכנית תתעדכן.</p>}
       </div>
 
-      <button className="btn primary block" onClick={start} disabled={feed.late && !plan.shifted}><Icon name="clock" size={18} />להתחיל לפי התוכנית</button>
+      {d.savedAt && feed.at <= now && feed.at > now - 3 * 3600000 && !store.bake && <div className="mb8"><Note kind="ok" icon="clock">הגיע זמן ההאכלה. לחצי "להתחיל לפי התוכנית", ומחמצי ילווה אותך שלב אחרי שלב.</Note></div>}
+      <div className="grid2">
+        <button className="btn block" onClick={savePlan}><Icon name="check" size={18} />{d.savedAt ? "לשמור שוב" : "שמירת התוכנית"}</button>
+        <button className="btn primary block" onClick={start} disabled={feed.late && !plan.shifted}><Icon name="clock" size={18} />להתחיל לפי התוכנית</button>
+      </div>
       <div className="grid2 mt8">
         <a className="btn block" href={gcalUrl("להאכיל את המחמצת", feed.at, 15, feedStepText(plan))} target="_blank" rel="noopener"><Icon name="calendar" size={18} />תזכורת להאכלה</a>
         <button className="btn block" onClick={() => downloadIcs("machmetzi-plan", plan.steps.filter((x) => x.start > now - 60000).map((x) => ({ ...x, title: x.title + (r ? " · " + r.name : "") })))}><Icon name="download" size={18} />כל השלבים ליומן</button>
@@ -2158,7 +2174,9 @@ function LearnScreen({ route, go }) {
           {ARTICLES.filter((a) => a.group === g).map((a) => <ListItem key={a.id} icon={a.icon} title={a.title} sub={a.sub} onClick={() => go("learn", "article", a.id)} />)}
         </div>
       ))}
-      {!isStandalone() && <><div className="section-title">האפליקציה</div><InstallCard /></>}
+      <div className="section-title">האפליקציה</div>
+      {!isStandalone() && <InstallCard />}
+      <ShareCard />
     </div>
   );
 }
@@ -2226,6 +2244,32 @@ function InstallCard({ compact, onDismiss }) {
 }
 
 /* ============================================================
+   Share
+   ============================================================ */
+const APP_URL = location.origin + location.pathname.replace(/index\.html$/, "");
+const SHARE_TEXT = "מחמצי: אפליקציה חינמית למחמצת. מחשבון האכלה, תכנון אפייה, מתכונים וטיפים.";
+function ShareCard() {
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    if (navigator.share) { try { await navigator.share({ title: "מחמצי", text: SHARE_TEXT, url: APP_URL }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+    window.open("https://wa.me/?text=" + encodeURIComponent(SHARE_TEXT + "\n" + APP_URL), "_blank");
+  };
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(APP_URL); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (e) { prompt("העתיקי את הקישור:", APP_URL); }
+  };
+  return (
+    <div className="card">
+      <div className="card-title" style={{ fontSize: 18 }}>לשתף את מחמצי</div>
+      <p className="small muted" style={{ margin: "6px 0 0" }}>כל אחת מקבלת אפליקציה משלה. הנתונים נשמרים רק בטלפון של כל אחת, ואף אחת לא רואה את של השנייה.</p>
+      <div className="grid2 mt12">
+        <button className="btn primary block" onClick={share}>שיתוף</button>
+        <button className="btn block" onClick={copy}>{copied ? "הועתק" : "העתקת קישור"}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
    Home
    ============================================================ */
 function greeting() { const h = new Date().getHours(); return h < 5 ? "לילה טוב" : h < 12 ? "בוקר טוב" : h < 17 ? "צהריים טובים" : h < 21 ? "ערב טוב" : "לילה טוב"; }
@@ -2235,6 +2279,8 @@ function HomeScreen({ store, go }) {
   const last = [...store.feedings].sort((a, b) => b.at - a.at)[0];
   const tip = TIPS[Math.floor(now / 86400000) % TIPS.length];
   const b = store.bake;
+  const pd = (store.drafts || {}).plan;
+  const savedPlan = pd && pd.savedAt && pd.feedT ? pd : null;
   let bakeCard = null;
   if (b) {
     const idx = b.steps.findIndex((s) => !s.done);
@@ -2292,7 +2338,19 @@ function HomeScreen({ store, go }) {
         )}
       </button>
 
-      {!b && (
+      {!b && savedPlan && (
+        <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake", null, { plan: true })}>
+          <div className="eyebrow" style={{ color: "#D9BE8E" }}>התוכנית השמורה שלך</div>
+          <div className="card-title" style={{ fontSize: 22 }}>
+            {savedPlan.feedT > now ? "להאכיל " + whenAt(savedPlan.feedT)
+              : savedPlan.feedT > now - 3 * 3600000 ? "הגיע זמן ההאכלה"
+              : savedPlan.T && savedPlan.T > now ? (savedPlan.anchor === "bake" ? "אופים " : "מכינים בצק ") + whenAt(savedPlan.T)
+              : "הזמנים של התוכנית עברו"}
+          </div>
+          <div className="small mt8" style={{ color: "#EADBC4" }}>{savedPlan.T && savedPlan.T < now ? "לחצי כדי לתכנן מחדש." : "לחצי כדי לראות את כל התוכנית ולהתחיל."}</div>
+        </button>
+      )}
+      {!b && !savedPlan && (
         <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake", null, { plan: true })}>
           <div className="eyebrow" style={{ color: "#D9BE8E" }}>רוצה לאפות?</div>
           <div className="card-title" style={{ fontSize: 22 }}>לתכנן אפייה</div>
@@ -2313,6 +2371,7 @@ function HomeScreen({ store, go }) {
       </div>
 
       <ListItem icon="sprout" title="בניית מחמצת מאפס" sub="תוכנית של 5 ימים" onClick={() => go("starter", "guide", "build")} />
+      <ShareCard />
     </div>
   );
 }
