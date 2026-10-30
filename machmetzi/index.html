@@ -14,9 +14,10 @@
 <title>מחמצי</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
+    --display: "Amatic SC", "Assistant", cursive;
     --bg: #F7F1E6;
     --paper: #FFFCF6;
     --wheat-soft: #F0E5D0;
@@ -59,7 +60,7 @@
 
   /* Header */
   .hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 4px 2px 18px; }
-  .hdr-title { font-family: "Frank Ruhl Libre", serif; font-weight: 700; font-size: 30px; line-height: 1.1; margin: 0; color: var(--crust-deep); }
+  .hdr-title { font-family: var(--display); font-weight: 700; font-size: 44px; line-height: 1; margin: 0; color: var(--crust-deep); }
   .hdr-sub { color: var(--muted); font-size: 15px; margin-top: 6px; line-height: 1.4; }
   .back { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--crust); font-weight: 600; font-size: 15px; padding: 6px 0; margin-bottom: 6px; }
   .ornament { display: flex; align-items: center; gap: 10px; color: var(--wheat); margin: 2px 0 0; }
@@ -71,7 +72,7 @@
   .card.tint { background: var(--wheat-soft); border-color: transparent; box-shadow: none; }
   .card.dark { background: var(--crust-deep); border-color: var(--crust-deep); color: #F7EEDF; }
   .card.dark .muted { color: #CDB89B; }
-  .card-title { font-family: "Frank Ruhl Libre", serif; font-weight: 700; font-size: 20px; margin: 0 0 4px; color: var(--crust-deep); }
+  .card-title { font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1.1; margin: 0 0 4px; color: var(--crust-deep); }
   .card.dark .card-title { color: #FFF6E8; }
   .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--wheat-deep); margin-bottom: 6px; }
   .muted { color: var(--muted); }
@@ -88,7 +89,7 @@
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .divider { height: 1px; background: var(--line); margin: 14px 0; border: 0; }
-  .section-title { font-family: "Frank Ruhl Libre", serif; font-weight: 700; font-size: 19px; color: var(--crust-deep); margin: 22px 2px 10px; }
+  .section-title { font-family: var(--display); font-weight: 700; font-size: 28px; line-height: 1.1; color: var(--crust-deep); margin: 22px 2px 10px; }
   .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
   p { line-height: 1.6; margin: 0 0 10px; }
 
@@ -149,14 +150,14 @@
   .badge.warn { background: var(--warn-soft); color: var(--warn); }
 
   /* Result blocks */
-  .big-time { font-family: "Frank Ruhl Libre", serif; font-size: 30px; font-weight: 700; color: var(--crust-deep); line-height: 1.1; }
+  .big-time { font-family: "Assistant", sans-serif; font-size: 30px; font-weight: 800; color: var(--crust-deep); line-height: 1.1; }
   .big-time .soft { color: var(--wheat-deep); }
   .stat { background: var(--wheat-soft); border-radius: 14px; padding: 12px 10px; text-align: center; }
   .card.dark .stat { background: rgba(255,255,255,.08); }
-  .stat .v { font-family: "Frank Ruhl Libre", serif; font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .stat .v { font-family: "Assistant", sans-serif; font-size: 26px; font-weight: 800; line-height: 1.1; }
   .stat .k { font-size: 13px; color: var(--muted); margin-top: 2px; }
   .card.dark .stat .k { color: #CDB89B; }
-  .ratio { font-family: "Frank Ruhl Libre", serif; font-size: 40px; font-weight: 700; letter-spacing: .02em; }
+  .ratio { font-family: "Assistant", sans-serif; font-size: 38px; font-weight: 800; letter-spacing: .02em; }
   .note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--wheat-soft); font-size: 14px; line-height: 1.5; }
   .note.warn { background: var(--warn-soft); color: #6E3417; }
   .note.ok { background: var(--olive-soft); color: #3E4A22; }
@@ -884,7 +885,8 @@ function computePlan(d, store, now) {
     dough = r ? doughSchedule(r, { ...d, fridgeH: dough.fh && d.fridgeH ? d.fridgeH : null }, temp, activity, newMix, "mix") : { mixStart: newMix, sched: null, fh: null };
   }
   const mixStart = dough.mixStart;
-  const ratio = LTR(`1:${r1(feed.F / feed.S)}:${r1(feed.W / feed.S)}`);
+  const half = (feed.F + feed.W) / 2 / feed.S;   // flour = water; avoid 6.4 vs 6.3 from gram rounding
+  const ratio = LTR(`1:${r1(half)}:${r1(half)}`);
   const feedStep = {
     key: "feed", title: "האכלת המחמצת", start: feed.at, min: Math.max(15, (mixStart - feed.at) / 60000), passive: true,
     feed: { S: feed.S, F: feed.F, W: feed.W, peakAt: feed.peakAt },
@@ -1783,7 +1785,7 @@ function Planner({ store, update, go }) {
       <div className="section-title">התוכנית שלך</div>
       <div className="card dark">
         <div className="eyebrow" style={{ color: "#D9BE8E" }}>{feed.late || d.feedMode === "now" ? "עכשיו" : whenAt(feed.at)}</div>
-        <div className="card-title" style={{ fontSize: 22 }}>{d.where === "fridge" ? "להוציא מהמקרר ולהאכיל" : "להאכיל את המחמצת"}</div>
+        <div className="card-title" style={{ fontSize: 32 }}>{d.where === "fridge" ? "להוציא מהמקרר ולהאכיל" : "להאכיל את המחמצת"}</div>
         <div className="grid3 mt12">
           <div className="stat"><div className="v">{feed.S}</div><div className="k">גרם מחמצת</div></div>
           <div className="stat"><div className="v">{feed.F}</div><div className="k">גרם קמח</div></div>
@@ -1806,7 +1808,7 @@ function Planner({ store, update, go }) {
       {!feed.night && nightSteps.length > 0 && !plan.shifted && <div className="mt8"><Note kind="warn" icon="alert">יש שלב בשעות הלילה ({nightSteps.map((x) => x.title).join(", ")}). נסי שעה אחרת, או שני את זמן המקרר בהגדרות.</Note></div>}
 
       <div className="card mt12">
-        <div className="card-title" style={{ fontSize: 18 }}>למה ככה?</div>
+        <div className="card-title" style={{ fontSize: 27 }}>למה ככה?</div>
         <p className="small" style={{ margin: "8px 0 0" }}>
           צריך {plan.needDough} גרם לבצק{plan.keep ? ` ועוד ${plan.keep} לצנצנת` : ""}, כלומר {plan.total} גרם בסך הכל.{" "}
           {haveN > 0 && leftover <= 1
@@ -1930,7 +1932,7 @@ function ActiveBake({ store, update }) {
     <div>
       <div className="card dark">
         <div className="row between"><div className="eyebrow" style={{ color: "#D9BE8E", margin: 0 }}>אפייה פעילה</div><span className="xs muted">{doneN}/{steps.length}</span></div>
-        <div className="card-title mt8" style={{ fontSize: 24 }}>{b.name}</div>
+        <div className="card-title mt8" style={{ fontSize: 34 }}>{b.name}</div>
         <div className="progress mt12"><div style={{ width: (doneN / steps.length) * 100 + "%" }} /></div>
         {cur ? (
           <div className="mt16">
@@ -2130,7 +2132,7 @@ function RecipesScreen({ store, update, route, go }) {
    ============================================================ */
 function Blocks({ blocks }) {
   return blocks.map((b, i) => {
-    if (b.h) return <div className="section-title" key={i} style={{ fontSize: 17, margin: "16px 0 8px" }}>{b.h}</div>;
+    if (b.h) return <div className="section-title" key={i} style={{ fontSize: 25, margin: "16px 0 8px" }}>{b.h}</div>;
     if (b.p) return <p key={i}>{b.p}</p>;
     if (b.list) return <ul className="dots" key={i}>{b.list.map((x, j) => <li key={j}>{x}</li>)}</ul>;
     if (b.table) return (
@@ -2154,7 +2156,7 @@ function LearnScreen({ route, go }) {
             {CRUMB_CASES.map((c) => (
               <div className="crumb-card" key={c.type}>
                 <CrumbSVG type={c.type} />
-                <div className="card-title mt8" style={{ fontSize: 18 }}>{c.title}</div>
+                <div className="card-title mt8" style={{ fontSize: 27 }}>{c.title}</div>
                 <ul className="dots small">{c.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
                 <div className={"note mt8 " + (c.type === "good" ? "ok" : "")}><Icon name={c.type === "good" ? "check" : "info"} size={18} /><div><span className="bold">{c.type === "good" ? "" : "מה לעשות: "}</span>{c.fix}</div></div>
               </div>
@@ -2259,7 +2261,7 @@ function ShareCard() {
   };
   return (
     <div className="card">
-      <div className="card-title" style={{ fontSize: 18 }}>לשתף את מחמצי</div>
+      <div className="card-title" style={{ fontSize: 27 }}>לשתף את מחמצי</div>
       <p className="small muted" style={{ margin: "6px 0 0" }}>כל אחת מקבלת אפליקציה משלה. הנתונים נשמרים רק בטלפון של כל אחת, ואף אחת לא רואה את של השנייה.</p>
       <div className="grid2 mt12">
         <button className="btn primary block" onClick={share}>שיתוף</button>
@@ -2289,7 +2291,7 @@ function HomeScreen({ store, go }) {
     bakeCard = (
       <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake")}>
         <div className="eyebrow" style={{ color: "#D9BE8E" }}>האפייה שלי</div>
-        <div className="card-title" style={{ fontSize: 22 }}>{b.name}</div>
+        <div className="card-title" style={{ fontSize: 32 }}>{b.name}</div>
         {cur ? <>
           <div className="mt8" style={{ fontSize: 15 }}>{now < cur.start ? "הבא" : "עכשיו"}: <span className="bold">{cur.title}</span></div>
           <div className="xs muted mt8">{now < cur.start ? "בעוד " + durShort((cur.start - now) / 60000) + " · " + when(cur.start) : "התחיל ב-" + hhmm(cur.start)}</div>
@@ -2315,7 +2317,7 @@ function HomeScreen({ store, go }) {
       <div className="hdr" style={{ marginBottom: 6 }}>
         <div>
           <div className="hdr-sub" style={{ marginTop: 0 }}>{greeting()}</div>
-          <h1 className="hdr-title" style={{ fontSize: 38 }}>מחמצי</h1>
+          <h1 className="hdr-title" style={{ fontSize: 58 }}>מחמצי</h1>
         </div>
         <img src="mascot.svg" alt="" width="64" height="64" style={{ marginTop: 2 }} />
       </div>
@@ -2341,7 +2343,7 @@ function HomeScreen({ store, go }) {
       {!b && savedPlan && (
         <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake", null, { plan: true })}>
           <div className="eyebrow" style={{ color: "#D9BE8E" }}>התוכנית השמורה שלך</div>
-          <div className="card-title" style={{ fontSize: 22 }}>
+          <div className="card-title" style={{ fontSize: 32 }}>
             {savedPlan.feedT > now ? "להאכיל " + whenAt(savedPlan.feedT)
               : savedPlan.feedT > now - 3 * 3600000 ? "הגיע זמן ההאכלה"
               : savedPlan.T && savedPlan.T > now ? (savedPlan.anchor === "bake" ? "אופים " : "מכינים בצק ") + whenAt(savedPlan.T)
@@ -2353,7 +2355,7 @@ function HomeScreen({ store, go }) {
       {!b && !savedPlan && (
         <button className="card dark" style={{ width: "100%", textAlign: "right", display: "block" }} onClick={() => go("bake", null, { plan: true })}>
           <div className="eyebrow" style={{ color: "#D9BE8E" }}>רוצה לאפות?</div>
-          <div className="card-title" style={{ fontSize: 22 }}>לתכנן אפייה</div>
+          <div className="card-title" style={{ fontSize: 32 }}>לתכנן אפייה</div>
           <div className="small mt8" style={{ color: "#EADBC4" }}>כמה מחמצת יש לך, מה אופים ומתי. מחמצי יגיד מתי להאכיל, כמה, ומה עושים בכל שלב.</div>
         </button>
       )}
@@ -2367,7 +2369,7 @@ function HomeScreen({ store, go }) {
 
       <div className="card tint mt16">
         <div className="eyebrow">טיפ להיום</div>
-        <p style={{ margin: 0, fontFamily: "'Frank Ruhl Libre', serif", fontSize: 18, color: "var(--crust-deep)" }}>{tip}</p>
+        <p style={{ margin: 0, fontFamily: "var(--display)", fontWeight: 700, fontSize: 27, lineHeight: 1.2, color: "var(--crust-deep)" }}>{tip}</p>
       </div>
 
       <ListItem icon="sprout" title="בניית מחמצת מאפס" sub="תוכנית של 5 ימים" onClick={() => go("starter", "guide", "build")} />
